@@ -14,7 +14,7 @@ export interface Quest {
         num?: number;
         unit?: string;
         dateStr?: string;
-    };
+    } | null;
 
     // Recurring specific
     freqNum?: number;
@@ -30,10 +30,11 @@ export interface Quest {
         unit?: string;
         dateStr?: string;
         count?: number;
-    };
+    } | null;
 
     // State & Progress
     isArchived: boolean;
+    deletedAt?: number;
     completed: boolean;
     completedAt?: number | null;
     gemClaimed?: boolean;
