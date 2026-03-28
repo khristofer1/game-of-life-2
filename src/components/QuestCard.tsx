@@ -7,9 +7,11 @@ interface QuestCardProps {
   onToggleComplete: (id: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
+  onRestore: (id: number) => void;
+  onHardDelete: (id: number) => void;
 }
 
-export function QuestCard({ quest, onToggleComplete, onEdit, onDelete }: QuestCardProps) {
+export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete }: QuestCardProps) {
   // Local state to force the card to re-render every minute for the countdown
   const [now, setNow] = useState(Date.now());
 
@@ -122,30 +124,50 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete }: QuestCa
       </div>
 
       <div className="pt-2 flex items-center justify-between gap-2">
-        <button
-          onClick={() => !isPending && quest.id && onToggleComplete(quest.id)}
-          disabled={isPending}
-          className={`check-transition grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap ${btnClass}`}
-        >
-          {btnText}
-        </button>
+        {quest.deletedAt ? (
+          // --- RECYCLE BIN ACTIONS ---
+          <>
+            <button
+              onClick={() => quest.id && onRestore?.(quest.id)}
+              className="grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all"
+            >
+              Reforge (Restore)
+            </button>
+            <button
+              onClick={() => quest.id && onHardDelete?.(quest.id)}
+              className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-90"
+              title="Delete Permanently"
+            >
+              🗑️
+            </button>
+          </>
+        ) : (
+          // --- STANDARD ACTIONS (Active/Coming/Completed) ---
+          <>
+            <button
+              onClick={() => !isPending && quest.id && onToggleComplete(quest.id)}
+              disabled={isPending}
+              className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap ${btnClass}`}
+            >
+              {btnText}
+            </button>
 
-        <div className="flex gap-1 shrink-0 ml-2">
-          <button
-            onClick={() => quest.id && onEdit(quest.id)}
-            className="p-3 rounded-xl bg-gray-50 text-muted hover:text-orange-500 hover:bg-orange-50 transition-all active:scale-90"
-            title="Edit"
-          >
-            ✏️
-          </button>
-          <button
-            onClick={() => quest.id && onDelete(quest.id)}
-            className="p-3 rounded-xl bg-gray-50 text-muted hover:text-red-500 hover:bg-red-50 transition-all active:scale-90"
-            title="Delete"
-          >
-            🗑️
-          </button>
-        </div>
+            <div className="flex gap-1 shrink-0 ml-2">
+              <button
+                onClick={() => quest.id && onEdit(quest.id)}
+                className="p-3 rounded-xl bg-gray-50 text-muted hover:text-orange-500 hover:bg-orange-50 transition-all active:scale-90"
+              >
+                ✏️
+              </button>
+              <button
+                onClick={() => quest.id && onDelete(quest.id)}
+                className="p-3 rounded-xl bg-gray-50 text-muted hover:text-red-500 hover:bg-red-50 transition-all active:scale-90"
+              >
+                🗑️
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
