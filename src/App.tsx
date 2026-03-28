@@ -16,156 +16,162 @@ export default function App() {
 	// Store the timeout IDs so we can cancel them if the user click "Restore"
 	const deleteTimeouts = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 	const [completingIds, setCompletingIds] = useState<number[]>([]);
-  const completeTimeouts = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+	const completeTimeouts = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [isShopOpen, setIsShopOpen] = useState(false);
 
 	// --- Action Handlers (Stubs) ---
 	// We will wire these up to the database and modals in the next step!
-	
+
 	// Shop Logic
-  const handleBuyFreeze = async () => {
-    if (gems >= 10) {
-      const newGems = gems - 10;
-      const newFreezes = freezes + 1;
-      
-      await setMeta("gems", newGems);
-      await setMeta("globalFreezes", newFreezes);
-      
-      forceRefresh(); // Instantly update the UI
-    } else {
-      alert("Not enough gems!");
-    }
-  };
-	
+	const handleBuyFreeze = async () => {
+		if (gems >= 10) {
+			const newGems = gems - 10;
+			const newFreezes = freezes + 1;
+
+			await setMeta("gems", newGems);
+			await setMeta("globalFreezes", newFreezes);
+
+			forceRefresh(); // Instantly update the UI
+		} else {
+			alert("Not enough gems!");
+		}
+	};
+
 	const handleToggleComplete = async (id: number) => {
-    // 1. Instantly trigger visual fade-out
-    setCompletingIds(prev => [...prev, id]);
+		// 1. Instantly trigger visual fade-out
+		setCompletingIds(prev => [...prev, id]);
 
-    // 2. Start the 3-second countdown before processing database math
-    const timeoutId = setTimeout(async () => {
-      const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
-      const taskToUpdate = allTasks.find(t => t.id === id);
-      
-      if (!taskToUpdate) return;
+		// 2. Start the 3-second countdown before processing database math
+		const timeoutId = setTimeout(async () => {
+			const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
+			const taskToUpdate = allTasks.find(t => t.id === id);
 
-      const now = Date.now();
-      const updatedTask = { ...taskToUpdate };
+			if (!taskToUpdate) return;
 
-      // Toggling to COMPLETED
-      if (!updatedTask.completed) {
-        updatedTask.completed = true;
-        updatedTask.completedAt = now;
-        updatedTask.gemClaimed = false;
+			const now = Date.now();
+			const updatedTask = { ...taskToUpdate };
 
-        let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
-        let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
-        let timeLeft = activeDeadline - now;
+			// Toggling to COMPLETED
+			if (!updatedTask.completed) {
+				updatedTask.completed = true;
+				updatedTask.completedAt = now;
+				updatedTask.gemClaimed = false;
 
-        if (timeLeft > 0) {
-          updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
-        } else {
-          updatedTask.energyPercent = 0;
-        }
+				let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
+				let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
+				let timeLeft = activeDeadline - now;
 
-        // STREAK ADD LOGIC
-        const lastDate = await getMeta("lastStreakUpdate", 0);
-        let globalStreak = await getMeta("globalStreak", 0);
-        const todayDay = new Date(now).setHours(0, 0, 0, 0);
-        const lastStreakDay = new Date(lastDate).setHours(0, 0, 0, 0);
+				if (timeLeft > 0) {
+					updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
+				} else {
+					updatedTask.energyPercent = 0;
+				}
 
-        if (lastDate === 0 || todayDay > lastStreakDay) {
-          globalStreak += 1;
-          await setMeta("globalStreak", globalStreak);
-          await setMeta("lastStreakUpdate", now);
-        }
+				// STREAK ADD LOGIC
+				const lastDate = await getMeta("lastStreakUpdate", 0);
+				let globalStreak = await getMeta("globalStreak", 0);
+				const todayDay = new Date(now).setHours(0, 0, 0, 0);
+				const lastStreakDay = new Date(lastDate).setHours(0, 0, 0, 0);
 
-      // UNDOING a Completion
-      } else {
-        updatedTask.completed = false;
-        updatedTask.completedAt = null;
-        updatedTask.gemClaimed = false;
+				if (lastDate === 0 || todayDay > lastStreakDay) {
+					globalStreak += 1;
+					await setMeta("globalStreak", globalStreak);
+					await setMeta("lastStreakUpdate", now);
+				}
 
-        const todayDay = new Date(now).setHours(0, 0, 0, 0);
-        
-        const otherCompletedTasks = allTasks.some(t => 
-          t.id !== updatedTask.id && 
-          t.completed && 
-          t.completedAt && 
-          new Date(t.completedAt).setHours(0, 0, 0, 0) === todayDay
-        );
+				// UNDOING a Completion
+			} else {
+				updatedTask.completed = false;
+				updatedTask.completedAt = null;
+				updatedTask.gemClaimed = false;
 
-        if (!otherCompletedTasks) {
-          let globalStreak = await getMeta("globalStreak", 0);
-          if (globalStreak > 0) {
-            globalStreak -= 1;
-            await setMeta("globalStreak", globalStreak);
-            const yesterday = now - (24 * 60 * 60 * 1000);
-            await setMeta("lastStreakUpdate", yesterday);
-          }
-        }
-      }
+				const todayDay = new Date(now).setHours(0, 0, 0, 0);
 
-      await saveTaskToDB(updatedTask);
-      
-      // Clean up the memory and refresh UI
-      setCompletingIds(prev => prev.filter(cId => cId !== id));
-      completeTimeouts.current.delete(id);
-      forceRefresh();
-    }, 3000);
+				const otherCompletedTasks = allTasks.some(t =>
+					t.id !== updatedTask.id &&
+					t.completed &&
+					t.completedAt &&
+					new Date(t.completedAt).setHours(0, 0, 0, 0) === todayDay
+				);
 
-    // 3. Save the timer ID to allow cancellation
-    completeTimeouts.current.set(id, timeoutId);
-  };
+				if (!otherCompletedTasks) {
+					let globalStreak = await getMeta("globalStreak", 0);
+					if (globalStreak > 0) {
+						globalStreak -= 1;
+						await setMeta("globalStreak", globalStreak);
+						const yesterday = now - (24 * 60 * 60 * 1000);
+						await setMeta("lastStreakUpdate", yesterday);
+					}
+				}
+			}
 
-  // Cancel the completion toggle
-  const handleCancelComplete = (id: number) => {
-    const timeoutId = completeTimeouts.current.get(id);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      completeTimeouts.current.delete(id);
-    }
-    setCompletingIds(prev => prev.filter(cId => cId !== id));
-  };
+			await saveTaskToDB(updatedTask);
 
+			// Clean up the memory and refresh UI
+			setCompletingIds(prev => prev.filter(cId => cId !== id));
+			completeTimeouts.current.delete(id);
+			forceRefresh();
+		}, 3000);
+
+		// 3. Save the timer ID to allow cancellation
+		completeTimeouts.current.set(id, timeoutId);
+	};
+
+	// Cancel the completion toggle
+	const handleCancelComplete = (id: number) => {
+		const timeoutId = completeTimeouts.current.get(id);
+		if (timeoutId) {
+			clearTimeout(timeoutId);
+			completeTimeouts.current.delete(id);
+		}
+		setCompletingIds(prev => prev.filter(cId => cId !== id));
+	};
+
+	// 1. Click "Edit" on a card
 	const handleEdit = (id: number) => {
-		console.log("Edit clicked for ID:", id);
+		const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
+		const quest = allTasks.find(t => t.id === id);
+		if (quest) {
+			setEditingQuest(quest);
+			setIsModalOpen(true);
+		}
 	};
 
 	const handleDelete = async (id: number) => {
-    // 1. Instantly trigger the visual fade-out animation
-    setDeletingIds(prev => [...prev, id]);
+		// 1. Instantly trigger the visual fade-out animation
+		setDeletingIds(prev => [...prev, id]);
 
-    // 2. Start the 3-second countdown
-    const timeoutId = setTimeout(async () => {
-      const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
-      const taskToTrash = allTasks.find(t => t.id === id);
-      
-      if (taskToTrash) {
-        taskToTrash.deletedAt = Date.now();
-        await saveTaskToDB(taskToTrash);
-        
-        setDeletingIds(prev => prev.filter(dId => dId !== id));
-        deleteTimeouts.current.delete(id); // Clean up the memory
-        forceRefresh();
-      }
-    }, 3000);
+		// 2. Start the 3-second countdown
+		const timeoutId = setTimeout(async () => {
+			const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
+			const taskToTrash = allTasks.find(t => t.id === id);
 
-    // 3. Save the timer ID just in case we need to stop it
-    deleteTimeouts.current.set(id, timeoutId);
-  };
+			if (taskToTrash) {
+				taskToTrash.deletedAt = Date.now();
+				await saveTaskToDB(taskToTrash);
+
+				setDeletingIds(prev => prev.filter(dId => dId !== id));
+				deleteTimeouts.current.delete(id); // Clean up the memory
+				forceRefresh();
+			}
+		}, 3000);
+
+		// 3. Save the timer ID just in case we need to stop it
+		deleteTimeouts.current.set(id, timeoutId);
+	};
 
 	// The Undo Function
-  const handleCancelDelete = (id: number) => {
-    const timeoutId = deleteTimeouts.current.get(id);
-    if (timeoutId) {
-      clearTimeout(timeoutId); // Stop the bomb!
-      deleteTimeouts.current.delete(id);
-    }
-    // Remove it from the fading animation array so it pops back to normal
-    setDeletingIds(prev => prev.filter(dId => dId !== id));
-  };
+	const handleCancelDelete = (id: number) => {
+		const timeoutId = deleteTimeouts.current.get(id);
+		if (timeoutId) {
+			clearTimeout(timeoutId); // Stop the bomb!
+			deleteTimeouts.current.delete(id);
+		}
+		// Remove it from the fading animation array so it pops back to normal
+		setDeletingIds(prev => prev.filter(dId => dId !== id));
+	};
 
 	const handleRestore = async (id: number) => {
 		const task = deletedTasks.find(t => t.id === id);
@@ -243,22 +249,22 @@ export default function App() {
 					<h1 className="text-2xl font-bold tracking-tight text-dark hidden sm:block">Game of Life</h1>
 
 					<div className="flex items-center gap-4">
-            <button 
-              onClick={() => setIsShopOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-500 rounded-full font-bold shadow-sm border border-red-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
-            >
-              <span className="text-sm">🔥</span>
-              <span>{streak}</span>
-            </button>
+						<button
+							onClick={() => setIsShopOpen(true)}
+							className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-500 rounded-full font-bold shadow-sm border border-red-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
+						>
+							<span className="text-sm">🔥</span>
+							<span>{streak}</span>
+						</button>
 
-            <button 
-              onClick={() => setIsShopOpen(true)}
-              className="flex items-center gap-2 px-4 py-1.5 bg-orange-50 text-orange-600 rounded-full font-bold shadow-sm border border-orange-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
-            >
-              <span className="text-sm">💎</span> 
-              <span>{gems}</span>
-            </button>
-          </div>
+						<button
+							onClick={() => setIsShopOpen(true)}
+							className="flex items-center gap-2 px-4 py-1.5 bg-orange-50 text-orange-600 rounded-full font-bold shadow-sm border border-orange-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
+						>
+							<span className="text-sm">💎</span>
+							<span>{gems}</span>
+						</button>
+					</div>
 				</div>
 			</header>
 
@@ -360,20 +366,20 @@ export default function App() {
 			</button>
 
 			{/* MODALS */}
-      <TaskModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        initialData={editingQuest} 
-        onSave={handleSaveQuest} 
-      />
+			<TaskModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+				initialData={editingQuest}
+				onSave={handleSaveQuest}
+			/>
 
-      <ShopModal 
-        isOpen={isShopOpen}
-        onClose={() => setIsShopOpen(false)}
-        gems={gems}
-        freezes={freezes}
-        onBuyFreeze={handleBuyFreeze}
-      />
-    </div>
+			<ShopModal
+				isOpen={isShopOpen}
+				onClose={() => setIsShopOpen(false)}
+				gems={gems}
+				freezes={freezes}
+				onBuyFreeze={handleBuyFreeze}
+			/>
+		</div>
 	);
 }
