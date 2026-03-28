@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useTasks } from './hooks/useTasks';
 import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
@@ -13,6 +13,8 @@ export default function App() {
 	// React State to manage the bottom navigation
 	const [activeTab, setActiveTab] = useState<'active' | 'coming' | 'completed' | 'deleted'>('active');
 	const [deletingIds, setDeletingIds] = useState<number[]>([]);
+	// Store the timeout IDs so we can cancel them if the user click "Restore"
+	const deleteTimeouts = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [isShopOpen, setIsShopOpen] = useState(false);
@@ -121,8 +123,8 @@ export default function App() {
     // 1. Instantly trigger the visual fade-out animation
     setDeletingIds(prev => [...prev, id]);
 
-    // 2. Wait exactly 3 seconds (3000ms), then update the database
-    setTimeout(async () => {
+    // 2. Start the 3-second countdown
+    const timeoutId = setTimeout(async () => {
       const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
       const taskToTrash = allTasks.find(t => t.id === id);
       
@@ -130,11 +132,25 @@ export default function App() {
         taskToTrash.deletedAt = Date.now();
         await saveTaskToDB(taskToTrash);
         
-        // Remove it from the animation array so it resets properly
         setDeletingIds(prev => prev.filter(dId => dId !== id));
-        forceRefresh(); // Tell the UI to officially move it to the Deleted tab
+        deleteTimeouts.current.delete(id); // Clean up the memory
+        forceRefresh();
       }
     }, 3000);
+
+    // 3. Save the timer ID just in case we need to stop it
+    deleteTimeouts.current.set(id, timeoutId);
+  };
+
+	// The Undo Function
+  const handleCancelDelete = (id: number) => {
+    const timeoutId = deleteTimeouts.current.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId); // Stop the bomb!
+      deleteTimeouts.current.delete(id);
+    }
+    // Remove it from the fading animation array so it pops back to normal
+    setDeletingIds(prev => prev.filter(dId => dId !== id));
   };
 
 	const handleRestore = async (id: number) => {
@@ -255,6 +271,7 @@ export default function App() {
 								onDelete={handleDelete}
 								onRestore={handleRestore}
 								onHardDelete={handleHardDelete}
+								onCancelDelete={handleCancelDelete}
 							/>
 						))}
 					</div>

@@ -10,9 +10,10 @@ interface QuestCardProps {
   onDelete: (id: number) => void;
   onRestore: (id: number) => void;
   onHardDelete: (id: number) => void;
+  onCancelDelete?: (id: number) => void;
 }
 
-export function QuestCard({ quest, isDeleting, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete }: QuestCardProps) {
+export function QuestCard({ quest, isDeleting, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete, onCancelDelete }: QuestCardProps) {
   // Local state to force the card to re-render every minute for the countdown
   const [now, setNow] = useState(Date.now());
 
@@ -93,7 +94,7 @@ export function QuestCard({ quest, isDeleting, onToggleComplete, onEdit, onDelet
       className={`glass-card flex flex-col h-full rounded-4xl p-6 shadow-premium transition-all 
         ${quest.completed ? 'ring-2 ring-orange-400 bg-white/40 ring-inset' : ''} 
         ${isPending ? 'opacity-75 grayscale-[0.2]' : ''}
-        ${isDeleting ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'}
+        ${isDeleting ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}
       `}
       style={{ transitionDuration: isDeleting ? '3000ms' : '300ms' }}
     >
@@ -130,7 +131,15 @@ export function QuestCard({ quest, isDeleting, onToggleComplete, onEdit, onDelet
       </div>
 
       <div className="pt-2 flex items-center justify-between gap-2">
-        {quest.deletedAt ? (
+        {isDeleting ? (
+          // --- THE 3-SECOND UNDO WINDOW ---
+          <button 
+            onClick={() => quest.id && onCancelDelete?.(quest.id)}
+            className="grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-dark text-white hover:bg-gray-800 transition-all shadow-lg"
+          >
+            Restore
+          </button>
+        ) : quest.deletedAt ? (
           // --- RECYCLE BIN ACTIONS ---
           <>
             <button
