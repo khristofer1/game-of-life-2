@@ -12,6 +12,7 @@ export default function App() {
 
 	// React State to manage the bottom navigation
 	const [activeTab, setActiveTab] = useState<'active' | 'coming' | 'completed' | 'deleted'>('active');
+	const [deletingIds, setDeletingIds] = useState<number[]>([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [isShopOpen, setIsShopOpen] = useState(false);
@@ -117,16 +118,24 @@ export default function App() {
 	};
 
 	const handleDelete = async (id: number) => {
-		const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
-		const taskToTrash = allTasks.find(t => t.id === id);
+    // 1. Instantly trigger the visual fade-out animation
+    setDeletingIds(prev => [...prev, id]);
 
-		if (taskToTrash) {
-			// Soft Delete: Tag it with a timestamp
-			taskToTrash.deletedAt = Date.now();
-			await saveTaskToDB(taskToTrash);
-			forceRefresh();
-		}
-	};
+    // 2. Wait exactly 3 seconds (3000ms), then update the database
+    setTimeout(async () => {
+      const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
+      const taskToTrash = allTasks.find(t => t.id === id);
+      
+      if (taskToTrash) {
+        taskToTrash.deletedAt = Date.now();
+        await saveTaskToDB(taskToTrash);
+        
+        // Remove it from the animation array so it resets properly
+        setDeletingIds(prev => prev.filter(dId => dId !== id));
+        forceRefresh(); // Tell the UI to officially move it to the Deleted tab
+      }
+    }, 3000);
+  };
 
 	const handleRestore = async (id: number) => {
 		const task = deletedTasks.find(t => t.id === id);
@@ -240,6 +249,7 @@ export default function App() {
 							<QuestCard
 								key={quest.id}
 								quest={quest}
+								isDeleting={deletingIds.includes(quest.id!)}
 								onToggleComplete={handleToggleComplete}
 								onEdit={handleEdit}
 								onDelete={handleDelete}

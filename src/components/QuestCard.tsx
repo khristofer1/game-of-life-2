@@ -4,6 +4,7 @@ import type { Quest } from '../types/quest';
 
 interface QuestCardProps {
   quest: Quest;
+  isDeleting?: boolean;
   onToggleComplete: (id: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
@@ -11,7 +12,7 @@ interface QuestCardProps {
   onHardDelete: (id: number) => void;
 }
 
-export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete }: QuestCardProps) {
+export function QuestCard({ quest, isDeleting, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete }: QuestCardProps) {
   // Local state to force the card to re-render every minute for the countdown
   const [now, setNow] = useState(Date.now());
 
@@ -88,9 +89,14 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
   }
 
   return (
-    <div className={`glass-card flex flex-col h-full rounded-4xl p-6 shadow-premium transition-all 
-            ${quest.completed ? 'ring-2 ring-orange-400 bg-white/40 ring-inset' : ''} 
-            ${isPending ? 'opacity-75 grayscale-[0.2]' : ''}`}>
+    <div 
+      className={`glass-card flex flex-col h-full rounded-4xl p-6 shadow-premium transition-all 
+        ${quest.completed ? 'ring-2 ring-orange-400 bg-white/40 ring-inset' : ''} 
+        ${isPending ? 'opacity-75 grayscale-[0.2]' : ''}
+        ${isDeleting ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'}
+      `}
+      style={{ transitionDuration: isDeleting ? '3000ms' : '300ms' }}
+    >
 
       <div className="flex justify-between items-start mb-3 gap-4">
         <div className="flex-1 min-w-0">
@@ -131,7 +137,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
               onClick={() => quest.id && onRestore?.(quest.id)}
               className="grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all"
             >
-              Reforge (Restore)
+              Restore
             </button>
             <button
               onClick={() => quest.id && onHardDelete?.(quest.id)}
