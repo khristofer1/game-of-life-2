@@ -15,6 +15,8 @@ export default function App() {
 	const [deletingIds, setDeletingIds] = useState<number[]>([]);
 	// Store the timeout IDs so we can cancel them if the user click "Restore"
 	const deleteTimeouts = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+	const [completingIds, setCompletingIds] = useState<number[]>([]);
+  const completeTimeouts = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [isShopOpen, setIsShopOpen] = useState(false);
@@ -38,82 +40,94 @@ export default function App() {
   };
 	
 	const handleToggleComplete = async (id: number) => {
-		// 1. Find the exact task the user clicked
-		const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
-		const taskToUpdate = allTasks.find(t => t.id === id);
+    // 1. Instantly trigger visual fade-out
+    setCompletingIds(prev => [...prev, id]);
 
-		if (!taskToUpdate) return;
+    // 2. Start the 3-second countdown before processing database math
+    const timeoutId = setTimeout(async () => {
+      const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
+      const taskToUpdate = allTasks.find(t => t.id === id);
+      
+      if (!taskToUpdate) return;
 
-		const now = Date.now();
-		const updatedTask = { ...taskToUpdate };
+      const now = Date.now();
+      const updatedTask = { ...taskToUpdate };
 
-		// 2. Toggling to COMPLETED
-		if (!updatedTask.completed) {
-			updatedTask.completed = true;
-			updatedTask.completedAt = now;
-			updatedTask.gemClaimed = false; // Preps it for the midnight gem sweep!
+      // Toggling to COMPLETED
+      if (!updatedTask.completed) {
+        updatedTask.completed = true;
+        updatedTask.completedAt = now;
+        updatedTask.gemClaimed = false;
 
-			// Recalculate energy to freeze it exactly where they finished
-			let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
-			let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
-			let timeLeft = activeDeadline - now;
+        let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
+        let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
+        let timeLeft = activeDeadline - now;
 
-			if (timeLeft > 0) {
-				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
-			} else {
-				updatedTask.energyPercent = 0;
-			}
+        if (timeLeft > 0) {
+          updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
+        } else {
+          updatedTask.energyPercent = 0;
+        }
 
-			// --- STREAK ADD LOGIC ---
-			const lastDate = await getMeta("lastStreakUpdate", 0);
-			let globalStreak = await getMeta("globalStreak", 0);
-			const todayDay = new Date(now).setHours(0, 0, 0, 0);
-			const lastStreakDay = new Date(lastDate).setHours(0, 0, 0, 0);
+        // STREAK ADD LOGIC
+        const lastDate = await getMeta("lastStreakUpdate", 0);
+        let globalStreak = await getMeta("globalStreak", 0);
+        const todayDay = new Date(now).setHours(0, 0, 0, 0);
+        const lastStreakDay = new Date(lastDate).setHours(0, 0, 0, 0);
 
-			// If this is the FIRST task completed today, boost the streak!
-			if (lastDate === 0 || todayDay > lastStreakDay) {
-				globalStreak += 1;
-				await setMeta("globalStreak", globalStreak);
-				await setMeta("lastStreakUpdate", now);
-				console.log(`🔥 Daily Streak increased to ${globalStreak}!`);
-			}
+        if (lastDate === 0 || todayDay > lastStreakDay) {
+          globalStreak += 1;
+          await setMeta("globalStreak", globalStreak);
+          await setMeta("lastStreakUpdate", now);
+        }
 
-			// 3. UNDOING a Completion
-		} else {
-			updatedTask.completed = false;
-			updatedTask.completedAt = null;
-			updatedTask.gemClaimed = false;
+      // UNDOING a Completion
+      } else {
+        updatedTask.completed = false;
+        updatedTask.completedAt = null;
+        updatedTask.gemClaimed = false;
 
-			// --- STREAK UNDO LOGIC ---
-			const todayDay = new Date(now).setHours(0, 0, 0, 0);
+        const todayDay = new Date(now).setHours(0, 0, 0, 0);
+        
+        const otherCompletedTasks = allTasks.some(t => 
+          t.id !== updatedTask.id && 
+          t.completed && 
+          t.completedAt && 
+          new Date(t.completedAt).setHours(0, 0, 0, 0) === todayDay
+        );
 
-			// Check if there are ANY OTHER tasks completed today
-			const otherCompletedTasks = allTasks.some(t =>
-				t.id !== updatedTask.id &&
-				t.completed &&
-				t.completedAt &&
-				new Date(t.completedAt).setHours(0, 0, 0, 0) === todayDay
-			);
+        if (!otherCompletedTasks) {
+          let globalStreak = await getMeta("globalStreak", 0);
+          if (globalStreak > 0) {
+            globalStreak -= 1;
+            await setMeta("globalStreak", globalStreak);
+            const yesterday = now - (24 * 60 * 60 * 1000);
+            await setMeta("lastStreakUpdate", yesterday);
+          }
+        }
+      }
 
-			// If this was the ONLY task done today, revoke the streak!
-			if (!otherCompletedTasks) {
-				let globalStreak = await getMeta("globalStreak", 0);
-				if (globalStreak > 0) {
-					globalStreak -= 1;
-					await setMeta("globalStreak", globalStreak);
+      await saveTaskToDB(updatedTask);
+      
+      // Clean up the memory and refresh UI
+      setCompletingIds(prev => prev.filter(cId => cId !== id));
+      completeTimeouts.current.delete(id);
+      forceRefresh();
+    }, 3000);
 
-					// Roll the calendar back to yesterday so you don't get locked out of re-earning it
-					const yesterday = now - (24 * 60 * 60 * 1000);
-					await setMeta("lastStreakUpdate", yesterday);
-					console.log("Undo: Daily Streak reverted.");
-				}
-			}
-		}
+    // 3. Save the timer ID to allow cancellation
+    completeTimeouts.current.set(id, timeoutId);
+  };
 
-		// 4. Save to Database and trigger the UI update!
-		await saveTaskToDB(updatedTask);
-		forceRefresh(); // <-- The warning is gone! This tells React to redraw the screen immediately.
-	};
+  // Cancel the completion toggle
+  const handleCancelComplete = (id: number) => {
+    const timeoutId = completeTimeouts.current.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      completeTimeouts.current.delete(id);
+    }
+    setCompletingIds(prev => prev.filter(cId => cId !== id));
+  };
 
 	const handleEdit = (id: number) => {
 		console.log("Edit clicked for ID:", id);
@@ -266,12 +280,14 @@ export default function App() {
 								key={quest.id}
 								quest={quest}
 								isDeleting={deletingIds.includes(quest.id!)}
+								isCompleting={completingIds.includes(quest.id!)}
 								onToggleComplete={handleToggleComplete}
 								onEdit={handleEdit}
 								onDelete={handleDelete}
 								onRestore={handleRestore}
 								onHardDelete={handleHardDelete}
 								onCancelDelete={handleCancelDelete}
+								onCancelComplete={handleCancelComplete}
 							/>
 						))}
 					</div>
