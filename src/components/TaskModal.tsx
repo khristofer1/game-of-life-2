@@ -201,7 +201,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
 
             <div>
               <label className="block font-semibold text-dark mb-2">Description <span className="text-muted font-normal">(Optional)</span></label>
-              <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Quest details..." className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all resize-none h-24"></textarea>
+              <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Quest details..." className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all resize-none field-sizing-content"></textarea>
             </div>
 
             {/* START DATE */}
