@@ -4,18 +4,36 @@ import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
 import { saveTaskToDB, deleteTaskFromDB, getMeta, setMeta } from './services/db';
 import type { Quest } from './types/quest';
+import { ShopModal } from "./components/ShopModal";
 
 export default function App() {
 	// Pull everything we need from our custom background engine!
-	const { activeTasks, comingTasks, completedTasks, deletedTasks, gems, streak, forceRefresh } = useTasks();
+	const { activeTasks, comingTasks, completedTasks, deletedTasks, gems, freezes, streak, forceRefresh } = useTasks();
 
 	// React State to manage the bottom navigation
 	const [activeTab, setActiveTab] = useState<'active' | 'coming' | 'completed' | 'deleted'>('active');
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
+	const [isShopOpen, setIsShopOpen] = useState(false);
 
 	// --- Action Handlers (Stubs) ---
 	// We will wire these up to the database and modals in the next step!
+	
+	// Shop Logic
+  const handleBuyFreeze = async () => {
+    if (gems >= 10) {
+      const newGems = gems - 10;
+      const newFreezes = freezes + 1;
+      
+      await setMeta("gems", newGems);
+      await setMeta("globalFreezes", newFreezes);
+      
+      forceRefresh(); // Instantly update the UI
+    } else {
+      alert("Not enough gems!");
+    }
+  };
+	
 	const handleToggleComplete = async (id: number) => {
 		// 1. Find the exact task the user clicked
 		const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
@@ -186,16 +204,22 @@ export default function App() {
 					<h1 className="text-2xl font-bold tracking-tight text-dark hidden sm:block">Game of Life</h1>
 
 					<div className="flex items-center gap-4">
-						<button className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-500 rounded-full font-bold shadow-sm border border-red-100 transition-all">
-							<span className="text-sm">🔥</span>
-							<span>{streak}</span>
-						</button>
+            <button 
+              onClick={() => setIsShopOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-500 rounded-full font-bold shadow-sm border border-red-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <span className="text-sm">🔥</span>
+              <span>{streak}</span>
+            </button>
 
-						<button className="flex items-center gap-2 px-4 py-1.5 bg-orange-50 text-orange-600 rounded-full font-bold shadow-sm border border-orange-100 transition-all">
-							<span className="text-sm">💎</span>
-							<span>{gems}</span>
-						</button>
-					</div>
+            <button 
+              onClick={() => setIsShopOpen(true)}
+              className="flex items-center gap-2 px-4 py-1.5 bg-orange-50 text-orange-600 rounded-full font-bold shadow-sm border border-orange-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <span className="text-sm">💎</span> 
+              <span>{gems}</span>
+            </button>
+          </div>
 				</div>
 			</header>
 
@@ -292,13 +316,21 @@ export default function App() {
 				</svg>
 			</button>
 
-			{/* THE MODAL */}
-			<TaskModal
-				isOpen={isModalOpen}
-				onClose={() => setIsModalOpen(false)}
-				initialData={editingQuest}
-				onSave={handleSaveQuest}
-			/>
-		</div>
+			{/* MODALS */}
+      <TaskModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        initialData={editingQuest} 
+        onSave={handleSaveQuest} 
+      />
+
+      <ShopModal 
+        isOpen={isShopOpen}
+        onClose={() => setIsShopOpen(false)}
+        gems={gems}
+        freezes={freezes}
+        onBuyFreeze={handleBuyFreeze}
+      />
+    </div>
 	);
 }
