@@ -217,7 +217,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-0 flex items-center justify-center">
       <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
-      <div className="relative w-full max-w-lg bg-white rounded-4xl shadow-2xl modal-enter overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-xl bg-white rounded-4xl shadow-2xl modal-enter overflow-hidden flex flex-col max-h-[90vh]">
 
         <div className="px-8 pt-8 pb-6 overflow-y-auto custom-scrollbar">
           <h2 className="text-xl font-bold text-dark mb-6">{initialData ? 'Edit Quest' : 'New Quest'}</h2>
@@ -226,7 +226,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
             {/* NAME & DESC */}
             <div>
               <label className="block font-semibold text-dark mb-2">Quest Name</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. Read 1 Chapter..." className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all" />
+              <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. Read 1 Chapter..." className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-semibold" />
             </div>
 
             <div>
