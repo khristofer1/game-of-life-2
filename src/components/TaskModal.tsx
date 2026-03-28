@@ -42,6 +42,8 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
   const [limitUnit, setLimitUnit] = useState('months');
   const [limitDateStr, setLimitDateStr] = useState('');
   const [limitOccurrences, setLimitOccurrences] = useState(10);
+  const [activeWindowType, setActiveWindowType] = useState<'duration' | 'date'>('duration');
+  const [activeWindowDateStr, setActiveWindowDateStr] = useState('');
 
   // --- INITIALIZATION (Runs when modal opens) ---
   useEffect(() => {
@@ -66,15 +68,31 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
 
           if (initialData.activeDeadlineMs && initialData.activeDeadlineMs < initialData.durationMs) {
             setHasShorterDeadline(true);
-            let ms = initialData.activeDeadlineMs;
-            if (ms % (7 * 24 * 60 * 60 * 1000) === 0) { setActiveNum(ms / (7 * 24 * 60 * 60 * 1000)); setActiveUnit('weeks'); }
-            else if (ms % (24 * 60 * 60 * 1000) === 0) { setActiveNum(ms / (24 * 60 * 60 * 1000)); setActiveUnit('days'); }
-            else if (ms % (60 * 60 * 1000) === 0) { setActiveNum(ms / (60 * 60 * 1000)); setActiveUnit('hours'); }
-            else { setActiveNum(Math.floor(ms / (60 * 1000))); setActiveUnit('minutes'); }
+            
+            // Check if they previously saved using the new data object
+            if (initialData.activeWindowData) {
+              setActiveWindowType(initialData.activeWindowData.type as 'duration' | 'date');
+              if (initialData.activeWindowData.type === 'duration') {
+                setActiveNum(initialData.activeWindowData.num || 3);
+                setActiveUnit(initialData.activeWindowData.unit || 'hours');
+              } else {
+                setActiveWindowDateStr(initialData.activeWindowData.dateStr || '');
+              }
+            } else {
+              // Fallback for older quests created before this update
+              setActiveWindowType('duration');
+              let ms = initialData.activeDeadlineMs;
+              if (ms % (7 * 24 * 60 * 60 * 1000) === 0) { setActiveNum(ms / (7 * 24 * 60 * 60 * 1000)); setActiveUnit('weeks'); }
+              else if (ms % (24 * 60 * 60 * 1000) === 0) { setActiveNum(ms / (24 * 60 * 60 * 1000)); setActiveUnit('days'); }
+              else if (ms % (60 * 60 * 1000) === 0) { setActiveNum(ms / (60 * 60 * 1000)); setActiveUnit('hours'); }
+              else { setActiveNum(Math.floor(ms / (60 * 1000))); setActiveUnit('minutes'); }
+            }
           } else {
             setHasShorterDeadline(false);
+            setActiveWindowType('duration');
             setActiveNum(3);
             setActiveUnit('hours');
+            setActiveWindowDateStr('');
           }
 
           setHasLimit(initialData.hasLimit || false);
@@ -113,6 +131,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
     let activeDeadlineMs = 0;
     let displayFreq = '';
     let limitData = { type: 'none' } as any;
+    let activeWindowData: any = undefined;
 
     if (isOneTime) {
       if (otType === 'duration') {
@@ -144,12 +163,23 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
       displayFreq = `Every ${freqNum} ${unitText.charAt(0).toUpperCase() + unitText.slice(1)}`;
 
       if (hasShorterDeadline) {
-        let activeMulti = 1;
-        if (activeUnit === 'minutes') activeMulti = 60 * 1000;
-        if (activeUnit === 'hours') activeMulti = 60 * 60 * 1000;
-        if (activeUnit === 'days') activeMulti = 24 * 60 * 60 * 1000;
-        if (activeUnit === 'weeks') activeMulti = 7 * 24 * 60 * 60 * 1000;
-        activeDeadlineMs = activeNum * activeMulti;
+        if (activeWindowType === 'duration') {
+          let activeMulti = 1;
+          if (activeUnit === 'minutes') activeMulti = 60 * 1000;
+          if (activeUnit === 'hours') activeMulti = 60 * 60 * 1000;
+          if (activeUnit === 'days') activeMulti = 24 * 60 * 60 * 1000;
+          if (activeUnit === 'weeks') activeMulti = 7 * 24 * 60 * 60 * 1000;
+          activeDeadlineMs = activeNum * activeMulti;
+          activeWindowData = { type: 'duration', num: activeNum, unit: activeUnit };
+        } else {
+          // Calculate the duration mathematically based on the selected date
+          if (!activeWindowDateStr) return alert("Please select a specific date and time for the active window.");
+          const targetTime = new Date(activeWindowDateStr).getTime();
+          activeDeadlineMs = targetTime - startDate;
+          
+          if (activeDeadlineMs <= 0) return alert("The active window deadline must be after the Start Date.");
+          activeWindowData = { type: 'date', dateStr: activeWindowDateStr };
+        }
 
         if (activeDeadlineMs > durationMs) return alert("Active window cannot be longer than the repeat interval!");
       } else {
@@ -178,7 +208,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
     // Pass the calculated data back to App.tsx to save!
     onSave({
       name, desc, startDate, isOneTime, durationMs, deadline, oneTimeData,
-      freqNum, freqUnit, displayFreq, hasLimit, limitData, expireAt, activeDeadlineMs
+      freqNum, freqUnit, displayFreq, hasLimit, limitData, expireAt, activeDeadlineMs, activeWindowData
     });
   };
 
@@ -263,15 +293,38 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
                     <input type="checkbox" checked={hasShorterDeadline} onChange={e => setHasShorterDeadline(e.target.checked)} className="w-4 h-4 text-orange-500 rounded focus:ring-orange-400" />
                     <span className="font-semibold text-dark">Set a specific window to complete this quest</span>
                   </label>
+                  
                   {hasShorterDeadline && (
-                    <div className="animate-fade-in">
-                      <p className="text-xs text-muted mb-3">How long do you have to complete it once a new cycle starts?</p>
-                      <div className="flex gap-3">
-                        <input type="number" min="1" value={activeNum} onChange={e => setActiveNum(parseInt(e.target.value))} className="w-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark text-center" />
-                        <select value={activeUnit} onChange={e => setActiveUnit(e.target.value)} className="grow px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark">
-                          <option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option><option value="weeks">Weeks</option>
-                        </select>
-                      </div>
+                    <div className="space-y-3 animate-fade-in">
+                      <select 
+                        value={activeWindowType} 
+                        onChange={e => setActiveWindowType(e.target.value as 'duration' | 'date')} 
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer"
+                      >
+                        <option value="duration">By Duration</option>
+                        <option value="date">By Specific Date & Time</option>
+                      </select>
+
+                      {activeWindowType === 'duration' ? (
+                        <div className="flex gap-3">
+                          <input type="number" min="1" value={activeNum} onChange={e => setActiveNum(parseInt(e.target.value))} className="w-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark text-center" />
+                          <select value={activeUnit} onChange={e => setActiveUnit(e.target.value)} className="grow px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark">
+                            <option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option><option value="weeks">Weeks</option>
+                          </select>
+                        </div>
+                      ) : (
+                        <div>
+                          <input 
+                            type="datetime-local" 
+                            value={activeWindowDateStr} 
+                            onChange={e => setActiveWindowDateStr(e.target.value)} 
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer text-center" 
+                          />
+                          <p className="text-xs text-muted mt-2 px-1">
+                            Note: The exact time difference between your Start Date and this Deadline will become the standard active window for all future cycles.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
