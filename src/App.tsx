@@ -11,9 +11,9 @@ export default function App() {
 	const { activeTasks, comingTasks, completedTasks, deletedTasks, gems, freezes, streak, forceRefresh } = useTasks();
 
 	// --- TOAST NOTIFICATION SYSTEM ---
-	const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete', taskId: number } | null>(null);
+  const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete' | 'restore', taskId: number } | null>(null);
   const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const triggerToast = (message: string, action: 'delete' | 'complete', taskId: number) => {
+	const triggerToast = (message: string, action: 'delete' | 'complete' | 'restore', taskId: number) => {
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
     setToast({ id: Date.now(), message, action, taskId });
     // Toast disappears automatically after 5 seconds
@@ -139,6 +139,7 @@ export default function App() {
 			delete task.deletedAt; // Remove the delete timestamp
 			await saveTaskToDB(task);
 			forceRefresh();
+			triggerToast("Quest restored from trash.", 'restore', id);
 		}
 	};
 
@@ -332,6 +333,7 @@ export default function App() {
                 // Route the undo click to the correct function!
                 if (toast.action === 'delete') handleRestore(toast.taskId);
                 if (toast.action === 'complete') handleToggleComplete(toast.taskId);
+								if (toast.action === 'restore') handleDelete(toast.taskId);
                 
                 // Close the toast immediately
                 setToast(null);
