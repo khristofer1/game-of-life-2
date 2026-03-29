@@ -29,102 +29,100 @@ export function useTasks() {
 			let totalGemsEarned = 0;
 
 			// Engine Sweep: Process logic for every task
-			const processedTasks: Quest[] = [];
+      const processedTasks: Quest[] = [];
 
-			for (const task of rawTasks) {
-				// --- THE RECYCLE BIN SWEEPER ---
-				if (task.deletedAt) {
-					const timeInBin = now - task.deletedAt;
-					// If it's been in the bin for > 24 hours (86,400,000 ms), destroy it permanently
-					if (timeInBin > 24 * 60 * 60 * 1000) {
-						if (task.id) await deleteTaskFromDB(task.id);
-						continue; // Skip adding this to processedTasks
-					}
-					processedTasks.push(task);
-					continue; // Skip the rest of the game logic for deleted items
-				}
+      for (const task of rawTasks) {
+        // 1. The Recycle Bin Sweeper
+        if (task.deletedAt) {
+          const timeInBin = now - task.deletedAt;
+          if (timeInBin > 24 * 60 * 60 * 1000) {
+            if (task.id) await deleteTaskFromDB(task.id);
+            continue; 
+          }
+          processedTasks.push(task);
+          continue; 
+        }
 
-				if (task.isArchived) {
-					processedTasks.push(task);
-					continue;
-				}
+        if (task.isArchived) {
+          processedTasks.push(task);
+          continue;
+        }
 
-				const isFutureStart = task.startDate && now < task.startDate;
-				if (isFutureStart) {
-					if (task.energyPercent !== 100) {
-						task.energyPercent = 100;
-						tasksUpdated = true;
-					}
-					return task;
-				}
+        // 2. Pending Quests
+        const isPending = task.startDate && now < task.startDate;
+        if (isPending) {
+          if (task.energyPercent !== 100) {
+            task.energyPercent = 100;
+            tasksUpdated = true;
+          }
+          // THE FIX: Push to array and continue the loop instead of returning!
+          processedTasks.push(task); 
+          continue;                  
+        }
 
-				// Midnight Sweeper (Daily Gem Claim)
-				if (task.completed && !task.gemClaimed && task.completedAt) {
-					const todayDay = new Date(now).setHours(0, 0, 0, 0);
-					const completedDay = new Date(task.completedAt).setHours(0, 0, 0, 0);
+        // 3. Midnight Sweeper (Daily Gem Claim)
+        if (task.completed && !task.gemClaimed && task.completedAt) {
+          const todayDay = new Date(now).setHours(0, 0, 0, 0);
+          const completedDay = new Date(task.completedAt).setHours(0, 0, 0, 0);
 
-					if (todayDay > completedDay) {
-						totalGemsEarned += 1;
-						task.gemClaimed = true;
-						tasksUpdated = true;
-						// Note: If one-time, you'd trigger a delete here, but for React 
-						// it's safer to mark as archived and filter it out.
-						if (task.isOneTime) task.isArchived = true;
-					}
-				}
+          if (todayDay > completedDay) {
+            totalGemsEarned += 1;
+            task.gemClaimed = true;
+            tasksUpdated = true;
+            if (task.isOneTime) task.isArchived = true;
+          }
+        }
 
-				// Energy & Active Deadline Math
-				let activeTimeLeft = 0;
-				let activeDuration = 1;
+        // 4. Energy & Active Deadline Math
+        let activeTimeLeft = 0;
+        let activeDuration = 1;
 
-				if (task.isOneTime) {
-					activeTimeLeft = (task.deadline || 0) - now;
-					activeDuration = task.durationMs;
-
-					// --- ONE-TIME AUTO-TRASH ---
+        if (task.isOneTime) {
+          activeTimeLeft = (task.deadline || 0) - now;
+          activeDuration = task.durationMs;
+          
+          // One-Time Auto-Trash if expired
           if (activeTimeLeft <= 0 && !task.completed) {
-            task.deletedAt = now; // Send straight to the shadow realm
+            task.deletedAt = now;
             task.energyPercent = 0;
             tasksUpdated = true;
             processedTasks.push(task);
-            continue; // Skip the rest of the math
+            continue; 
           }
-				} else {
-					// Safety fallback for old quests
-					if (!task.cycleStart) task.cycleStart = task.createdAt || task.startDate;
-					if (!task.activeDeadlineMs) task.activeDeadlineMs = task.durationMs;
+        } else {
+          if (!task.cycleStart) task.cycleStart = task.createdAt || task.startDate;
+          if (!task.activeDeadlineMs) task.activeDeadlineMs = task.durationMs;
 
-					// Cycle Leaping Logic
-					if (now >= task.cycleStart + task.durationMs) {
-						const cyclesMissed = Math.floor((now - task.cycleStart) / task.durationMs);
-						task.cycleStart += (cyclesMissed * task.durationMs);
-						task.completed = false;
-						task.gemClaimed = false;
-						task.completedAt = null;
-						tasksUpdated = true;
-					}
+          if (now >= task.cycleStart + task.durationMs) {
+            const cyclesMissed = Math.floor((now - task.cycleStart) / task.durationMs);
+            task.cycleStart += (cyclesMissed * task.durationMs);
+            task.completed = false;
+            task.gemClaimed = false;
+            task.completedAt = null;
+            tasksUpdated = true;
+          }
 
-					const currentCycleDeadline = task.cycleStart + task.activeDeadlineMs;
-					activeTimeLeft = currentCycleDeadline - now;
-					activeDuration = task.activeDeadlineMs;
-				}
+          const currentCycleDeadline = task.cycleStart + task.activeDeadlineMs;
+          activeTimeLeft = currentCycleDeadline - now;
+          activeDuration = task.activeDeadlineMs;
+        }
 
-				// Apply energy calculation
-				if (activeTimeLeft > 0 && !task.completed) {
-					const newPercent = Math.max(0, Math.min(100, Math.round((activeTimeLeft / activeDuration) * 100)));
-					if (task.energyPercent !== newPercent) {
-						task.energyPercent = newPercent;
-						tasksUpdated = true;
-					}
-				} else if (activeTimeLeft <= 0 && !task.completed) {
-					if (task.energyPercent !== 0) {
-						task.energyPercent = 0;
-						tasksUpdated = true;
-					}
-				}
+        if (activeTimeLeft > 0 && !task.completed) {
+          const newPercent = Math.max(0, Math.min(100, Math.round((activeTimeLeft / activeDuration) * 100)));
+          if (task.energyPercent !== newPercent) {
+            task.energyPercent = newPercent;
+            tasksUpdated = true;
+          }
+        } else if (activeTimeLeft <= 0 && !task.completed) {
+          if (task.energyPercent !== 0) {
+            task.energyPercent = 0;
+            tasksUpdated = true;
+          }
+        }
 
-				processedTasks.push(task);
-			};
+        // Make sure the surviving task actually gets added to the new array!
+        processedTasks.push(task); 
+      };
 
 			// Save back to DB if anything mutated
 			if (tasksUpdated) {
