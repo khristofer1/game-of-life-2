@@ -61,20 +61,6 @@ export function QuestCard({ quest, isDeleting, isCompleting, onToggleComplete, o
   if (percent <= 25) barColor = 'bg-red-500';
   if (quest.completed || isPending) barColor = 'bg-gray-300';
 
-  let timeText = '';
-  if (isDynamic) {
-    if (timeLeft > 0) {
-      const d = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-      const h = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-      if (d > 0) timeText = `${d}d ${h}h left`;
-      else if (h > 0) timeText = `${h}h ${m}m left`;
-      else timeText = `${m}m left`;
-    } else {
-      timeText = 'Expired';
-    }
-  }
-
   let btnClass = '';
   let btnText = '';
   if (isPending) {
@@ -114,11 +100,6 @@ export function QuestCard({ quest, isDeleting, isCompleting, onToggleComplete, o
             {quest.displayFreq}
           </span>
           <div className="text-right">
-            {isDynamic && (
-              <span className="text-[10px] font-bold text-muted block mb-0.5">
-                {timeText}
-              </span>
-            )}
             <span className={`text-sm font-bold ${isPending ? 'text-gray-400' : (quest.completed ? 'text-green-500' : 'text-orange-500')}`}>
               {isPending ? 'Locked' : (quest.completed ? `Safe at ${percent}%` : `${percent}%`)}
             </span>
