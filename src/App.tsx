@@ -10,19 +10,23 @@ export default function App() {
 	// Pull everything we need from our custom background engine!
 	const { activeTasks, comingTasks, completedTasks, deletedTasks, gems, freezes, streak, forceRefresh } = useTasks();
 
+	// --- TOAST NOTIFICATION SYSTEM ---
+	const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete', taskId: number } | null>(null);
+  const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const triggerToast = (message: string, action: 'delete' | 'complete', taskId: number) => {
+    if (toastTimeout.current) clearTimeout(toastTimeout.current);
+    setToast({ id: Date.now(), message, action, taskId });
+    // Toast disappears automatically after 5 seconds
+    toastTimeout.current = setTimeout(() => setToast(null), 5000);
+  };
+
 	// React State to manage the bottom navigation
 	const [activeTab, setActiveTab] = useState<'active' | 'coming' | 'completed' | 'deleted'>('active');
-	const [deletingIds, setDeletingIds] = useState<number[]>([]);
-	// Store the timeout IDs so we can cancel them if the user click "Restore"
-	const deleteTimeouts = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
-	const [completingIds, setCompletingIds] = useState<number[]>([]);
-	const completeTimeouts = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [isShopOpen, setIsShopOpen] = useState(false);
 
 	// --- Action Handlers (Stubs) ---
-	// We will wire these up to the database and modals in the next step!
 
 	// Shop Logic
 	const handleBuyFreeze = async () => {
@@ -40,94 +44,72 @@ export default function App() {
 	};
 
 	const handleToggleComplete = async (id: number) => {
-		// 1. Instantly trigger visual fade-out
-		setCompletingIds(prev => [...prev, id]);
+    const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
+    const taskToUpdate = allTasks.find(t => t.id === id);
+    if (!taskToUpdate) return;
 
-		// 2. Start the 3-second countdown before processing database math
-		const timeoutId = setTimeout(async () => {
-			const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
-			const taskToUpdate = allTasks.find(t => t.id === id);
+    const now = Date.now();
+    const updatedTask = { ...taskToUpdate };
 
-			if (!taskToUpdate) return;
+    // Toggling to COMPLETED
+    if (!updatedTask.completed) {
+      updatedTask.completed = true;
+      updatedTask.completedAt = now;
+      updatedTask.gemClaimed = false;
 
-			const now = Date.now();
-			const updatedTask = { ...taskToUpdate };
+      let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
+      let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
+      let timeLeft = activeDeadline - now;
 
-			// Toggling to COMPLETED
-			if (!updatedTask.completed) {
-				updatedTask.completed = true;
-				updatedTask.completedAt = now;
-				updatedTask.gemClaimed = false;
+      if (timeLeft > 0) {
+        updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
+      } else {
+        updatedTask.energyPercent = 0;
+      }
 
-				let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
-				let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
-				let timeLeft = activeDeadline - now;
+      // STREAK ADD LOGIC
+      const lastDate = await getMeta("lastStreakUpdate", 0);
+      let globalStreak = await getMeta("globalStreak", 0);
+      const todayDay = new Date(now).setHours(0, 0, 0, 0);
+      const lastStreakDay = new Date(lastDate).setHours(0, 0, 0, 0);
 
-				if (timeLeft > 0) {
-					updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
-				} else {
-					updatedTask.energyPercent = 0;
-				}
+      if (lastDate === 0 || todayDay > lastStreakDay) {
+        globalStreak += 1;
+        await setMeta("globalStreak", globalStreak);
+        await setMeta("lastStreakUpdate", now);
+      }
+      
+      await saveTaskToDB(updatedTask);
+      forceRefresh();
+      triggerToast("Quest completed!", 'complete', id);
 
-				// STREAK ADD LOGIC
-				const lastDate = await getMeta("lastStreakUpdate", 0);
-				let globalStreak = await getMeta("globalStreak", 0);
-				const todayDay = new Date(now).setHours(0, 0, 0, 0);
-				const lastStreakDay = new Date(lastDate).setHours(0, 0, 0, 0);
+    // UNDOING a Completion (Moving back to Active)
+    } else {
+      updatedTask.completed = false;
+      updatedTask.completedAt = null;
+      updatedTask.gemClaimed = false;
 
-				if (lastDate === 0 || todayDay > lastStreakDay) {
-					globalStreak += 1;
-					await setMeta("globalStreak", globalStreak);
-					await setMeta("lastStreakUpdate", now);
-				}
+      const todayDay = new Date(now).setHours(0, 0, 0, 0);
+      const otherCompletedTasks = allTasks.some(t => 
+        t.id !== updatedTask.id && t.completed && t.completedAt && 
+        new Date(t.completedAt).setHours(0, 0, 0, 0) === todayDay
+      );
 
-				// UNDOING a Completion
-			} else {
-				updatedTask.completed = false;
-				updatedTask.completedAt = null;
-				updatedTask.gemClaimed = false;
+      if (!otherCompletedTasks) {
+        let globalStreak = await getMeta("globalStreak", 0);
+        if (globalStreak > 0) {
+          globalStreak -= 1;
+          await setMeta("globalStreak", globalStreak);
+          const yesterday = now - (24 * 60 * 60 * 1000);
+          await setMeta("lastStreakUpdate", yesterday);
+        }
+      }
 
-				const todayDay = new Date(now).setHours(0, 0, 0, 0);
-
-				const otherCompletedTasks = allTasks.some(t =>
-					t.id !== updatedTask.id &&
-					t.completed &&
-					t.completedAt &&
-					new Date(t.completedAt).setHours(0, 0, 0, 0) === todayDay
-				);
-
-				if (!otherCompletedTasks) {
-					let globalStreak = await getMeta("globalStreak", 0);
-					if (globalStreak > 0) {
-						globalStreak -= 1;
-						await setMeta("globalStreak", globalStreak);
-						const yesterday = now - (24 * 60 * 60 * 1000);
-						await setMeta("lastStreakUpdate", yesterday);
-					}
-				}
-			}
-
-			await saveTaskToDB(updatedTask);
-
-			// Clean up the memory and refresh UI
-			setCompletingIds(prev => prev.filter(cId => cId !== id));
-			completeTimeouts.current.delete(id);
-			forceRefresh();
-		}, 3000);
-
-		// 3. Save the timer ID to allow cancellation
-		completeTimeouts.current.set(id, timeoutId);
-	};
-
-	// Cancel the completion toggle
-	const handleCancelComplete = (id: number) => {
-		const timeoutId = completeTimeouts.current.get(id);
-		if (timeoutId) {
-			clearTimeout(timeoutId);
-			completeTimeouts.current.delete(id);
-		}
-		setCompletingIds(prev => prev.filter(cId => cId !== id));
-	};
+      await saveTaskToDB(updatedTask);
+      forceRefresh();
+      triggerToast("Quest restored to active.", 'complete', id);
+    }
+  };
 
 	// 1. Click "Edit" on a card
 	const handleEdit = (id: number) => {
@@ -140,38 +122,16 @@ export default function App() {
 	};
 
 	const handleDelete = async (id: number) => {
-		// 1. Instantly trigger the visual fade-out animation
-		setDeletingIds(prev => [...prev, id]);
-
-		// 2. Start the 3-second countdown
-		const timeoutId = setTimeout(async () => {
-			const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
-			const taskToTrash = allTasks.find(t => t.id === id);
-
-			if (taskToTrash) {
-				taskToTrash.deletedAt = Date.now();
-				await saveTaskToDB(taskToTrash);
-
-				setDeletingIds(prev => prev.filter(dId => dId !== id));
-				deleteTimeouts.current.delete(id); // Clean up the memory
-				forceRefresh();
-			}
-		}, 3000);
-
-		// 3. Save the timer ID just in case we need to stop it
-		deleteTimeouts.current.set(id, timeoutId);
-	};
-
-	// The Undo Function
-	const handleCancelDelete = (id: number) => {
-		const timeoutId = deleteTimeouts.current.get(id);
-		if (timeoutId) {
-			clearTimeout(timeoutId); // Stop the bomb!
-			deleteTimeouts.current.delete(id);
-		}
-		// Remove it from the fading animation array so it pops back to normal
-		setDeletingIds(prev => prev.filter(dId => dId !== id));
-	};
+    const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
+    const taskToTrash = allTasks.find(t => t.id === id);
+    
+    if (taskToTrash) {
+      taskToTrash.deletedAt = Date.now();
+      await saveTaskToDB(taskToTrash);
+      forceRefresh();
+      triggerToast("Quest moved to trash.", 'delete', id);
+    }
+  };
 
 	const handleRestore = async (id: number) => {
 		const task = deletedTasks.find(t => t.id === id);
@@ -285,15 +245,11 @@ export default function App() {
 							<QuestCard
 								key={quest.id}
 								quest={quest}
-								isDeleting={deletingIds.includes(quest.id!)}
-								isCompleting={completingIds.includes(quest.id!)}
 								onToggleComplete={handleToggleComplete}
 								onEdit={handleEdit}
 								onDelete={handleDelete}
 								onRestore={handleRestore}
 								onHardDelete={handleHardDelete}
-								onCancelDelete={handleCancelDelete}
-								onCancelComplete={handleCancelComplete}
 							/>
 						))}
 					</div>
@@ -364,6 +320,30 @@ export default function App() {
 					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
 				</svg>
 			</button>
+
+			{/* TOAST NOTIFICATION */}
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+          <div className="bg-dark text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-4 text-sm font-semibold border border-gray-700">
+            <span>{toast.message}</span>
+            <div className="w-px h-4 bg-gray-600"></div>
+            <button 
+              onClick={() => {
+                // Route the undo click to the correct function!
+                if (toast.action === 'delete') handleRestore(toast.taskId);
+                if (toast.action === 'complete') handleToggleComplete(toast.taskId);
+                
+                // Close the toast immediately
+                setToast(null);
+                if (toastTimeout.current) clearTimeout(toastTimeout.current);
+              }}
+              className="text-orange-400 hover:text-orange-300 transition-colors uppercase tracking-wider text-xs px-1"
+            >
+              Undo
+            </button>
+          </div>
+        </div>
+      )}
 
 			{/* MODALS */}
 			<TaskModal

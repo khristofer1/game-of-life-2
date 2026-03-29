@@ -4,18 +4,14 @@ import type { Quest } from '../types/quest';
 
 interface QuestCardProps {
   quest: Quest;
-  isDeleting?: boolean;
-  isCompleting?: boolean;
   onToggleComplete: (id: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   onRestore: (id: number) => void;
   onHardDelete: (id: number) => void;
-  onCancelDelete?: (id: number) => void;
-  onCancelComplete?: (id: number) => void;
 }
 
-export function QuestCard({ quest, isDeleting, isCompleting, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete, onCancelDelete, onCancelComplete }: QuestCardProps) {
+export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete }: QuestCardProps) {
   const [now, setNow] = useState(Date.now());
 
   // --- Dynamic Math Calculations ---
@@ -85,9 +81,7 @@ export function QuestCard({ quest, isDeleting, isCompleting, onToggleComplete, o
       className={`glass-card flex flex-col h-full rounded-4xl p-6 shadow-premium transition-all 
         ${quest.completed ? 'ring-2 ring-orange-400 bg-white/40 ring-inset' : ''} 
         ${isPending ? 'opacity-75 grayscale-[0.2]' : ''}
-        ${isDeleting || isCompleting ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}
       `}
-      style={{ transitionDuration: (isDeleting || isCompleting) ? '3000ms' : '300ms' }}
     >
 
       <div className="flex justify-between items-start mb-3 gap-4">
@@ -117,23 +111,7 @@ export function QuestCard({ quest, isDeleting, isCompleting, onToggleComplete, o
       </div>
 
       <div className="pt-2 flex items-center justify-between gap-2">
-        {isDeleting ? (
-          // --- THE 3-SECOND UNDO WINDOW ---
-          <button 
-            onClick={() => quest.id && onCancelDelete?.(quest.id)}
-            className="grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-dark text-white hover:bg-gray-800 transition-all shadow-lg"
-          >
-            Restore
-          </button>
-        ) : isCompleting ? (
-          // --- THE 3-SECOND COMPLETION UNDO WINDOW ---
-          <button 
-            onClick={() => quest.id && onCancelComplete?.(quest.id)}
-            className="grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-orange-100 text-orange-600 hover:bg-orange-200 transition-all shadow-sm"
-          >
-            Undo Action
-          </button>
-        ) : quest.deletedAt ? (
+        {quest.deletedAt ? (
           // --- RECYCLE BIN ACTIONS ---
           <>
             <button
