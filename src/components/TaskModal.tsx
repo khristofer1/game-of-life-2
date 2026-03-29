@@ -1,5 +1,5 @@
 // src/components/TaskModal.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Quest } from '../types/quest';
 
 interface TaskModalProps {
@@ -18,6 +18,8 @@ const formatDateTimeLocal = (timestamp?: number) => {
 };
 
 export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalProps) {
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  
   // --- FORM STATE ---
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
@@ -113,6 +115,13 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
         const tzoffset = now.getTimezoneOffset() * 60000;
         setStartDateStr(new Date(now.getTime() - tzoffset).toISOString().slice(0, 16));
       }
+      
+      // Focus the input slightly after the modal finishes rendering and animating
+      setTimeout(() => {
+        if (nameInputRef.current) {
+          nameInputRef.current.focus();
+        }
+      }, 100);
     }
   }, [isOpen, initialData]);
 
@@ -226,7 +235,14 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
             {/* NAME & DESC */}
             <div>
               <label className="block font-semibold text-dark mb-2">Quest Name</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. Read 1 Chapter..." className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-semibold" />
+              <input
+                ref={nameInputRef}
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)} required
+                placeholder="e.g. Read 1 Chapter..."
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-semibold"
+              />
             </div>
 
             <div>
