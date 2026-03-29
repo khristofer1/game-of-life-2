@@ -49,8 +49,8 @@ export function useTasks() {
 					continue;
 				}
 
-				const isPending = task.startDate && now < task.startDate;
-				if (isPending) {
+				const isFutureStart = task.startDate && now < task.startDate;
+				if (isFutureStart) {
 					if (task.energyPercent !== 100) {
 						task.energyPercent = 100;
 						tasksUpdated = true;
@@ -80,6 +80,15 @@ export function useTasks() {
 				if (task.isOneTime) {
 					activeTimeLeft = (task.deadline || 0) - now;
 					activeDuration = task.durationMs;
+
+					// --- ONE-TIME AUTO-TRASH ---
+          if (activeTimeLeft <= 0 && !task.completed) {
+            task.deletedAt = now; // Send straight to the shadow realm
+            task.energyPercent = 0;
+            tasksUpdated = true;
+            processedTasks.push(task);
+            continue; // Skip the rest of the math
+          }
 				} else {
 					// Safety fallback for old quests
 					if (!task.cycleStart) task.cycleStart = task.createdAt || task.startDate;
@@ -132,13 +141,28 @@ export function useTasks() {
 			// 3. Sorting & Filtering for the UI
       const getRealDeadline = (t: Quest) => t.isOneTime ? (t.deadline || 0) : ((t.cycleStart || 0) + (t.activeDeadlineMs || 0));
 
+			// Helper to determine if a task is waiting for its time
+      const checkIsComing = (t: Quest) => {
+        if (t.startDate && now < t.startDate) return true; // Hasn't started yet
+        if (!t.isOneTime && !t.completed) {
+          const cycleDeadline = (t.cycleStart || 0) + (t.activeDeadlineMs || 0);
+          if (now >= cycleDeadline) return true; // Recurring missed its active window
+        }
+        return false;
+      };
+
       const active = processedTasks
-        .filter(t => !t.deletedAt && !t.completed && !t.isArchived && !(t.startDate && now < t.startDate))
+        .filter(t => !t.deletedAt && !t.completed && !t.isArchived && !checkIsComing(t))
         .sort((a, b) => getRealDeadline(a) - getRealDeadline(b));
 
       const coming = processedTasks
-        .filter(t => !t.deletedAt && !t.completed && !t.isArchived && (t.startDate && now < t.startDate))
-        .sort((a, b) => a.startDate - b.startDate);
+        .filter(t => !t.deletedAt && !t.completed && !t.isArchived && checkIsComing(t))
+        .sort((a, b) => {
+          // Sort Coming tasks by when they are next available
+          const aNext = (a.startDate && now < a.startDate) ? (a.startDate) : ((a.cycleStart || 0) + a.durationMs);
+          const bNext = (b.startDate && now < b.startDate) ? (b.startDate) : ((b.cycleStart || 0) + b.durationMs);
+          return aNext - bNext;
+        });
 
       const completed = processedTasks
         .filter(t => !t.deletedAt && t.completed && !t.isArchived)

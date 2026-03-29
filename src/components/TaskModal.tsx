@@ -291,7 +291,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
                 <div className="pt-4 border-t border-gray-100 mb-4">
                   <label className="flex items-center gap-2 cursor-pointer mb-3">
                     <input type="checkbox" checked={hasShorterDeadline} onChange={e => setHasShorterDeadline(e.target.checked)} className="w-4 h-4 text-orange-500 rounded focus:ring-orange-400" />
-                    <span className="font-semibold text-dark">Set a specific window to complete this quest</span>
+                    <span className="font-semibold text-dark">Use a custom deadline</span>
                   </label>
                   
                   {hasShorterDeadline && (

@@ -16,40 +16,41 @@ interface QuestCardProps {
 }
 
 export function QuestCard({ quest, isDeleting, isCompleting, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete, onCancelDelete, onCancelComplete }: QuestCardProps) {
-  // Local state to force the card to re-render every minute for the countdown
   const [now, setNow] = useState(Date.now());
 
-  const isPending = !!(quest.startDate && now < quest.startDate);
+  // --- Dynamic Math Calculations ---
+  // We calculate deadlines first so we can check if it's in the "Dead Zone"
+  const activeDeadline = quest.isOneTime 
+    ? (quest.deadline || 0) 
+    : ((quest.cycleStart || 0) + (quest.activeDeadlineMs || 0));
+      
+  const activeDuration = quest.isOneTime 
+    ? quest.durationMs 
+    : (quest.activeDeadlineMs || 1);
+
+  // A quest is "Pending" (Locked) if it hasn't started yet, 
+  // OR if it's a recurring quest that completely missed its active window.
+  const isFutureStart = !!(quest.startDate && now < quest.startDate);
+  const isDeadZone = !quest.isOneTime && !quest.completed && now >= activeDeadline;
+
+  const isPending = isFutureStart || isDeadZone;
   const isDynamic = !quest.completed && !isPending;
 
   // Real-time ticking logic
   useEffect(() => {
     if (!isDynamic) return;
-
-    const intervalId = setInterval(() => {
-      setNow(Date.now());
-    }, 60000);
-
-    return () => clearInterval(intervalId); // Cleanup prevents memory leaks!
+    const intervalId = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(intervalId); 
   }, [isDynamic]);
 
-  // --- Dynamic Math Calculations ---
-  const activeDeadline = quest.isOneTime
-    ? (quest.deadline || 0)
-    : ((quest.cycleStart || 0) + (quest.activeDeadlineMs || 0));
-
-  const activeDuration = quest.isOneTime
-    ? quest.durationMs
-    : (quest.activeDeadlineMs || 1);
-
   const timeLeft = activeDeadline - now;
-
+  
   // Calculate precise energy percent for the UI
   let percent = 100;
-  if (isPending) {
+  if (isFutureStart) {
     percent = 100;
   } else if (quest.completed) {
-    percent = quest.energyPercent; // Lock at the saved percentage
+    percent = quest.energyPercent;
   } else if (timeLeft > 0) {
     percent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
   } else {
@@ -64,10 +65,12 @@ export function QuestCard({ quest, isDeleting, isCompleting, onToggleComplete, o
   let btnClass = '';
   let btnText = '';
   if (isPending) {
-    const startD = new Date(quest.startDate);
+    // If it's in the dead zone, tell them when the next cycle starts!
+    const nextStartMs = isFutureStart ? (quest.startDate as number) : ((quest.cycleStart || 0) + quest.durationMs);
+    const startD = new Date(nextStartMs);
     const dateStr = startD.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     const timeStr = startD.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-
+    
     btnClass = 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200';
     btnText = `⏳ Starts ${dateStr}, ${timeStr}`;
   } else {
