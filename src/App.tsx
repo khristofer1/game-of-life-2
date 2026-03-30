@@ -1,4 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import type { User } from 'firebase/auth';
+import { auth, logoutFromGoogle } from './services/firebase';
+import { Login } from './components/Login';
 import { useTasks } from './hooks/useTasks';
 import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
@@ -7,6 +11,19 @@ import type { Quest } from './types/quest';
 import { ShopModal } from "./components/ShopModal";
 
 export default function App() {
+	// --- AUTHENTICATION STATE ---
+	const [user, setUser] = useState<User | null>(null);
+	const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+	useEffect(() => {
+		// listens for login/logout events automatically
+		const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+			setUser(currentUser);
+			setIsAuthLoading(false);
+		});
+		return unsubscribe;
+	}, []);
+	
 	// Pull everything we need from our custom background engine!
 	const { activeTasks, comingTasks, completedTasks, deletedTasks, gems, freezes, streak, forceRefresh } = useTasks();
 
@@ -25,6 +42,14 @@ export default function App() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [isShopOpen, setIsShopOpen] = useState(false);
+
+	if (isAuthLoading) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-muted animate-pulse">Loading Game of Life...</div>;
+  }
+
+  if (!user) {
+    return <Login />;
+  }
 
 	// --- Action Handlers (Stubs) ---
 
@@ -210,6 +235,9 @@ export default function App() {
 					<h1 className="text-2xl font-bold tracking-tight text-dark hidden sm:block">Game of Life</h1>
 
 					<div className="flex items-center gap-4">
+            <button onClick={logoutFromGoogle} className="text-xs font-bold text-muted hover:text-dark mr-2">
+              Logout
+            </button>
 						<button
 							onClick={() => setIsShopOpen(true)}
 							className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-500 rounded-full font-bold shadow-sm border border-red-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
