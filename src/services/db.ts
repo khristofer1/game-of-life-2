@@ -1,88 +1,73 @@
+import { db, auth } from './firebase';
+import { collection, doc, getDocs, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import type { Quest } from '../types/quest';
 
-const DB_NAME = "HabitTrackerDB";
-const DB_VERSION = 5;
-const TASK_STORE = "tasks";
-const META_STORE = "metadata";
-
-// 1. Core Connection: Initializes and upgrades the DB just like the old script
-export const initDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onupgradeneeded = (e) => {
-      const db = (e.target as IDBOpenDBRequest).result;
-      // Preserving your exact schema migrations
-      if (db.objectStoreNames.contains("habits")) db.deleteObjectStore("habits");
-      if (!db.objectStoreNames.contains(META_STORE)) db.createObjectStore(META_STORE);
-      if (!db.objectStoreNames.contains(TASK_STORE)) db.createObjectStore(TASK_STORE, { keyPath: "id", autoIncrement: true });
-    };
-
-    request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
-    request.onerror = (e) => reject((e.target as IDBOpenDBRequest).error);
-  });
+// --- SECURITY HELPER ---
+// This ensures we always save data to the currently logged-in user's private folder
+const getUserId = () => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Critical Error: Cannot access database. User is not logged in.");
+  return user.uid;
 };
 
-// 2. Task API: Promise-based wrappers for your CRUD operations
-export const getAllTasks = async (): Promise<Quest[]> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([TASK_STORE], "readonly");
-    const store = transaction.objectStore(TASK_STORE);
-    const request = store.getAll();
+// --- CRUD OPERATIONS ---
 
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-};
+// 1. Fetch all quests from the cloud
+export async function getAllTasks(): Promise<Quest[]> {
+  const uid = getUserId();
+  const tasksRef = collection(db, `users/${uid}/tasks`);
+  const snapshot = await getDocs(tasksRef);
+  
+  // Convert Firestore documents back into our Quest interface
+  return snapshot.docs.map(doc => doc.data() as Quest);
+}
 
-export const saveTaskToDB = async (task: any): Promise<number> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([TASK_STORE], "readwrite");
-    const store = transaction.objectStore(TASK_STORE);
+// 2. Save or Update a quest in the cloud
+export async function saveTaskToDB(task: Quest): Promise<void> {
+  const uid = getUserId();
+  
+  // If this is a brand new quest, give it a unique numeric ID
+  if (!task.id) {
+    task.id = Date.now();
+  }
+  
+  // Firestore crashes if it sees 'undefined' values.
+  // This completely strips out any undefined properties before uploading!
+  const cleanTask = JSON.parse(JSON.stringify(task));
+  
+  // Save it specifically under: users / [my_id] / tasks / [task_id]
+  const taskRef = doc(db, `users/${uid}/tasks`, cleanTask.id.toString());
+  await setDoc(taskRef, cleanTask);
+}
 
-    // If it has an ID, it updates (put). If not, it adds (add).
-    const request = task.id ? store.put(task) : store.add(task);
+// 3. Permanently destroy a quest in the cloud
+export async function deleteTaskFromDB(id: number): Promise<void> {
+  const uid = getUserId();
+  const taskRef = doc(db, `users/${uid}/tasks`, id.toString());
+  await deleteDoc(taskRef);
+}
 
-    request.onsuccess = () => resolve(request.result as number);
-    request.onerror = () => reject(request.error);
-  });
-};
+// --- METADATA OPERATIONS (Gems, Streaks, Freezes) ---
 
-export const deleteTaskFromDB = async (id: number): Promise<void> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([TASK_STORE], "readwrite");
-    const store = transaction.objectStore(TASK_STORE);
-    const request = store.delete(id);
+// 4. Get a specific meta value (like your gem count)
+export async function getMeta<T>(key: string, defaultValue: T): Promise<T> {
+  const uid = getUserId();
+  const metaRef = doc(db, `users/${uid}/meta`, 'data');
+  const metaSnap = await getDoc(metaRef);
+  
+  if (metaSnap.exists()) {
+    const data = metaSnap.data();
+    return data[key] !== undefined ? (data[key] as T) : defaultValue;
+  }
+  return defaultValue;
+}
 
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
-};
-
-// 3. Metadata API: For Gems, Freezes, and Chests
-export const getMeta = async (key: string, defaultValue: any = null): Promise<any> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([META_STORE], "readonly");
-    const store = transaction.objectStore(META_STORE);
-    const request = store.get(key);
-
-    request.onsuccess = () => resolve(request.result !== undefined ? request.result : defaultValue);
-    request.onerror = () => reject(request.error);
-  });
-};
-
-export const setMeta = async (key: string, value: any): Promise<void> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([META_STORE], "readwrite");
-    const store = transaction.objectStore(META_STORE);
-    const request = store.put(value, key);
-
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
-};
+// 5. Update a specific meta value
+export async function setMeta<T>(key: string, value: T): Promise<void> {
+  const uid = getUserId();
+  const metaRef = doc(db, `users/${uid}/meta`, 'data');
+  
+  // { merge: true } is crucial! It tells Firebase to only update the exact key 
+  // we passed (e.g., gems) without accidentally deleting our streak data!
+  await setDoc(metaRef, { [key]: value }, { merge: true });
+}
