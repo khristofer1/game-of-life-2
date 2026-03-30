@@ -2,8 +2,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getAllTasks, saveTaskToDB, getMeta, setMeta, deleteTaskFromDB } from '../services/db';
 import type { Quest } from '../types/quest';
+import type { User } from 'firebase/auth';
 
-export function useTasks() {
+export function useTasks(user: User | null) {
 	// 1. React State: This replaces your manual DOM manipulation
 	const [activeTasks, setActiveTasks] = useState<Quest[]>([]);
 	const [comingTasks, setComingTasks] = useState<Quest[]>([]);
@@ -186,17 +187,18 @@ export function useTasks() {
 
 	// 4. The Background Loop: Safely replaces your old setInterval
 	useEffect(() => {
-		// Run immediately on mount
+    // Don't try to fetch data until the user is logged in
+    if (!user) return;
+    
 		refreshTasks();
 
-		// Then run every 60 seconds
 		const intervalId = setInterval(() => {
 			refreshTasks();
 		}, 60000);
 
 		// React Cleanup: Prevents memory leaks if the component unmounts!
 		return () => clearInterval(intervalId);
-	}, [refreshTasks]);
+	}, [user]);
 
 	// Return the data so your UI components can use it
 	return {

@@ -25,7 +25,7 @@ export default function App() {
 	}, []);
 	
 	// Pull everything we need from our custom background engine!
-	const { activeTasks, comingTasks, completedTasks, deletedTasks, gems, freezes, streak, forceRefresh } = useTasks();
+	const { activeTasks, comingTasks, completedTasks, deletedTasks, gems, freezes, streak, forceRefresh } = useTasks(user);
 
 	// --- TOAST NOTIFICATION SYSTEM ---
   const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete' | 'restore', taskId: number } | null>(null);
