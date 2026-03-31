@@ -126,14 +126,14 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
         // 3. Feed this 9 PM string to the states that actually control your inputs!
         setOtDeadlineStr(tonightIso);         // For One-Time Quests
         setActiveWindowDateStr(tonightIso);   // For Recurring Quests (Custom Deadline)
+
+        // Focus the input slightly after the modal finishes rendering and animating
+        setTimeout(() => {
+          if (nameInputRef.current) {
+            nameInputRef.current.focus();
+          }
+        }, 100);
       }
-      
-      // Focus the input slightly after the modal finishes rendering and animating
-      setTimeout(() => {
-        if (nameInputRef.current) {
-          nameInputRef.current.focus();
-        }
-      }, 100);
     }
   }, [isOpen, initialData]);
 
