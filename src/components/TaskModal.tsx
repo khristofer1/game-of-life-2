@@ -110,10 +110,22 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
         // ADD MODE: Reset to defaults
         setName(''); setDesc(''); setQuestType('onetime'); setHasShorterDeadline(false); setHasLimit(false);
 
-        // Set to exactly now
-        const now = new Date();
-        const tzoffset = now.getTimezoneOffset() * 60000;
-        setStartDateStr(new Date(now.getTime() - tzoffset).toISOString().slice(0, 16));
+        setActiveWindowType('date');
+
+        // 1. Set Start Date to today at 06:00 AM
+        const today = new Date();
+        today.setHours(6, 0, 0, 0);
+        const tzoffset = today.getTimezoneOffset() * 60000;
+        setStartDateStr(new Date(today.getTime() - tzoffset).toISOString().slice(0, 16));
+
+        // 2. Set Deadlines to today at 09:00 PM
+        const tonight = new Date();
+        tonight.setHours(21, 0, 0, 0);
+        const tonightIso = new Date(tonight.getTime() - tzoffset).toISOString().slice(0, 16);
+        
+        // 3. Feed this 9 PM string to the states that actually control your inputs!
+        setOtDeadlineStr(tonightIso);         // For One-Time Quests
+        setActiveWindowDateStr(tonightIso);   // For Recurring Quests (Custom Deadline)
       }
       
       // Focus the input slightly after the modal finishes rendering and animating
@@ -317,8 +329,8 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
                         onChange={e => setActiveWindowType(e.target.value as 'duration' | 'date')} 
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer"
                       >
-                        <option value="duration">By Duration</option>
                         <option value="date">By Specific Date & Time</option>
+                        <option value="duration">By Duration</option>
                       </select>
 
                       {activeWindowType === 'duration' ? (
