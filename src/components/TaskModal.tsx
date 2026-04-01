@@ -108,8 +108,11 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
         }
       } else {
         // ADD MODE: Reset to defaults
-        setName(''); setDesc(''); setQuestType('onetime'); setHasShorterDeadline(false); setHasLimit(false);
-
+        setName('');
+        setDesc('');
+        setQuestType('onetime');
+        setHasShorterDeadline(false);
+        setHasLimit(false);
         setActiveWindowType('date');
 
         // 1. Set Start Date to today at 06:00 AM
@@ -137,7 +140,33 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
     }
   }, [isOpen, initialData]);
 
-  // --- SAVE LOGIC ---
+  const handleClose = () => {
+    let hasUnsavedChanges = false;
+
+    if (initialData) {
+      // EDIT MODE: Check if the current name or description differ from the original data
+      hasUnsavedChanges = 
+        name !== initialData.name || 
+        desc !== (initialData.desc || '');
+    } else {
+      // ADD MODE: Check if they have typed anything at all
+      hasUnsavedChanges = name.trim() !== '' || desc.trim() !== '';
+    }
+
+    // If there are changes, show the native confirmation dialog
+    if (hasUnsavedChanges) {
+      const confirmDiscard = window.confirm("You have unsaved changes. Are you sure you want to discard them?");
+      
+      // If the user clicks "Cancel" on the dialog, stop here and keep the modal open
+      if (!confirmDiscard) {
+        return; 
+      }
+    }
+
+    // If there are no changes, OR if the user clicked "OK" to discard, close it
+    onClose();
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return alert("Please enter a quest name.");
@@ -237,7 +266,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-0 flex items-center justify-center">
-      <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+      <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" onClick={handleClose}></div>
       <div className="relative w-full max-w-xl bg-white rounded-4xl shadow-2xl modal-enter overflow-hidden flex flex-col max-h-[90vh]">
 
         <div className="px-8 pt-8 pb-6 overflow-y-auto custom-scrollbar">
@@ -395,7 +424,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
 
         {/* FOOTER BUTTONS */}
         <div className="bg-gray-50 px-8 py-4 flex gap-3 shrink-0 border-t border-gray-100 text-sm">
-          <button onClick={onClose} className="flex-1 px-6 py-3 rounded-2xl font-semibold text-muted hover:bg-gray-200 transition-colors">Cancel</button>
+          <button onClick={handleClose} className="flex-1 px-6 py-3 rounded-2xl font-semibold text-muted hover:bg-gray-200 transition-colors">Cancel</button>
           <button onClick={handleSave} className="flex-1 bg-dark text-white px-6 py-3 rounded-2xl font-semibold hover:bg-blue-500 transition-colors shadow-lg">Save Quest</button>
         </div>
       </div>
