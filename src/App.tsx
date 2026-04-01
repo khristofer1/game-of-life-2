@@ -55,8 +55,8 @@ export default function App() {
 
 	// Shop Logic
 	const handleBuyFreeze = async () => {
-		if (gems >= 10) {
-			const newGems = gems - 10;
+		if (gems >= 30) {
+			const newGems = gems - 30;
 			const newFreezes = freezes + 1;
 
 			await setMeta("gems", newGems);
