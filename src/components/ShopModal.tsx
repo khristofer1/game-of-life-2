@@ -1,3 +1,5 @@
+import { GAME_CONFIG } from "../config/gameConstants";
+
 interface ShopModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -45,14 +47,14 @@ export function ShopModal({ isOpen, onClose, gems, freezes, onBuyFreeze }: ShopM
               
               <button 
                 onClick={onBuyFreeze}
-                disabled={gems < 30}
+                disabled={gems < GAME_CONFIG.REWARDS.FREEZE_COST}
                 className={`shrink-0 ml-4 px-5 py-3 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
-                  gems >= 30 
+                  gems >= GAME_CONFIG.REWARDS.FREEZE_COST 
                     ? 'bg-dark text-white hover:bg-blue-500 shadow-lg hover:shadow-blue-500/25' 
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                30 💎
+                {GAME_CONFIG.REWARDS.FREEZE_COST} 💎
               </button>
             </div>
           </div>

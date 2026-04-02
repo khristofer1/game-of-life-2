@@ -9,6 +9,7 @@ import { TaskModal } from './components/TaskModal';
 import { saveTaskToDB, deleteTaskFromDB, getMeta, setMeta } from './services/db';
 import type { Quest } from './types/quest';
 import { ShopModal } from "./components/ShopModal";
+import { GAME_CONFIG } from './config/gameConstants';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -55,8 +56,8 @@ export default function App() {
 
 	// Shop Logic
 	const handleBuyFreeze = async () => {
-		if (gems >= 30) {
-			const newGems = gems - 30;
+		if (gems >= GAME_CONFIG.REWARDS.FREEZE_COST) {
+			const newGems = gems - GAME_CONFIG.REWARDS.FREEZE_COST;
 			const newFreezes = freezes + 1;
 
 			await setMeta("gems", newGems);
