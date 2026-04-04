@@ -1,6 +1,7 @@
 // src/components/TaskModal.tsx
 import { useState, useEffect, useRef } from 'react';
 import type { Quest } from '../types/quest';
+import { formatQuestDuration } from '../utils/timeFormat';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -192,14 +193,21 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
         durationMs = days * 24 * 60 * 60 * 1000;
         deadline = startDate + durationMs;
         oneTimeData = { type: 'duration', num: otNum, unit: otUnit };
+        
+        // Build the string directly from the duration inputs
+        const unitText = otNum === 1 ? otUnit.slice(0, -1) : otUnit;
+        displayFreq = `${otNum} ${unitText.charAt(0).toUpperCase() + unitText.slice(1)}`;
+
       } else {
         if (!otDeadlineStr) return alert("Please set a hard deadline.");
         deadline = new Date(otDeadlineStr).getTime();
         if (deadline <= startDate) return alert("Deadline must be after Start Date.");
         durationMs = deadline - startDate;
         oneTimeData = { type: 'date', dateStr: otDeadlineStr };
+        
+        // Only use the timeFormat utility when calculating specific dates!
+        displayFreq = formatQuestDuration(startDateStr, otDeadlineStr);
       }
-      displayFreq = "One-Time Quest";
       activeDeadlineMs = durationMs;
     } else {
       // Recurring Math
