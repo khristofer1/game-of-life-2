@@ -10,6 +10,7 @@ import { saveTaskToDB, deleteTaskFromDB, getMeta, setMeta } from './services/db'
 import type { Quest } from './types/quest';
 import { ShopModal } from "./components/ShopModal";
 import { GAME_CONFIG } from './config/gameConstants';
+import logo from './assets/logo.svg';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -233,12 +234,20 @@ export default function App() {
 			{/* TOP HEADER */}
 			<header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 mb-8">
 				<div className="max-w-7xl mx-auto flex justify-between items-center">
-					<h1 className="text-2xl font-bold tracking-tight text-dark hidden sm:block">Game of Life</h1>
+					<div className="flex items-center gap-3">
+						{/* THE LOGO */}
+						<img
+							src={logo}
+							alt="Game of Life Logo"
+							className='w-8 h-8 text-orange-500'
+						/>
+						
+						<h1 className="text-2xl font-bold tracking-tight text-dark">
+							Game of Life
+						</h1>
+					</div>
 
 					<div className="flex items-center gap-4">
-            <button onClick={logoutFromGoogle} className="text-xs font-bold text-muted hover:text-dark mr-2">
-              Logout
-            </button>
 						<button
 							onClick={() => setIsShopOpen(true)}
 							className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-500 rounded-full font-bold shadow-sm border border-red-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
@@ -254,6 +263,10 @@ export default function App() {
 							<span className="text-sm">💎</span>
 							<span>{gems}</span>
 						</button>
+
+						<button onClick={logoutFromGoogle} className="text-xs font-bold text-muted hover:text-dark mr-2">
+              Logout
+            </button>
 					</div>
 				</div>
 			</header>
