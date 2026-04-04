@@ -1,5 +1,6 @@
 // src/components/TaskModal.tsx
 import { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import type { Quest } from '../types/quest';
 import { formatQuestDuration } from '../utils/timeFormat';
 
@@ -141,13 +142,34 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
     }
   }, [isOpen, initialData]);
 
-// --- TEXTAREA AUTO-FORMATTING ---
+  // --- TEXTAREA AUTO-FORMATTING ---
   const handleDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    let val = e.target.value;
+    const target = e.target;
+    const cursorPosition = target.selectionStart;
+    const originalValue = target.value;
+    
+    // Capture the current scroll position
+    const scrollContainer = target.closest('.overflow-y-auto');
+    const scrollPosition = scrollContainer ? scrollContainer.scrollTop : 0;
     
     // Convert ONLY "* " at the start of any line into a proper bullet "• "
-    val = val.replace(/(^|\n)\* /g, '$1• ');
-    setDesc(val);
+    const newValue = originalValue.replace(/(^|\n)\* /g, '$1• ');
+
+    if (newValue !== originalValue) {
+      // Force React to update the DOM synchronously, pausing the browser paint
+      flushSync(() => {
+        setDesc(newValue);
+      });
+      
+      // Now we can restore the cursor and scroll perfectly BEFORE the screen flashes
+      target.selectionStart = target.selectionEnd = cursorPosition;
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollPosition;
+      }
+    } else {
+      // If it's just normal typing, let React handle it normally
+      setDesc(newValue);
+    }
   };
 
   const handleDescKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
