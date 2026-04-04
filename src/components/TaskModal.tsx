@@ -362,7 +362,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
                 value={desc} 
                 onChange={handleDescChange} 
                 onKeyDown={handleDescKeyDown}
-                placeholder="Quest details... (Type * and a space for a bullet list)" 
+                placeholder="Quest details..." 
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all resize-none field-sizing-content"
               ></textarea>
             </div>
