@@ -242,7 +242,7 @@ export default function App() {
 							className='w-8 h-8 text-orange-500'
 						/>
 						
-						<h1 className="text-2xl font-bold tracking-tight text-dark">
+						<h1 className="text-2xl font-bold tracking-tight text-dark hidden sm:block">
 							Game of Life
 						</h1>
 					</div>
