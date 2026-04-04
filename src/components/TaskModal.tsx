@@ -141,6 +141,66 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
     }
   }, [isOpen, initialData]);
 
+// --- TEXTAREA AUTO-FORMATTING ---
+  const handleDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    let val = e.target.value;
+    
+    // Convert ONLY "* " at the start of any line into a proper bullet "• "
+    val = val.replace(/(^|\n)\* /g, '$1• ');
+    setDesc(val);
+  };
+
+  const handleDescKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Grab the element and cursor details first so both keys can use them
+    const target = e.target as HTMLTextAreaElement;
+    const cursorPosition = target.selectionStart;
+    
+    const textBeforeCursor = target.value.substring(0, cursorPosition);
+    const textAfterCursor = target.value.substring(cursorPosition);
+
+    const lines = textBeforeCursor.split('\n');
+    const currentLine = lines[lines.length - 1];
+
+    // --- ENTER KEY LOGIC ---
+    if (e.key === 'Enter') {
+      if (currentLine.startsWith('• ')) {
+        e.preventDefault(); 
+
+        if (currentLine === '• ') {
+          const newTextBefore = textBeforeCursor.substring(0, textBeforeCursor.length - 2);
+          setDesc(newTextBefore + textAfterCursor);
+          
+          setTimeout(() => {
+            target.selectionStart = target.selectionEnd = newTextBefore.length;
+          }, 0);
+        } else {
+          setDesc(textBeforeCursor + '\n• ' + textAfterCursor);
+          
+          setTimeout(() => {
+            target.selectionStart = target.selectionEnd = cursorPosition + 3;
+          }, 0);
+        }
+      }
+    } 
+    
+    // --- BACKSPACE KEY LOGIC ---
+    else if (e.key === 'Backspace') {
+      // If they hit Backspace while sitting exactly at the end of an empty bullet point
+      if (currentLine === '• ') {
+        e.preventDefault(); 
+
+        // Strip the 2 characters ("• ") off the end of the text before the cursor
+        const newTextBefore = textBeforeCursor.substring(0, textBeforeCursor.length - 2);
+        
+        setDesc(newTextBefore + textAfterCursor);
+        
+        setTimeout(() => {
+          target.selectionStart = target.selectionEnd = newTextBefore.length;
+        }, 0);
+      }
+    }
+  };
+
   const handleClose = () => {
     let hasUnsavedChanges = false;
 
@@ -295,8 +355,16 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
             </div>
 
             <div>
-              <label className="block font-semibold text-dark mb-2">Description <span className="text-muted font-normal">(Optional)</span></label>
-              <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Quest details..." className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all resize-none field-sizing-content"></textarea>
+              <label className="block font-semibold text-dark mb-2">
+                Description <span className="text-muted font-normal">(Optional)</span>
+              </label>
+              <textarea 
+                value={desc} 
+                onChange={handleDescChange} 
+                onKeyDown={handleDescKeyDown}
+                placeholder="Quest details... (Type * and a space for a bullet list)" 
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all resize-none field-sizing-content"
+              ></textarea>
             </div>
 
             {/* START DATE */}
