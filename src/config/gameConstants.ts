@@ -1,6 +1,6 @@
 export const GAME_CONFIG = {
   REWARDS: {
-    FREEZE_COST: 30,
+    FREEZE_COST: 10,
     
     // You can easily add your future Daily Chest math here too!
     DAILY_CHEST_MIN_GEMS: 5,
