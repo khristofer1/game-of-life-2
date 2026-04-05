@@ -36,7 +36,7 @@ export function ShopModal({ isOpen, onClose, gems, freezes, onBuyFreeze }: ShopM
 
           {/* SHOP ITEMS */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-3xl border border-gray-100 transition-all hover:border-blue-200 hover:bg-blue-50/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gray-50 rounded-3xl border border-gray-100 transition-all hover:border-blue-200 hover:bg-blue-50/50">
               <div className="flex items-center gap-4">
                 <div className="text-4xl drop-shadow-md">❄️</div>
                 <div>
@@ -48,7 +48,8 @@ export function ShopModal({ isOpen, onClose, gems, freezes, onBuyFreeze }: ShopM
               <button 
                 onClick={onBuyFreeze}
                 disabled={gems < GAME_CONFIG.REWARDS.FREEZE_COST}
-                className={`shrink-0 ml-4 px-5 py-3 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
+                // We removed 'ml-4' and added 'w-full sm:w-auto' for better mobile tapping
+                className={`shrink-0 w-full sm:w-auto px-5 py-3 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
                   gems >= GAME_CONFIG.REWARDS.FREEZE_COST 
                     ? 'bg-dark text-white hover:bg-blue-500 shadow-lg hover:shadow-blue-500/25' 
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
