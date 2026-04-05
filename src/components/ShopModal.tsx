@@ -48,7 +48,6 @@ export function ShopModal({ isOpen, onClose, gems, freezes, onBuyFreeze }: ShopM
               <button 
                 onClick={onBuyFreeze}
                 disabled={gems < GAME_CONFIG.REWARDS.FREEZE_COST}
-                // We removed 'ml-4' and added 'w-full sm:w-auto' for better mobile tapping
                 className={`shrink-0 w-full sm:w-auto px-5 py-3 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
                   gems >= GAME_CONFIG.REWARDS.FREEZE_COST 
                     ? 'bg-dark text-white hover:bg-blue-500 shadow-lg hover:shadow-blue-500/25' 
