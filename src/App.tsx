@@ -282,7 +282,7 @@ export default function App() {
 						<p className="text-muted text-sm italic">No quests found in this tab.</p>
 					</div>
 				) : (
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-md mx-auto md:max-w-none">
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-sm md:max-w-3xl lg:max-w-none">
 						{/* THE MAGIC LOOP: Render a QuestCard for every item in the array */}
 						{displayedTasks.map(quest => (
 							<QuestCard
