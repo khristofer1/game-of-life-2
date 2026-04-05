@@ -64,7 +64,7 @@ export function ShopModal({ isOpen, onClose, gems, freezes, onBuyFreeze }: ShopM
         <div className="bg-gray-50 px-8 py-4 border-t border-gray-100 text-center">
           <button 
             onClick={onClose} 
-            className="w-full px-6 py-4 rounded-2xl font-bold text-muted hover:bg-gray-200 hover:text-dark transition-colors"
+            className="w-full px-6 py-3 rounded-2xl font-bold text-muted hover:bg-gray-200 hover:text-dark transition-colors text-sm"
           >
             Close Stash
           </button>
