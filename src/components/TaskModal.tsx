@@ -396,7 +396,12 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
       <div className="relative w-full max-w-xl bg-white rounded-4xl shadow-2xl modal-enter overflow-hidden flex flex-col max-h-[90vh]">
 
         <div className="px-8 pt-8 pb-6 overflow-y-auto custom-scrollbar">
-          <h2 className="text-xl font-bold text-dark mb-6">{initialData ? 'Edit Quest' : 'New Quest'}</h2>
+          <h2 className="text-xl font-bold text-dark mb-6">
+            {initialData 
+              ? (initialData.isBreak ? 'Edit Break Activity' : 'Edit Quest') 
+              : (questType === 'break' ? 'New Break Activity' : 'New Quest')
+            }
+          </h2>
 
           <form onSubmit={handleSave} className="space-y-6 text-sm">
             {/* NAME & DESC */}
@@ -433,7 +438,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
 
              {/* TYPE SELECTOR */}
             <div>
-              <label className="block font-semibold text-dark mb-2">Quest Type</label>
+              <label className="block font-semibold text-dark mb-2">Activity Type</label>
               <select value={questType} onChange={e => setQuestType(e.target.value as 'onetime' | 'recurring' | 'break')} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer">
                 <option value="onetime">🎯 One-Time Quest</option>
                 <option value="recurring">🔁 Recurring Quest</option>
