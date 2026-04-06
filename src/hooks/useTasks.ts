@@ -52,6 +52,18 @@ export function useTasks(user: User | null) {
 
         // --- BREAK ACTIVITIES MATH ---
         if (task.isBreak) {
+          // --- THE BREAK MIDNIGHT SWEEPER ---
+          if (!task.gemClaimed && task.lastDoneAt) {
+            const todayDay = new Date(now).setHours(0, 0, 0, 0);
+            const doneDay = new Date(task.lastDoneAt).setHours(0, 0, 0, 0);
+
+            if (todayDay > doneDay) {
+              totalGemsEarned += 1;
+              task.gemClaimed = true;
+              tasksUpdated = true;
+            }
+          }
+          
           // How long has it been since they last took this break? (If never, default to 0)
           const timeSinceLastDone = now - (task.lastDoneAt || 0);
           const timeLeft = (task.cooldownMs || 0) - timeSinceLastDone;

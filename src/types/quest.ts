@@ -11,6 +11,7 @@ export interface Quest {
 	cooldownMs?: number;
 	lastDoneAt?: number;
 	previousLastDoneAt?: number;
+	previousGemClaimed?: boolean;
 	cooldownData?: { num: number; unit: string; } | null;
 
 	// One-Time specific

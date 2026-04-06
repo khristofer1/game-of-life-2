@@ -154,22 +154,20 @@ export default function App() {
 		const task = breakTasks.find(t => t.id === id);
 		if (!task) return;
 
-		// NEW: Save the previous time before we overwrite it, just in case they click Undo!
+		// Save the previous state for the Undo button
 		task.previousLastDoneAt = task.lastDoneAt;
+		task.previousGemClaimed = task.gemClaimed;
 
 		// 1. Reset the cooldown timer
 		task.lastDoneAt = Date.now();
 		task.energyPercent = 0; 
-
-		// 2. Give the user a Gem! 💎
-		const currentGems = await getMeta("gems", 0);
-		await setMeta("gems", currentGems + 1);
+		task.gemClaimed = false;
 
 		await saveTaskToDB(task);
 		forceRefresh();
 		
-		// NEW: Route this to our new 'break' action instead of 'complete'
-		triggerToast(`Enjoy your break! +1 Gem 💎`, 'break', id); 
+		// 2. Change the toast to reflect the delayed gratification!
+		triggerToast(`Break taken! Gem will arrive at midnight 🌙`, 'break', id); 
 	};
 
 	const handleUndoBreak = async (id: number) => {
@@ -177,12 +175,13 @@ export default function App() {
 		const taskToUpdate = allTasks.find(t => t.id === id);
 		if (!taskToUpdate) return;
 
-		// 1. Restore the previous cooldown timer so the progress bar jumps back
+		// 1. Restore the previous cooldown timer
 		taskToUpdate.lastDoneAt = taskToUpdate.previousLastDoneAt || 0;
 
-		// 2. Take back the Gem (using Math.max to ensure they never go into negative debt)
-		const currentGems = await getMeta("gems", 0);
-		await setMeta("gems", Math.max(0, currentGems - 1));
+		// 2. Restore the previous gem flag
+		if (taskToUpdate.previousGemClaimed !== undefined) {
+			taskToUpdate.gemClaimed = taskToUpdate.previousGemClaimed;
+		}
 
 		await saveTaskToDB(taskToUpdate);
 		forceRefresh();
