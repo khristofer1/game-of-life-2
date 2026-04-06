@@ -9,9 +9,10 @@ interface QuestCardProps {
   onDelete: (id: number) => void;
   onRestore: (id: number) => void;
   onHardDelete: (id: number) => void;
+  onTakeBreak?: (id: number) => void;
 }
 
-export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete }: QuestCardProps) {
+export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete, onTakeBreak }: QuestCardProps) {
   const [now, setNow] = useState(Date.now());
 
   // --- Dynamic Math Calculations ---
@@ -131,15 +132,31 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
             </button>
           </>
         ) : (
-          // --- STANDARD ACTIONS (Active/Coming/Completed) ---
+          // --- STANDARD ACTIONS (Active/Coming/Completed/Break) ---
           <>
-            <button
-              onClick={() => !isPending && quest.id && onToggleComplete(quest.id)}
-              disabled={isPending}
-              className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap ${btnClass}`}
-            >
-              {btnText}
-            </button>
+            {quest.isBreak ? (
+              // BREAK ACTIVITY BUTTON
+              <button
+                onClick={() => quest.id && onTakeBreak?.(quest.id)}
+                disabled={quest.energyPercent! < 100}
+                className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${
+                  quest.energyPercent! >= 100 
+                    ? 'bg-orange-100 text-orange-600 hover:bg-orange-500 hover:text-white' 
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                }`}
+              >
+                {quest.energyPercent! >= 100 ? '☕ Take Break (+1 💎)' : '⏳ Cooling Down'}
+              </button>
+            ) : (
+              // STANDARD QUEST BUTTON
+              <button
+                onClick={() => !isPending && quest.id && onToggleComplete(quest.id)}
+                disabled={isPending}
+                className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${btnClass}`}
+              >
+                {btnText}
+              </button>
+            )}
 
             <div className="flex gap-1 shrink-0 ml-2">
               <button

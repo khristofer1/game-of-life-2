@@ -150,6 +150,25 @@ export default function App() {
     }
   };
 
+	const handleTakeBreak = async (id: number) => {
+		const task = breakTasks.find(t => t.id === id);
+		if (!task) return;
+
+		// 1. Reset the cooldown timer
+		task.lastDoneAt = Date.now();
+		task.energyPercent = 0; // Instantly drain the bar so it starts filling up again
+
+		// 2. Give the user a Gem! 💎
+		const currentGems = await getMeta("gems", 0);
+		await setMeta("gems", currentGems + 1);
+
+		await saveTaskToDB(task);
+		forceRefresh();
+		
+		// Note: We use 'complete' as the toast action so you could undo it if you accidentally clicked!
+		triggerToast(`Enjoy your break! +1 Gem 💎`, 'complete', id); 
+	};
+
 	// 1. Click "Edit" on a card
 	const handleEdit = (id: number) => {
 		const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
@@ -306,6 +325,7 @@ export default function App() {
 								onDelete={handleDelete}
 								onRestore={handleRestore}
 								onHardDelete={handleHardDelete}
+								onTakeBreak={handleTakeBreak}
 							/>
 						))}
 					</div>

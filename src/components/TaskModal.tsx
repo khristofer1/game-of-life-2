@@ -50,6 +50,10 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
   const [activeWindowType, setActiveWindowType] = useState<'duration' | 'date'>('duration');
   const [activeWindowDateStr, setActiveWindowDateStr] = useState('');
 
+  // Break activity state
+  const [breakNum, setBreakNum] = useState(1);
+  const [breakUnit, setBreakUnit] = useState('days');
+
   // --- INITIALIZATION (Runs when modal opens) ---
   useEffect(() => {
     if (isOpen) {
@@ -58,8 +62,17 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
         setName(initialData.name);
         setDesc(initialData.desc || '');
         setStartDateStr(formatDateTimeLocal(initialData.startDate));
-        setQuestType(initialData.isOneTime ? 'onetime' : 'recurring');
 
+        if (initialData.isBreak) {
+          setQuestType('break');
+          if (initialData.cooldownData) {
+            setBreakNum(initialData.cooldownData.num || 1);
+            setBreakUnit(initialData.cooldownData.unit || 'days');
+          }
+        } else {
+          setQuestType(initialData.isOneTime ? 'onetime' : 'recurring');
+        }
+        
         if (initialData.isOneTime) {
           if (initialData.oneTimeData) {
             setOtType(initialData.oneTimeData.type as 'duration' | 'date');
@@ -93,9 +106,6 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
               else { setActiveNum(Math.floor(ms / (60 * 1000))); setActiveUnit('minutes'); }
             }
           } else {
-            setName('');
-            setDesc('');
-            setQuestType(defaultIsBreak ? 'break' : 'onetime');
             setHasShorterDeadline(false);
             setActiveWindowType('duration');
             setActiveNum(3);
@@ -116,7 +126,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
         // ADD MODE: Reset to defaults
         setName('');
         setDesc('');
-        setQuestType('onetime');
+        setQuestType(defaultIsBreak ? 'break' : 'onetime');
         setHasShorterDeadline(false);
         setHasLimit(false);
         setActiveWindowType('date');
@@ -144,7 +154,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
         }, 100);
       }
     }
-  }, [isOpen, initialData]);
+  }, [isOpen, initialData, defaultIsBreak]);
 
   // --- TEXTAREA AUTO-FORMATTING ---
   const handleDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -257,6 +267,28 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return alert("Please enter a quest name.");
+
+    // SAVE LOGIC FOR BREAKS
+    if (questType === 'break') {
+      let multi = 1;
+      if (breakUnit === 'minutes') multi = 60 * 1000;
+      if (breakUnit === 'hours') multi = 60 * 60 * 1000;
+      if (breakUnit === 'days') multi = 24 * 60 * 60 * 1000;
+      if (breakUnit === 'weeks') multi = 7 * 24 * 60 * 60 * 1000;
+      
+      const cooldownMs = breakNum * multi;
+      const cooldownData = { num: breakNum, unit: breakUnit };
+
+      const unitText = breakNum === 1 ? breakUnit.slice(0, -1) : breakUnit;
+      const displayFreq = `Cooldown: ${breakNum} ${unitText.charAt(0).toUpperCase() + unitText.slice(1)}`;
+
+      onSave({
+        name, desc, isBreak: true, cooldownMs, cooldownData, displayFreq,
+        // Zero out standard fields safely
+        isOneTime: false, startDate: new Date().getTime(), lastDoneAt: initialData?.lastDoneAt || 0
+      });
+      return;
+    }
 
     const startDate = startDateStr ? new Date(startDateStr).getTime() : new Date().setHours(0, 0, 0, 0);
     const isOneTime = questType === 'onetime';
@@ -399,12 +431,13 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
               <input type="datetime-local" value={startDateStr} onChange={e => setStartDateStr(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer text-center" />
             </div>
 
-            {/* TYPE SELECTOR */}
+             {/* TYPE SELECTOR */}
             <div>
               <label className="block font-semibold text-dark mb-2">Quest Type</label>
-              <select value={questType} onChange={e => setQuestType(e.target.value as 'onetime' | 'recurring')} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer">
+              <select value={questType} onChange={e => setQuestType(e.target.value as 'onetime' | 'recurring' | 'break')} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer">
                 <option value="onetime">🎯 One-Time Quest</option>
                 <option value="recurring">🔁 Recurring Quest</option>
+                <option value="break">☕ Break Activity</option>
               </select>
             </div>
 
@@ -518,6 +551,22 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
                       )}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* BREAK ACTIVITY SETTINGS */}
+            {questType === 'break' && (
+              <div className="space-y-6 animate-fade-in">
+                <div>
+                  <label className="block font-semibold text-dark mb-2">Cooldown Duration</label>
+                  <p className="text-xs text-muted mb-3">How long until you are allowed to do this activity again?</p>
+                  <div className="flex gap-3">
+                    <input type="number" min="1" value={breakNum} onChange={e => setBreakNum(parseInt(e.target.value))} className="w-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark text-center" />
+                    <select value={breakUnit} onChange={e => setBreakUnit(e.target.value)} className="grow px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark">
+                      <option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option><option value="weeks">Weeks</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             )}
