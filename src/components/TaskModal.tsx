@@ -438,7 +438,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
 
              {/* TYPE SELECTOR */}
             <div>
-              <label className="block font-semibold text-dark mb-2">Activity Type</label>
+              <label className="block font-semibold text-dark mb-2">Card Type</label>
               <select value={questType} onChange={e => setQuestType(e.target.value as 'onetime' | 'recurring' | 'break')} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer">
                 <option value="onetime">🎯 One-Time Quest</option>
                 <option value="recurring">🔁 Recurring Quest</option>
