@@ -10,6 +10,7 @@ export interface Quest {
 	isBreak?: boolean;
 	cooldownMs?: number;
 	lastDoneAt?: number;
+	previousLastDoneAt?: number;
 	cooldownData?: { num: number; unit: string; } | null;
 
 	// One-Time specific
