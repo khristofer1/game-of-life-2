@@ -27,7 +27,7 @@ export default function App() {
 	}, []);
 	
 	// Pull everything we need from our custom background engine!
-	const { activeTasks, comingTasks, completedTasks, deletedTasks, gems, freezes, streak, forceRefresh } = useTasks(user);
+	const { activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, gems, freezes, streak, forceRefresh } = useTasks(user);
 
 	// --- TOAST NOTIFICATION SYSTEM ---
   const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete' | 'restore', taskId: number } | null>(null);
@@ -40,9 +40,11 @@ export default function App() {
   };
 
 	// React State to manage the bottom navigation
-	const [activeTab, setActiveTab] = useState<'active' | 'coming' | 'completed' | 'deleted'>('active');
+	const [activeTab, setActiveTab] = useState<'active' | 'coming' | 'completed' | 'break' | 'deleted'>('active');
+	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
+	const [modalDefaultIsBreak, setModalDefaultIsBreak] = useState(false);
 	const [isShopOpen, setIsShopOpen] = useState(false);
 
 	if (isAuthLoading) {
@@ -54,6 +56,16 @@ export default function App() {
   }
 
 	// --- Action Handlers (Stubs) ---
+
+	const handleFabClick = () => {
+		if (activeTab === 'break') {
+			setModalDefaultIsBreak(true);
+		} else {
+			setModalDefaultIsBreak(false);
+		}
+		setEditingQuest(null);
+		setIsModalOpen(true);
+	}
 
 	// Shop Logic
 	const handleBuyFreeze = async () => {
@@ -227,6 +239,7 @@ export default function App() {
 	let displayedTasks = activeTasks;
 	if (activeTab === 'coming') displayedTasks = comingTasks;
 	if (activeTab === 'completed') displayedTasks = completedTasks;
+	if (activeTab === 'break') displayedTasks = breakTasks;
 	if (activeTab === 'deleted') displayedTasks = deletedTasks;
 
 	return (
@@ -300,7 +313,7 @@ export default function App() {
 			</main>
 
 			{/* BOTTOM NAVIGATION */}
-			<nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-40 px-6 py-2 flex justify-between items-center text-xs font-semibold pb-safe">
+			<nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 px-6 py-2 flex justify-between items-center text-xs font-semibold pb-safe">
 				<button
 					onClick={() => setActiveTab('active')}
 					className={`flex-1 flex flex-col items-center gap-1 transition-all ${activeTab === 'active'
@@ -340,28 +353,65 @@ export default function App() {
 					<span className="uppercase tracking-wider">Completed</span>
 				</button>
 
-				<button
-					onClick={() => setActiveTab('deleted')}
-					className={`flex-1 flex flex-col items-center gap-1 transition-all ${activeTab === 'deleted'
-						? 'text-red-500 scale-105'
-						: 'text-gray-400 hover:text-dark'
+				{/* MORE MENU (3 DOTS) */}
+				<div className="flex-1 flex justify-center relative">
+					<button
+						onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+						className={`flex flex-col items-center gap-1 transition-all ${
+							(activeTab === 'deleted' || activeTab === 'break')
+								? 'text-orange-500 scale-105'
+								: 'text-gray-400 hover:text-dark'
 						}`}
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-						<path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-					</svg>
-					<span className="uppercase tracking-wider">Deleted</span>
-				</button>
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+							<path strokeLinecap="round" strokeLinejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+						</svg>
+						<span className="uppercase tracking-wider">More</span>
+					</button>
+
+					{/* THE POPUP DROPDOWN */}
+					{isMoreMenuOpen && (
+						<div className="absolute bottom-full mb-4 right-4 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in flex flex-col">
+							<button 
+								onClick={() => { setActiveTab('break'); setIsMoreMenuOpen(false); }}
+								className={`px-4 py-3 text-sm font-bold text-left hover:bg-orange-50 transition-colors flex items-center gap-2 ${activeTab === 'break' ? 'text-orange-500 bg-orange-50/50' : 'text-dark'}`}
+							>
+								<span className="text-lg">☕</span> Break
+							</button>
+							<button 
+								onClick={() => { setActiveTab('deleted'); setIsMoreMenuOpen(false); }}
+								className={`px-4 py-3 text-sm font-bold text-left hover:bg-red-50 transition-colors border-t border-gray-100 flex items-center gap-2 ${activeTab === 'deleted' ? 'text-red-500 bg-red-50/50' : 'text-dark'}`}
+							>
+								<span className="text-lg">🗑️</span> Deleted
+							</button>
+						</div>
+					)}
+				</div>
 			</nav>
 
-			{/* FLOATING ACTION BUTTON (Add Quest) */}
-			<button
-				onClick={() => { setEditingQuest(null); setIsModalOpen(true); }} // <-- Updated
-				className="fixed bottom-20 right-6 z-40 w-14 h-14 bg-dark text-white rounded-full flex items-center justify-center shadow-2xl hover:bg-orange-500 hover:scale-110 active:scale-95 transition-all focus:outline-none"
+			{/* FLOATING ACTION BUTTON */}
+			<button 
+				onClick={handleFabClick}
+				className="fixed bottom-24 right-6 bg-orange-500 text-white p-4 rounded-full shadow-lg hover:bg-orange-600 hover:scale-105 transition-all flex items-center justify-center gap-2 group z-40"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-				</svg>
+				{activeTab === 'break' ? (
+					<>
+						{/* Break Icon (e.g., a coffee cup or pause button) */}
+						<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+						{/* Optional: Show text on hover for desktop, or permanently for a pill-shaped FAB */}
+						<span className="hidden sm:block font-bold pr-2">Add Break Activity</span>
+					</>
+				) : (
+					<>
+						{/* Standard Quest Icon (Plus) */}
+						<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+						</svg>
+						<span className="hidden sm:block font-bold pr-2">Add Quest</span>
+					</>
+				)}
 			</button>
 
 			{/* TOAST NOTIFICATION */}
@@ -395,6 +445,7 @@ export default function App() {
 				onClose={() => setIsModalOpen(false)}
 				initialData={editingQuest}
 				onSave={handleSaveQuest}
+				defaultIsBreak={modalDefaultIsBreak}
 			/>
 
 			<ShopModal

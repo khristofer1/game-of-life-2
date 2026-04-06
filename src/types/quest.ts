@@ -6,6 +6,12 @@ export interface Quest {
 	startDate: number;
 	createdAt: number;
 
+	// Break activity
+	isBreak?: boolean;
+	cooldownMs?: number;
+	lastDoneAt?: number;
+	cooldownData?: { num: number; unit: string; } | null;
+
 	// One-Time specific
 	deadline?: number;
 	durationMs: number;

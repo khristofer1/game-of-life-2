@@ -9,6 +9,7 @@ interface TaskModalProps {
   onClose: () => void;
   initialData: Quest | null;
   onSave: (questData: Partial<Quest>) => void;
+  defaultIsBreak?: boolean;
 }
 
 // Helper to format timestamps for the <input type="datetime-local">
@@ -19,14 +20,14 @@ const formatDateTimeLocal = (timestamp?: number) => {
   return new Date(d.getTime() - tzoffset).toISOString().slice(0, 16);
 };
 
-export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalProps) {
+export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak }: TaskModalProps) {
   const nameInputRef = useRef<HTMLInputElement>(null);
   
   // --- FORM STATE ---
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [startDateStr, setStartDateStr] = useState('');
-  const [questType, setQuestType] = useState<'onetime' | 'recurring'>('onetime');
+  const [questType, setQuestType] = useState<'onetime' | 'recurring' | 'break'>('onetime');
 
   // One-Time State
   const [otType, setOtType] = useState<'duration' | 'date'>('duration');
@@ -92,6 +93,9 @@ export function TaskModal({ isOpen, onClose, initialData, onSave }: TaskModalPro
               else { setActiveNum(Math.floor(ms / (60 * 1000))); setActiveUnit('minutes'); }
             }
           } else {
+            setName('');
+            setDesc('');
+            setQuestType(defaultIsBreak ? 'break' : 'onetime');
             setHasShorterDeadline(false);
             setActiveWindowType('duration');
             setActiveNum(3);

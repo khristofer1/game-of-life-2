@@ -9,6 +9,7 @@ export function useTasks(user: User | null) {
 	const [activeTasks, setActiveTasks] = useState<Quest[]>([]);
 	const [comingTasks, setComingTasks] = useState<Quest[]>([]);
 	const [completedTasks, setCompletedTasks] = useState<Quest[]>([]);
+  const [breakTasks, setBreakTasks] = useState<Quest[]>([]);
 	const [deletedTasks, setDeletedTasks] = useState<Quest[]>([]);
 
 	// Game Economy State
@@ -45,6 +46,32 @@ export function useTasks(user: User | null) {
         }
 
         if (task.isArchived) {
+          processedTasks.push(task);
+          continue;
+        }
+
+        // --- BREAK ACTIVITIES MATH ---
+        if (task.isBreak) {
+          // How long has it been since they last took this break? (If never, default to 0)
+          const timeSinceLastDone = now - (task.lastDoneAt || 0);
+          const timeLeft = (task.cooldownMs || 0) - timeSinceLastDone;
+
+          if (timeLeft > 0) {
+            // Still cooling down. Progress bar fills up from 0% to 99% as it gets closer to being ready!
+            const newPercent = Math.max(0, Math.min(100, Math.round((timeSinceLastDone / (task.cooldownMs || 1)) * 100)));
+            if (task.energyPercent !== newPercent) {
+              task.energyPercent = newPercent;
+              tasksUpdated = true;
+            }
+          } else {
+            // Ready to be claimed! 100% Energy.
+            if (task.energyPercent !== 100) {
+              task.energyPercent = 100;
+              tasksUpdated = true;
+            }
+          }
+
+          // Push to the array and skip the rest of the normal quest math
           processedTasks.push(task);
           continue;
         }
@@ -151,11 +178,11 @@ export function useTasks(user: User | null) {
       };
 
       const active = processedTasks
-        .filter(t => !t.deletedAt && !t.completed && !t.isArchived && !checkIsComing(t))
+        .filter(t => !t.deletedAt && !t.completed && !t.isArchived && !t.isBreak && !checkIsComing(t))
         .sort((a, b) => getRealDeadline(a) - getRealDeadline(b));
 
       const coming = processedTasks
-        .filter(t => !t.deletedAt && !t.completed && !t.isArchived && checkIsComing(t))
+        .filter(t => !t.deletedAt && !t.completed && !t.isArchived && !t.isBreak && checkIsComing(t))
         .sort((a, b) => {
           // Sort Coming tasks by when they are next available
           const aNext = (a.startDate && now < a.startDate) ? (a.startDate) : ((a.cycleStart || 0) + a.durationMs);
@@ -164,17 +191,29 @@ export function useTasks(user: User | null) {
         });
 
       const completed = processedTasks
-        .filter(t => !t.deletedAt && t.completed && !t.isArchived)
+        .filter(t => !t.deletedAt && t.completed && !t.isArchived && !t.isBreak)
         .sort((a, b) => getRealDeadline(a) - getRealDeadline(b));
 
 			const deleted = processedTasks
 				.filter(t => t.deletedAt)
 				.sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0));
+      
+      const breakList = processedTasks
+        .filter(t => !t.deletedAt && !t.isArchived && t.isBreak)
+        .sort((a, b) => {
+          // Sort by "Ready" first, then by shortest cooldown time left
+          const aTimeLeft = Math.max(0, (a.cooldownMs || 0) - (now - (a.lastDoneAt || 0)));
+          const bTimeLeft = Math.max(0, (b.cooldownMs || 0) - (now - (b.lastDoneAt || 0)));
+          
+          if (aTimeLeft === 0 && bTimeLeft === 0) return (a.cooldownMs || 0) - (b.cooldownMs || 0);
+          return aTimeLeft - bTimeLeft;
+        });
 
 			// Update React State
 			setActiveTasks(active);
 			setComingTasks(coming);
 			setCompletedTasks(completed);
+      setBreakTasks(breakList);
 			setDeletedTasks(deleted);
 			setGems(currentGems);
 			setStreak(globalStreak);
@@ -205,6 +244,7 @@ export function useTasks(user: User | null) {
 		activeTasks,
 		comingTasks,
 		completedTasks,
+    breakTasks,
 		deletedTasks,
 		gems,
 		streak,
