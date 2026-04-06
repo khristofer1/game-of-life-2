@@ -397,16 +397,13 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
 
         <div className="px-8 pt-8 pb-6 overflow-y-auto custom-scrollbar">
           <h2 className="text-xl font-bold text-dark mb-6">
-            {initialData 
-              ? (initialData.isBreak ? 'Edit Break Activity' : 'Edit Quest') 
-              : (questType === 'break' ? 'New Break Activity' : 'New Quest')
-            }
+            New Card
           </h2>
 
           <form onSubmit={handleSave} className="space-y-6 text-sm">
             {/* NAME & DESC */}
             <div>
-              <label className="block font-semibold text-dark mb-2">Quest Name</label>
+              <label className="block font-semibold text-dark mb-2">Card Name</label>
               <input
                 ref={nameInputRef}
                 type="text"
