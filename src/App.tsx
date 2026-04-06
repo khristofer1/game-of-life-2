@@ -411,7 +411,7 @@ export default function App() {
 
 			{/* FLOATING ACTION BUTTON (Add Quest) */}
 			<button
-				onClick={() => { setEditingQuest(null); setIsModalOpen(true); }} // <-- Updated
+				onClick={handleFabClick}
 				className="fixed bottom-20 right-6 z-40 w-14 h-14 bg-dark text-white rounded-full flex items-center justify-center shadow-2xl hover:bg-orange-500 hover:scale-110 active:scale-95 transition-all focus:outline-none"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
