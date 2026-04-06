@@ -397,7 +397,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
 
         <div className="px-8 pt-8 pb-6 overflow-y-auto custom-scrollbar">
           <h2 className="text-xl font-bold text-dark mb-6">
-            New Card
+            {initialData ? 'Edit Card' : 'New Card'}
           </h2>
 
           <form onSubmit={handleSave} className="space-y-6 text-sm">
@@ -578,7 +578,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
         {/* FOOTER BUTTONS */}
         <div className="bg-gray-50 px-8 py-4 flex gap-3 shrink-0 border-t border-gray-100 text-sm">
           <button onClick={handleClose} className="flex-1 px-6 py-3 rounded-2xl font-semibold text-muted hover:bg-gray-200 transition-colors">Cancel</button>
-          <button onClick={handleSave} className="flex-1 bg-dark text-white px-6 py-3 rounded-2xl font-semibold hover:bg-blue-500 transition-colors shadow-lg">Save Quest</button>
+          <button onClick={handleSave} className="flex-1 bg-dark text-white px-6 py-3 rounded-2xl font-semibold hover:bg-blue-500 transition-colors shadow-lg">Save Card</button>
         </div>
       </div>
     </div>
