@@ -157,7 +157,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
                     : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                 }`}
               >
-                {quest.energyPercent! >= 100 ? '☕ Take Break (+1 💎)' : '⏳ Cooling Down'}
+                {quest.energyPercent! >= 100 ? '☕ Take Break' : '⏳ Cooling Down'}
               </button>
             ) : (
               // STANDARD QUEST BUTTON
