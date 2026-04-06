@@ -40,8 +40,6 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
     return () => clearInterval(intervalId); 
   }, [isDynamic]);
 
-  const timeLeft = activeDeadline - now;
-  
   // Calculate precise energy percent for the UI
   let percent = 100;
   if (quest.isBreak) {
