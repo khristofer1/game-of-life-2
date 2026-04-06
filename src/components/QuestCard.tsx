@@ -27,8 +27,8 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
 
   // A quest is "Pending" (Locked) if it hasn't started yet, 
   // OR if it's a recurring quest that completely missed its active window.
-  const isFutureStart = !!(quest.startDate && now < quest.startDate);
-  const isDeadZone = !quest.isOneTime && !quest.completed && now >= activeDeadline;
+  const isFutureStart = !!(quest.startDate && now < quest.startDate && !quest.isBreak);
+  const isDeadZone = !quest.isOneTime && !quest.completed && !quest.isBreak && now >= activeDeadline;
 
   const isPending = isFutureStart || isDeadZone;
   const isDynamic = !quest.completed && !isPending;
@@ -44,14 +44,28 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
   
   // Calculate precise energy percent for the UI
   let percent = 100;
-  if (isFutureStart) {
+  if (quest.isBreak) {
+    // INVERSE MATH: Calculate how full the bar should be based on time passed
+    const timeSinceLastDone = now - (quest.lastDoneAt || 0);
+    const cooldownLeft = (quest.cooldownMs || 0) - timeSinceLastDone;
+    
+    if (cooldownLeft > 0) {
+      percent = Math.max(0, Math.min(100, Math.round((timeSinceLastDone / (quest.cooldownMs || 1)) * 100)));
+    } else {
+      percent = 100;
+    }
+  } else if (isFutureStart) {
     percent = 100;
   } else if (quest.completed) {
     percent = quest.energyPercent;
-  } else if (timeLeft > 0) {
-    percent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
   } else {
-    percent = 0;
+    // STANDARD QUEST MATH: Calculate how much time is left
+    const timeLeft = activeDeadline - now;
+    if (timeLeft > 0) {
+      percent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
+    } else {
+      percent = 0;
+    }
   }
 
   // --- UI Formatting ---
