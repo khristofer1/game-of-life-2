@@ -331,7 +331,7 @@ export default function App() {
 
 				{displayedTasks.length === 0 ? (
 					<div className="text-center py-10">
-						<p className="text-muted text-sm italic">No quests found in this tab.</p>
+						<p className="text-muted text-sm italic">No cards found in this tab.</p>
 					</div>
 				) : (
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-sm md:max-w-3xl lg:max-w-none">
