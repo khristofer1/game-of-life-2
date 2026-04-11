@@ -425,6 +425,24 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
                 placeholder="Quest details..." 
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all resize-none field-sizing-content"
               ></textarea>
+
+              {(desc.match(/(https?:\/\/[^\s]+)/g) || []).length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2 animate-fade-in">
+                  {(desc.match(/(https?:\/\/[^\s]+)/g) || []).map((link, i) => (
+                    <a
+                      key={i}
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 hover:scale-105 transition-all shadow-sm"
+                    >
+                      <span>🔗</span> 
+                      {/* Truncate super long links so they don't break the UI */}
+                      {link.length > 35 ? link.substring(0, 35) + '...' : link}
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* START DATE */}
