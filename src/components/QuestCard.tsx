@@ -12,6 +12,33 @@ interface QuestCardProps {
   onTakeBreak?: (id: number) => void;
 }
 
+// Helper function to find URLs and turn them into clickable links
+const formatDescriptionWithLinks = (text: string) => {
+  // Regex to detect http:// or https:// links
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  
+  // Split the text by the URL, but keep the URL in the array
+  const parts = text.split(urlRegex);
+
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a 
+          key={index} 
+          href={part} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-orange-500 hover:text-orange-600 hover:underline transition-colors"
+          onClick={(e) => e.stopPropagation()} // Prevents the card from doing anything weird when you click the link
+        >
+          {part}
+        </a>
+      );
+    }
+    return part; // Return normal text as-is
+  });
+};
+
 export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete, onTakeBreak }: QuestCardProps) {
   const [now, setNow] = useState(Date.now());
 
@@ -102,7 +129,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
       <div className="flex justify-between items-start mb-3 gap-4">
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-dark leading-tight line-clamp-1">{quest.name}</h3>
-          {quest.desc && <p className="text-xs text-muted mt-1 line-clamp-2">{quest.desc}</p>}
+          {quest.desc && <p className="text-xs text-muted mt-1 line-clamp-2 whitespace-pre-wrap">{formatDescriptionWithLinks(quest.desc)}</p>}
         </div>
       </div>
 
