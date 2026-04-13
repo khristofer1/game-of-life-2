@@ -120,7 +120,7 @@ export default function App() {
       
       await saveTaskToDB(updatedTask);
       forceRefresh();
-      triggerToast("Quest completed!", 'complete', id);
+      triggerToast("Card completed!", 'complete', id);
 
     // UNDOING a Completion (Moving back to Active)
     } else {
@@ -146,7 +146,7 @@ export default function App() {
 
       await saveTaskToDB(updatedTask);
       forceRefresh();
-      triggerToast("Quest restored to active.", 'complete', id);
+      triggerToast("Card restored to active.", 'complete', id);
     }
   };
 
