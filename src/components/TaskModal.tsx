@@ -335,9 +335,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
       if (freqUnit === 'years') days = freqNum * 365;
       durationMs = days * 24 * 60 * 60 * 1000;
 
-      const unitText = freqNum === 1 ? freqUnit.slice(0, -1) : freqUnit;
-      displayFreq = `Every ${freqNum} ${unitText.charAt(0).toUpperCase() + unitText.slice(1)}`;
-
+      // 1. Calculate the Active Deadline FIRST
       if (hasShorterDeadline) {
         if (activeWindowType === 'duration') {
           let activeMulti = 1;
@@ -348,7 +346,6 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
           activeDeadlineMs = activeNum * activeMulti;
           activeWindowData = { type: 'duration', num: activeNum, unit: activeUnit };
         } else {
-          // Calculate the duration mathematically based on the selected date
           if (!activeWindowDateStr) return alert("Please select a specific date and time for the active window.");
           const targetTime = new Date(activeWindowDateStr).getTime();
           activeDeadlineMs = targetTime - startDate;
@@ -360,6 +357,37 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
         if (activeDeadlineMs > durationMs) return alert("Active window cannot be longer than the repeat interval!");
       } else {
         activeDeadlineMs = durationMs;
+      }
+
+      // 2. NOW construct the "1 Day every 2 Weeks" string
+      const freqBaseUnit = freqNum === 1 ? freqUnit.slice(0, -1) : freqUnit;
+      const freqBaseStr = `${freqNum} ${freqBaseUnit}`;
+
+      if (hasShorterDeadline) {
+        let activeStr = '';
+        if (activeWindowType === 'duration') {
+          const aUnit = activeNum === 1 ? activeUnit.slice(0, -1) : activeUnit;
+          activeStr = `${activeNum} ${aUnit}`;
+        } else {
+          // If they chose a specific date, mathematically convert the milliseconds back into readable text
+          const ms = activeDeadlineMs;
+          const d = Math.floor(ms / (24 * 60 * 60 * 1000));
+          const h = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+          const m = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+          
+          if (d > 0) activeStr = `${d} day${d !== 1 ? 's' : ''}`;
+          else if (h > 0) activeStr = `${h} hour${h !== 1 ? 's' : ''}`;
+          else activeStr = `${m} min${m !== 1 ? 's' : ''}`;
+        }
+        
+        displayFreq = `${activeStr} every ${freqBaseStr}`;
+        // Capitalize the very first letter for the UI
+        displayFreq = displayFreq.charAt(0).toUpperCase() + displayFreq.slice(1);
+        
+      } else {
+        // Fallback: If they didn't set a custom deadline, just show "Every 2 weeks"
+        displayFreq = `Every ${freqBaseStr}`;
+        displayFreq = displayFreq.charAt(0).toUpperCase() + displayFreq.slice(1);
       }
 
       if (hasLimit) {
