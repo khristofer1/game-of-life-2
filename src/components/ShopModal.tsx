@@ -1,3 +1,4 @@
+// src/components/ShopModal.tsx
 import { GAME_CONFIG } from "../config/gameConstants";
 
 interface ShopModalProps {
