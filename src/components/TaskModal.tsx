@@ -266,7 +266,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return alert("Please enter a quest name.");
+    if (!name) return alert("Please enter a card name.");
 
     // SAVE LOGIC FOR BREAKS
     if (questType === 'break') {
@@ -422,7 +422,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
                 value={desc} 
                 onChange={handleDescChange} 
                 onKeyDown={handleDescKeyDown}
-                placeholder="Quest details..." 
+                placeholder="Card details..." 
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all resize-none field-sizing-content"
               ></textarea>
 

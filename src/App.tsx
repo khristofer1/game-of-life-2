@@ -205,7 +205,7 @@ export default function App() {
       taskToTrash.deletedAt = Date.now();
       await saveTaskToDB(taskToTrash);
       forceRefresh();
-      triggerToast("Quest moved to trash.", 'delete', id);
+      triggerToast("Card moved to trash.", 'delete', id);
     }
   };
 
@@ -215,12 +215,12 @@ export default function App() {
 			delete task.deletedAt; // Remove the delete timestamp
 			await saveTaskToDB(task);
 			forceRefresh();
-			triggerToast("Quest restored from trash.", 'restore', id);
+			triggerToast("Card restored from trash.", 'restore', id);
 		}
 	};
 
 	const handleHardDelete = async (id: number) => {
-		if (window.confirm("Destroy this quest forever?")) {
+		if (window.confirm("Destroy this card forever?")) {
 			await deleteTaskFromDB(id);
 			forceRefresh();
 		}
