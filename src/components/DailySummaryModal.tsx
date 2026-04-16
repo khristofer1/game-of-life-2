@@ -6,7 +6,7 @@ interface DailySummaryModalProps {
   onClose: () => void;
   completedYesterday: Quest[];
   expiredQuests: Quest[];
-  gems: number;
+  gems: number; // Now we will actually use this!
   onRevive: (taskId: number) => void;
 }
 
@@ -20,7 +20,10 @@ export function DailySummaryModal({ isOpen, onClose, completedYesterday, expired
         
         <div className="bg-dark px-8 py-6 text-center shrink-0">
           <h2 className="text-2xl font-bold text-white mb-2">Daily Summary</h2>
-          <p className="text-gray-300 text-sm">Here is how you did yesterday.</p>
+          {/* ✅ UPDATED: Show their current gem balance here */}
+          <p className="text-gray-300 text-sm">
+            Here is how you did yesterday.<br></br><span className="font-bold text-orange-400 ml-1">Current Balance: 💎 {gems}</span>
+          </p>
         </div>
 
         <div className="px-8 py-6 overflow-y-auto custom-scrollbar space-y-8">
@@ -56,12 +59,21 @@ export function DailySummaryModal({ isOpen, onClose, completedYesterday, expired
                 {expiredQuests.map(quest => (
                   <div key={quest.id} className="flex flex-col gap-3 bg-red-50 px-4 py-4 rounded-2xl border border-red-100">
                     <div className="font-semibold text-red-900 text-sm">{quest.name}</div>
+                    
+                    {/* ✅ UPDATED: Smart disabled state for the button */}
                     <button 
                       onClick={() => onRevive(quest.id!)}
-                      className="w-full py-2 bg-white border border-red-200 text-red-600 rounded-xl text-sm font-bold hover:bg-red-600 hover:text-white transition-colors flex justify-center items-center gap-2 shadow-sm"
+                      disabled={gems < 1}
+                      className={`w-full py-2 border rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-sm transition-all ${
+                        gems >= 1 
+                          ? 'bg-white border-red-200 text-red-600 hover:bg-red-600 hover:text-white cursor-pointer' 
+                          : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'
+                      }`}
                     >
-                      <span>Revive Card</span>
-                      <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-lg text-xs">💎 1</span>
+                      <span>{gems >= 1 ? 'Revive Card' : 'Not Enough Gems'}</span>
+                      <span className={`px-2 py-0.5 rounded-lg text-xs ${gems >= 1 ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-500'}`}>
+                        💎 1
+                      </span>
                     </button>
                   </div>
                 ))}
@@ -72,8 +84,8 @@ export function DailySummaryModal({ isOpen, onClose, completedYesterday, expired
 
         {/* FOOTER */}
         <div className="bg-gray-50 px-8 py-4 shrink-0 border-t border-gray-100">
-          <button onClick={onClose} className="w-full bg-dark text-white px-6 py-3 rounded-2xl font-bold hover:bg-gray-800 transition-colors shadow-lg">
-            Continue
+          <button onClick={onClose} className="w-full bg-dark text-white px-6 py-3 rounded-2xl font-bold hover:bg-gray-800 transition-colors shadow-lg cursor-pointer">
+            Start My Day
           </button>
         </div>
       </div>
