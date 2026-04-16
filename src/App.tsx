@@ -12,6 +12,8 @@ import { ShopModal } from "./components/ShopModal";
 import { GAME_CONFIG } from './config/gameConstants';
 import logo from './assets/logo.svg';
 import { DailySummaryModal } from './components/DailySummaryModal';
+import confetti from 'canvas-confetti';
+import successSound from './assets/success.mp3';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -197,6 +199,21 @@ export default function App() {
       await saveTaskToDB(updatedTask);
       forceRefresh();
       triggerToast("Card completed!", 'complete', id);
+
+			// 🎇 THE CELEBRATION ENGINE 🎇
+      
+      // 1. Play the Sound (with error handling in case the browser blocks it)
+      const audio = new Audio(successSound);
+      audio.volume = 0.6; // 60% volume so it isn't deafening!
+      audio.play().catch(error => console.log("Audio blocked by browser:", error));
+
+      // 2. Fire the Confetti!
+      confetti({
+        particleCount: 150, // Number of pieces
+        spread: 80,         // How wide the explosion is
+        origin: { y: 0.6 }, // Starts slightly below the middle of the screen
+        colors: ['#f97316', '#fbbf24', '#34d399', '#3b82f6'] // Tailwind Orange, Yellow, Green, Blue
+      });
 
     // UNDOING a Completion (Moving back to Active)
     } else {
