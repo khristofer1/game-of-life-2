@@ -360,18 +360,22 @@ export default function App() {
 			{/* TOP HEADER */}
 			<header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 mb-8">
 				<div className="max-w-7xl mx-auto flex justify-between items-center">
-					<div className="flex items-center gap-3">
+					<button 
+						onClick={() => setShowSummaryModal(true)}
+						className="flex items-center gap-3 focus:outline-none group transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+						title="View Daily Summary"
+					>
 						{/* THE LOGO */}
 						<img
 							src={logo}
 							alt="Game of Life Logo"
-							className='w-8 h-8 text-orange-500'
+							className="w-8 h-8 text-orange-500 group-hover:drop-shadow-md transition-all"
 						/>
 						
-						<h1 className="text-2xl font-bold tracking-tight text-dark hidden sm:block">
+						<h1 className="text-2xl font-bold tracking-tight text-dark hidden sm:block group-hover:text-orange-600 transition-colors">
 							Game of Life
 						</h1>
-					</div>
+					</button>
 
 					<div className="flex items-center gap-4">
 						<button
