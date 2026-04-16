@@ -466,7 +466,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
                     >
                       <span>🔗</span> 
                       {/* Truncate super long links so they don't break the UI */}
-                      {link.length > 35 ? link.substring(0, 35) + '...' : link}
+                      {link.length > 30 ? link.substring(0, 30) + '...' : link}
                     </a>
                   ))}
                 </div>
