@@ -85,7 +85,7 @@ export function DailySummaryModal({ isOpen, onClose, completedYesterday, expired
         {/* FOOTER */}
         <div className="bg-gray-50 px-8 py-4 shrink-0 border-t border-gray-100">
           <button onClick={onClose} className="w-full bg-dark text-white px-6 py-3 rounded-2xl font-bold hover:bg-gray-800 transition-colors shadow-lg cursor-pointer">
-            Start My Day
+            Continue
           </button>
         </div>
       </div>
