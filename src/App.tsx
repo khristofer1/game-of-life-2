@@ -11,6 +11,7 @@ import type { Quest } from './types/quest';
 import { ShopModal } from "./components/ShopModal";
 import { GAME_CONFIG } from './config/gameConstants';
 import logo from './assets/logo.svg';
+import { DailySummaryModal } from './components/DailySummaryModal';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -46,6 +47,81 @@ export default function App() {
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [modalDefaultIsBreak, setModalDefaultIsBreak] = useState(false);
 	const [isShopOpen, setIsShopOpen] = useState(false);
+	
+	// --- DAILY SUMMARY STATE ---
+	const [showSummaryModal, setShowSummaryModal] = useState(false);
+	const [summaryData, setSummaryData] = useState({ completed: [] as Quest[], expired: [] as Quest[] });
+	const hasCheckedSummary = useRef(false);
+
+	// The Daily Check Engine
+	useEffect(() => {
+		const checkDailySummary = async () => {
+			const today = new Date().setHours(0, 0, 0, 0);
+			const lastSummary = await getMeta("lastSummaryDate", 0);
+
+			if (today > lastSummary) {
+				const yesterdayStart = today - (24 * 60 * 60 * 1000);
+
+				// Find cards completed yesterday
+				const completedYesterday = [...activeTasks, ...completedTasks].filter(t =>
+					t.completed && t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today
+				);
+
+				// Find expired one-time cards (deadline passed, not completed)
+				const expiredOneTime = [...activeTasks, ...comingTasks].filter(t =>
+					t.isOneTime && !t.completed && !t.deletedAt && t.deadline && t.deadline < today
+				);
+
+				// Only show modal if there is actual data to summarize
+				if (completedYesterday.length > 0 || expiredOneTime.length > 0) {
+					setSummaryData({ completed: completedYesterday, expired: expiredOneTime });
+					setShowSummaryModal(true);
+				} else {
+					// Nothing happened yesterday, silently update the tracker
+					await setMeta("lastSummaryDate", today);
+				}
+			}
+		};
+
+		// Only run the check once we have actually loaded tasks from Firebase
+		if (!hasCheckedSummary.current && (activeTasks.length > 0 || completedTasks.length > 0)) {
+			checkDailySummary();
+			hasCheckedSummary.current = true;
+		}
+	}, [activeTasks, completedTasks]);
+
+	const handleCloseSummary = async () => {
+		setShowSummaryModal(false);
+		const today = new Date().setHours(0, 0, 0, 0);
+		await setMeta("lastSummaryDate", today); // Lock it so it doesn't show again today
+	};
+
+	const handleReviveCard = async (taskId: number) => {
+		if (gems < 1) return alert("Not enough gems to revive this card!");
+
+		const taskToRevive = [...activeTasks, ...comingTasks].find(t => t.id === taskId);
+		if (!taskToRevive) return;
+
+		// Deduct 1 gem
+		const newGems = gems - 1;
+		await setMeta("gems", newGems);
+
+		// Reset the card times to NOW, keeping the original duration
+		const now = Date.now();
+		taskToRevive.startDate = now;
+		taskToRevive.deadline = now + taskToRevive.durationMs;
+		taskToRevive.cycleStart = now;
+		taskToRevive.energyPercent = 100; // Refill the progress bar
+
+		await saveTaskToDB(taskToRevive);
+		forceRefresh();
+
+		// Immediately remove it from the summary modal list
+		setSummaryData(prev => ({
+			...prev,
+			expired: prev.expired.filter(t => t.id !== taskId)
+		}));
+	};
 
 	if (isAuthLoading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-muted animate-pulse">Loading Game of Life...</div>;
@@ -480,6 +556,15 @@ export default function App() {
 				gems={gems}
 				freezes={freezes}
 				onBuyFreeze={handleBuyFreeze}
+			/>
+
+			<DailySummaryModal
+				isOpen={showSummaryModal}
+				onClose={handleCloseSummary}
+				completedYesterday={summaryData.completed}
+				expiredQuests={summaryData.expired}
+				gems={gems}
+				onRevive={handleReviveCard}
 			/>
 		</div>
 	);
