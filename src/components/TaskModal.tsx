@@ -455,18 +455,21 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
               ></textarea>
 
               {(desc.match(/(https?:\/\/[^\s]+)/g) || []).length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2 animate-fade-in">
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 animate-fade-in">
                   {(desc.match(/(https?:\/\/[^\s]+)/g) || []).map((link, i) => (
                     <a
                       key={i}
                       href={link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 hover:scale-105 transition-all shadow-sm"
+                      // 1. ADDED `min-w-0` to the parent so the grid allows it to shrink
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 hover:scale-105 transition-all shadow-sm min-w-0"
                     >
-                      <span>🔗</span> 
-                      {/* Truncate super long links so they don't break the UI */}
-                      {link.length > 30 ? link.substring(0, 30) + '...' : link}
+                      {/* 2. ADDED `shrink-0` so the emoji never gets squished */}
+                      <span className="shrink-0">🔗</span> 
+                      
+                      {/* 3. ADDED `truncate` and removed the Javascript substring! */}
+                      <span className="truncate">{link}</span>
                     </a>
                   ))}
                 </div>
