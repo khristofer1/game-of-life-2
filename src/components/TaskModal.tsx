@@ -28,6 +28,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
   const [desc, setDesc] = useState('');
   const [startDateStr, setStartDateStr] = useState('');
   const [questType, setQuestType] = useState<'onetime' | 'recurring' | 'break'>('onetime');
+  const [hasManuallySetTime, setHasManuallySetTime] = useState(false);
 
   // One-Time State
   const [otType, setOtType] = useState<'duration' | 'date'>('duration');
@@ -62,6 +63,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
         setName(initialData.name);
         setDesc(initialData.desc || '');
         setStartDateStr(formatDateTimeLocal(initialData.startDate));
+        setHasManuallySetTime(true);
 
         if (initialData.isBreak) {
           setQuestType('break');
@@ -131,11 +133,11 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
         setHasLimit(false);
         setActiveWindowType('date');
 
-        // 1. Set Start Date to today at 06:00 AM
-        const today = new Date();
-        today.setHours(6, 0, 0, 0);
-        const tzoffset = today.getTimezoneOffset() * 60000;
-        setStartDateStr(new Date(today.getTime() - tzoffset).toISOString().slice(0, 16));
+        // 1. Set Start Date exactly to NOW
+        const now = new Date();
+        const tzoffset = now.getTimezoneOffset() * 60000;
+        setStartDateStr(new Date(now.getTime() - tzoffset).toISOString().slice(0, 16));
+        setHasManuallySetTime(false);
 
         // 2. Set Deadlines to today at 09:00 PM
         const tonight = new Date();
@@ -157,6 +159,34 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
   }, [isOpen, initialData, defaultIsBreak]);
 
   // --- TEXTAREA AUTO-FORMATTING ---
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value; 
+    if (!newValue) {
+      setStartDateStr('');
+      return;
+    }
+
+    if (hasManuallySetTime) {
+      // The user already locked in a specific time. Respect whatever they do.
+      setStartDateStr(newValue);
+    } else {
+      // Split the ISO string into [Date, Time] -> e.g. ["2026-04-17", "21:33"]
+      const oldTime = startDateStr.split('T')[1];
+      const newTime = newValue.split('T')[1];
+      const newDate = newValue.split('T')[0];
+
+      if (oldTime !== newTime) {
+        // The time part changed! That means they clicked the clock. Lock it in!
+        setHasManuallySetTime(true);
+        setStartDateStr(newValue);
+      } else {
+        // The time is identical, which means they only changed the calendar date.
+        // Snap the time to 06:00 AM!
+        setStartDateStr(`${newDate}T06:00`);
+      }
+    }
+  };
+  
   const handleDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const target = e.target;
     const cursorPosition = target.selectionStart;
@@ -479,7 +509,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
             {/* START DATE */}
             <div>
               <label className="block font-semibold text-dark mb-2">Start Date & Time</label>
-              <input type="datetime-local" value={startDateStr} onChange={e => setStartDateStr(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer text-center" />
+              <input type="datetime-local" value={startDateStr} onChange={handleStartDateChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer text-center" />
             </div>
 
              {/* TYPE SELECTOR */}
