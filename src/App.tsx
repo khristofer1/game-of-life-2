@@ -229,6 +229,7 @@ export default function App() {
       updatedTask.completed = false;
       updatedTask.completedAt = null;
       updatedTask.gemClaimed = false;
+			updatedTask.isArchived = false;
 
       const todayDay = new Date(now).setHours(0, 0, 0, 0);
       const otherCompletedTasks = allTasks.some(t => 
