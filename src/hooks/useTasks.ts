@@ -1,5 +1,5 @@
 // src/hooks/useTasks.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllTasks, saveTaskToDB, getMeta, setMeta, deleteTaskFromDB } from '../services/db';
 import type { Quest } from '../types/quest';
 import type { User } from 'firebase/auth';
@@ -12,6 +12,11 @@ export function useTasks(user: User | null) {
 	const [completedTasks, setCompletedTasks] = useState<Quest[]>([]);
   const [breakTasks, setBreakTasks] = useState<Quest[]>([]);
 	const [deletedTasks, setDeletedTasks] = useState<Quest[]>([]);
+  const archivedTasks = useMemo(() => 
+    allTasks.filter(t => !t.deletedAt && t.isOneTime && t.completed && t.gemClaimed)
+      .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)),
+    [allTasks]
+  );
 
 	// Game Economy State
 	const [gems, setGems] = useState<number>(0);
@@ -271,6 +276,7 @@ export function useTasks(user: User | null) {
 		completedTasks,
     breakTasks,
 		deletedTasks,
+    archivedTasks,
 		gems,
 		streak,
 		freezes,

@@ -30,7 +30,7 @@ export default function App() {
 	}, []);
 	
 	// Pull everything we need from our custom background engine!
-	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, gems, freezes, streak, forceRefresh } = useTasks(user);
+	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, freezes, streak, forceRefresh } = useTasks(user);
 
 	// --- TOAST NOTIFICATION SYSTEM ---
   const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete' | 'restore' | 'break', taskId: number } | null>(null);
@@ -43,7 +43,7 @@ export default function App() {
   };
 
 	// React State to manage the bottom navigation
-	const [activeTab, setActiveTab] = useState<'active' | 'coming' | 'completed' | 'break' | 'deleted'>('active');
+	const [activeTab, setActiveTab] = useState<'active' | 'coming' | 'completed' | 'break' | 'deleted' | 'archived'>('active');
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
@@ -63,10 +63,10 @@ export default function App() {
 			const lastSummary = await getMeta("lastSummaryDate", 0);
 
 			if (today > lastSummary) {
-				// 🧹 1. THE 3-DAY HISTORY PURGE
-				const threeDaysAgo = today - (3 * 24 * 60 * 60 * 1000);
+				// 🧹 1. THE 7-DAY HISTORY PURGE
+				const sevenDaysAgo = today - (7 * 24 * 60 * 60 * 1000);
 				const tasksToPurge = allTasks.filter(t =>
-					t.isOneTime && t.completed && t.gemClaimed && t.completedAt && t.completedAt < threeDaysAgo
+					t.isOneTime && t.completed && t.gemClaimed && t.completedAt && t.completedAt < sevenDaysAgo
 				);
 
 				for (const task of tasksToPurge) {
@@ -380,6 +380,7 @@ export default function App() {
 	if (activeTab === 'completed') displayedTasks = completedTasks;
 	if (activeTab === 'break') displayedTasks = breakTasks;
 	if (activeTab === 'deleted') displayedTasks = deletedTasks;
+	if (activeTab === 'archived') displayedTasks = archivedTasks;
 
 	return (
 		<div className="min-h-screen pb-20 bg-gray-50/50 animate-fade-in">
@@ -524,6 +525,14 @@ export default function App() {
 							>
 								<span className="text-lg">☕</span> Break
 							</button>
+
+							<button 
+								onClick={() => { setActiveTab('archived'); setIsMoreMenuOpen(false); }}
+								className={`px-4 py-3 text-sm font-bold text-left hover:bg-blue-50 transition-colors border-t border-gray-100 flex items-center gap-2 ${activeTab === 'archived' ? 'text-blue-500 bg-blue-50/50' : 'text-dark'}`}
+							>
+								<span className="text-lg">🏛️</span> Archived
+							</button>
+
 							<button 
 								onClick={() => { setActiveTab('deleted'); setIsMoreMenuOpen(false); }}
 								className={`px-4 py-3 text-sm font-bold text-left hover:bg-red-50 transition-colors border-t border-gray-100 flex items-center gap-2 ${activeTab === 'deleted' ? 'text-red-500 bg-red-50/50' : 'text-dark'}`}
