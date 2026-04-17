@@ -20,6 +20,15 @@ export default function App() {
 	const [user, setUser] = useState<User | null>(null);
 	const [isAuthLoading, setIsAuthLoading] = useState(true);
 
+	// --- UI & SETTINGS STATE ---
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const [volumeLevel, setVolumeLevel] = useState(3);
+
+	// Load saved volume on mount
+	useEffect(() => {
+		getMeta("volumeLevel", 3).then(setVolumeLevel);
+	}, []);
+
 	useEffect(() => {
 		// listens for login/logout events automatically
 		const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -215,8 +224,13 @@ export default function App() {
       
       // 1. Play the Sound (with error handling in case the browser blocks it)
       const audio = new Audio(successSound);
-      audio.volume = 0.6; // 60% volume so it isn't deafening!
-      audio.play().catch(error => console.log("Audio blocked by browser:", error));
+			const volumeMap = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+			audio.volume = volumeMap[volumeLevel];
+
+			// Only play if it isn't muted!
+			if (volumeLevel > 0) {
+				audio.play().catch(error => console.log("Audio blocked by browser:", error));
+			}
 
       // 2. Fire the Confetti!
       confetti({
@@ -422,9 +436,60 @@ export default function App() {
 							<span>{gems}</span>
 						</button>
 
-						<button onClick={logoutFromGoogle} className="text-xs font-bold text-muted hover:text-dark mr-2">
-              Logout
-            </button>
+						<div className="relative">
+							<button
+								onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+								className="text-2xl p-1 hover:bg-gray-100 rounded-full transition-all focus:outline-none cursor-pointer hover:scale-110 active:scale-95 grayscale hover:grayscale-0"
+								title="Settings"
+							>
+								⚙️
+							</button>
+
+							{isSettingsOpen && (
+								<div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in flex flex-col">
+									
+									{/* Volume Controls */}
+									<div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+										<span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block text-center">
+											Sound Effects
+										</span>
+										<div className="flex justify-between items-center gap-1">
+											{[0, 1, 2, 3, 4, 5].map((level) => (
+												<button
+													key={level}
+													onClick={async () => {
+														setVolumeLevel(level);
+														await setMeta("volumeLevel", level);
+														
+														// Play a tiny test sound when they click a level (if not muted)
+														if (level > 0) {
+															const testAudio = new Audio(successSound);
+															testAudio.volume = [0, 0.2, 0.4, 0.6, 0.8, 1.0][level];
+															testAudio.play().catch(() => {});
+														}
+													}}
+													className={`w-8 h-8 rounded-full text-xs flex items-center justify-center transition-all ${
+														volumeLevel === level 
+															? 'bg-orange-500 text-white font-bold shadow-md scale-110' 
+															: 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-100'
+													}`}
+												>
+													{level === 0 ? '🔇' : level}
+												</button>
+											))}
+										</div>
+									</div>
+
+									{/* Logout Button */}
+									<button 
+										onClick={logoutFromGoogle} 
+										className="px-4 py-3 text-sm font-bold text-left text-red-500 hover:bg-red-50 transition-colors flex items-center gap-3"
+									>
+										<span className="text-lg">🚪</span> Logout
+									</button>
+								</div>
+							)}
+						</div>
 					</div>
 				</div>
 			</header>
