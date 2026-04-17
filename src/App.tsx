@@ -48,8 +48,15 @@ export default function App() {
 
 	// Load saved volume on mount
 	useEffect(() => {
-		getMeta("volumeLevel", 3).then(setVolumeLevel);
-	}, []);
+		// Only fetch the volume AFTER Firebase confirms who is logged in!
+		if (user) {
+			getMeta("volumeLevel", 3).then((savedVolume) => {
+				// Wrap it in Number() to protect against strict-equality bugs 
+				// just in case the database saved it as a string (e.g., "2" instead of 2)
+				setVolumeLevel(Number(savedVolume));
+			});
+		}
+	}, [user]);
 
 	useEffect(() => {
 		// listens for login/logout events automatically
