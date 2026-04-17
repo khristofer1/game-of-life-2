@@ -43,7 +43,7 @@ export function useTasks(user: User | null) {
         // 1. The Recycle Bin Sweeper
         if (task.deletedAt) {
           const timeInBin = now - task.deletedAt;
-          if (timeInBin > 24 * 60 * 60 * 1000) {
+          if (timeInBin > 7 * 24 * 60 * 60 * 1000) {
             if (task.id) await deleteTaskFromDB(task.id);
             continue; 
           }

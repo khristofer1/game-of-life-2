@@ -110,8 +110,11 @@ export default function App() {
 	const handleReviveCard = async (taskId: number) => {
 		if (gems < 1) return alert("Not enough gems to revive this card!");
 
-		const taskToRevive = [...activeTasks, ...comingTasks].find(t => t.id === taskId);
+		const taskToRevive = [...activeTasks, ...comingTasks, ...deletedTasks].find(t => t.id === taskId);
 		if (!taskToRevive) return;
+
+		// Removes it from the "Trash" state
+		delete taskToRevive.deletedAt;
 
 		// Deduct 1 gem
 		const newGems = gems - 1;
