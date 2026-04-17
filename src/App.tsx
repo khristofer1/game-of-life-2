@@ -23,6 +23,28 @@ export default function App() {
 	// --- UI & SETTINGS STATE ---
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [volumeLevel, setVolumeLevel] = useState(3);
+	const settingsRef = useRef<HTMLDivElement>(null);
+	const moreMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			// If the Settings menu is open AND the click was outside of it -> Close it
+			if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+				setIsSettingsOpen(false);
+			}
+			
+			// If the More menu is open AND the click was outside of it -> Close it
+			if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+				setIsMoreMenuOpen(false);
+			}
+		};
+
+		// Attach the listener
+		document.addEventListener("mousedown", handleClickOutside);
+		
+		// Clean up the listener when the component unmounts
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
 
 	// Load saved volume on mount
 	useEffect(() => {
@@ -436,7 +458,7 @@ export default function App() {
 							<span>{gems}</span>
 						</button>
 
-						<div className="relative">
+						<div className="relative" ref={settingsRef}>
 							<button
 								onClick={() => setIsSettingsOpen(!isSettingsOpen)}
 								className="text-2xl p-1 hover:bg-gray-100 rounded-full transition-all focus:outline-none cursor-pointer hover:scale-110 active:scale-95 grayscale hover:grayscale-0"
@@ -567,7 +589,7 @@ export default function App() {
 				</button>
 
 				{/* MORE MENU (3 DOTS) */}
-				<div className="flex-1 flex justify-center relative">
+				<div className="flex-1 flex justify-center relative" ref={moreMenuRef}>
 					<button
 						onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
 						className={`flex flex-col items-center gap-1 transition-all ${
