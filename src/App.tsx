@@ -30,7 +30,7 @@ export default function App() {
 	}, []);
 	
 	// Pull everything we need from our custom background engine!
-	const { activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, gems, freezes, streak, forceRefresh } = useTasks(user);
+	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, gems, freezes, streak, forceRefresh } = useTasks(user);
 
 	// --- TOAST NOTIFICATION SYSTEM ---
   const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete' | 'restore' | 'break', taskId: number } | null>(null);
@@ -56,41 +56,50 @@ export default function App() {
 	const hasCheckedSummary = useRef(false);
 
 	// The Daily Check Engine
+	// The Daily Check Engine & 3-Day Purge
 	useEffect(() => {
 		const checkDailySummary = async () => {
 			const today = new Date().setHours(0, 0, 0, 0);
 			const lastSummary = await getMeta("lastSummaryDate", 0);
 
 			if (today > lastSummary) {
+				// 🧹 1. THE 3-DAY HISTORY PURGE
+				const threeDaysAgo = today - (3 * 24 * 60 * 60 * 1000);
+				const tasksToPurge = allTasks.filter(t =>
+					t.isOneTime && t.completed && t.gemClaimed && t.completedAt && t.completedAt < threeDaysAgo
+				);
+
+				for (const task of tasksToPurge) {
+					if (task.id) await deleteTaskFromDB(task.id);
+				}
+
+				// 📊 2. THE DAILY SUMMARY
 				const yesterdayStart = today - (24 * 60 * 60 * 1000);
 
-				// Find cards completed yesterday
-				const completedYesterday = [...activeTasks, ...completedTasks].filter(t =>
+				// Now searching allTasks so it catches archived one-time cards!
+				const completedYesterday = allTasks.filter(t =>
 					t.completed && t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today
 				);
 
-				// Find expired one-time cards (deadline passed, not completed)
-				const expiredOneTime = [...activeTasks, ...comingTasks].filter(t =>
+				const expiredOneTime = allTasks.filter(t =>
 					t.isOneTime && !t.completed && !t.deletedAt && t.deadline && t.deadline < today
 				);
 
-				// Only show modal if there is actual data to summarize
 				if (completedYesterday.length > 0 || expiredOneTime.length > 0) {
 					setSummaryData({ completed: completedYesterday, expired: expiredOneTime });
 					setShowSummaryModal(true);
 				} else {
-					// Nothing happened yesterday, silently update the tracker
 					await setMeta("lastSummaryDate", today);
 				}
 			}
 		};
 
-		// Only run the check once we have actually loaded tasks from Firebase
-		if (!hasCheckedSummary.current && (activeTasks.length > 0 || completedTasks.length > 0)) {
+		// Run check once data is loaded
+		if (!hasCheckedSummary.current && allTasks.length > 0) {
 			checkDailySummary();
 			hasCheckedSummary.current = true;
 		}
-	}, [activeTasks, completedTasks]);
+	}, [allTasks]);
 
 	const handleCloseSummary = async () => {
 		setShowSummaryModal(false);

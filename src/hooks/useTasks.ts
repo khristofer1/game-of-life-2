@@ -6,6 +6,7 @@ import type { User } from 'firebase/auth';
 
 export function useTasks(user: User | null) {
 	// 1. React State: This replaces your manual DOM manipulation
+  const [allTasks, setAllTasks] = useState<Quest[]>([]);
 	const [activeTasks, setActiveTasks] = useState<Quest[]>([]);
 	const [comingTasks, setComingTasks] = useState<Quest[]>([]);
 	const [completedTasks, setCompletedTasks] = useState<Quest[]>([]);
@@ -194,16 +195,26 @@ export function useTasks(user: User | null) {
         .sort((a, b) => getRealDeadline(a) - getRealDeadline(b));
 
       const coming = processedTasks
-        .filter(t => !t.deletedAt && !t.completed && !t.isArchived && !t.isBreak && checkIsComing(t))
+        .filter(t => {
+          if (t.deletedAt || t.isBreak) return false;
+          
+          // Condition A: Standard pending/missed tasks
+          const isPending = t.startDate && now < t.startDate;
+          const isMissedRecurring = !t.isOneTime && !t.completed && now >= ((t.cycleStart || 0) + (t.activeDeadlineMs || 0));
+          
+          // Condition B: Rewarded recurring quests waiting for next cycle
+          const isRewardedRecurring = t.completed && t.gemClaimed && !t.isOneTime;
+
+          return isPending || isMissedRecurring || isRewardedRecurring;
+        })
         .sort((a, b) => {
-          // Sort Coming tasks by when they are next available
           const aNext = (a.startDate && now < a.startDate) ? (a.startDate) : ((a.cycleStart || 0) + a.durationMs);
           const bNext = (b.startDate && now < b.startDate) ? (b.startDate) : ((b.cycleStart || 0) + b.durationMs);
           return aNext - bNext;
         });
 
       const completed = processedTasks
-        .filter(t => !t.deletedAt && t.completed && !t.isArchived && !t.isBreak)
+        .filter(t => !t.deletedAt && t.completed && !t.gemClaimed && !t.isArchived && !t.isBreak) 
         .sort((a, b) => getRealDeadline(a) - getRealDeadline(b));
 
 			const deleted = processedTasks
@@ -222,6 +233,7 @@ export function useTasks(user: User | null) {
         });
 
 			// Update React State
+      setAllTasks(processedTasks);
 			setActiveTasks(active);
 			setComingTasks(coming);
 			setCompletedTasks(completed);
@@ -253,6 +265,7 @@ export function useTasks(user: User | null) {
 
 	// Return the data so your UI components can use it
 	return {
+    allTasks,
 		activeTasks,
 		comingTasks,
 		completedTasks,
