@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 firebase-debug.log*
+.npm
 
 node_modules
 dist
@@ -24,3 +25,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment
+.env
+.env.local
+.env.development.local
+
+# System files
+Thumbs.db
