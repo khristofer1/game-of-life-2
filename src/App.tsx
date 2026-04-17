@@ -173,7 +173,6 @@ export default function App() {
 	};
 
 	const handleToggleComplete = async (id: number) => {
-    const allTasks = [...activeTasks, ...comingTasks, ...completedTasks];
     const taskToUpdate = allTasks.find(t => t.id === id);
     if (!taskToUpdate) return;
 
@@ -295,7 +294,6 @@ export default function App() {
 
 	// 1. Click "Edit" on a card
 	const handleEdit = (id: number) => {
-		const allTasks = [...activeTasks, ...comingTasks, ...completedTasks, ...breakTasks];
 		const quest = allTasks.find(t => t.id === id);
 		if (quest) {
 			setEditingQuest(quest);
@@ -304,7 +302,6 @@ export default function App() {
 	};
 
 	const handleDelete = async (id: number) => {
-    const allTasks = [...activeTasks, ...comingTasks, ...completedTasks, ...breakTasks];
     const taskToTrash = allTasks.find(t => t.id === id);
     
     if (taskToTrash) {
