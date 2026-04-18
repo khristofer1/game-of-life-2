@@ -33,7 +33,7 @@ export default function App() {
 			if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
 				setIsSettingsOpen(false);
 			}
-			
+
 			// If the More menu is open AND the click was outside of it -> Close it
 			if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
 				setIsMoreMenuOpen(false);
@@ -42,7 +42,7 @@ export default function App() {
 
 		// Attach the listener
 		document.addEventListener("mousedown", handleClickOutside);
-		
+
 		// Clean up the listener when the component unmounts
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, []);
@@ -67,19 +67,19 @@ export default function App() {
 		});
 		return unsubscribe;
 	}, []);
-	
+
 	// Pull everything we need from our custom background engine!
 	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, freezes, streak, forceRefresh } = useTasks(user);
 
 	// --- TOAST NOTIFICATION SYSTEM ---
-  const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete' | 'restore' | 'break', taskId: number } | null>(null);
-  const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete' | 'restore' | 'break', taskId: number } | null>(null);
+	const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const triggerToast = (message: string, action: 'delete' | 'complete' | 'restore' | 'break', taskId: number) => {
-    if (toastTimeout.current) clearTimeout(toastTimeout.current);
-    setToast({ id: Date.now(), message, action, taskId });
-    // Toast disappears automatically after 5 seconds
-    toastTimeout.current = setTimeout(() => setToast(null), 5000);
-  };
+		if (toastTimeout.current) clearTimeout(toastTimeout.current);
+		setToast({ id: Date.now(), message, action, taskId });
+		// Toast disappears automatically after 5 seconds
+		toastTimeout.current = setTimeout(() => setToast(null), 5000);
+	};
 
 	// React State to manage the bottom navigation
 	const [activeTab, setActiveTab] = useState<'active' | 'coming' | 'completed' | 'break' | 'deleted' | 'archived'>('active');
@@ -88,7 +88,7 @@ export default function App() {
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [modalDefaultIsBreak, setModalDefaultIsBreak] = useState(false);
 	const [isShopOpen, setIsShopOpen] = useState(false);
-	
+
 	// --- DAILY SUMMARY STATE ---
 	const [showSummaryModal, setShowSummaryModal] = useState(false);
 	const [summaryData, setSummaryData] = useState({ completed: [] as Quest[], expired: [] as Quest[], gemsGained: 0 });
@@ -104,26 +104,26 @@ export default function App() {
 			const yesterdayStart = today - (24 * 60 * 60 * 1000);
 
 			const completedYesterday = allTasks.filter(t =>
-					t.completed && t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today
+				t.completed && t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today
 			);
 
 			const expiredOneTime = allTasks.filter(t =>
-					t.isOneTime && !t.completed && !t.deletedAt && t.deadline && t.deadline < today
+				t.isOneTime && !t.completed && !t.deletedAt && t.deadline && t.deadline < today
 			);
 
 			// Find breaks taken yesterday to include them in the gem math
-			const breaksYesterday = allTasks.filter(t => 
-					t.isBreak && t.lastDoneAt && t.lastDoneAt >= yesterdayStart && t.lastDoneAt < today
+			const breaksYesterday = allTasks.filter(t =>
+				t.isBreak && t.lastDoneAt && t.lastDoneAt >= yesterdayStart && t.lastDoneAt < today
 			);
 
 			// 1 gem per completed quest + 1 gem per break taken
 			const totalGemsGained = completedYesterday.length + breaksYesterday.length;
 
 			// ✅ Update the state setter to include the gemsGained
-			setSummaryData({ 
-					completed: completedYesterday, 
-					expired: expiredOneTime, 
-					gemsGained: totalGemsGained 
+			setSummaryData({
+				completed: completedYesterday,
+				expired: expiredOneTime,
+				gemsGained: totalGemsGained
 			});
 
 			// 🧹 2. ONLY AUTO-POPUP & PURGE ONCE PER DAY
@@ -189,12 +189,12 @@ export default function App() {
 	};
 
 	if (isAuthLoading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-muted animate-pulse">Loading Game of Life...</div>;
-  }
+		return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-muted animate-pulse">Loading Game of Life...</div>;
+	}
 
-  if (!user) {
-    return <Login />;
-  }
+	if (!user) {
+		return <Login />;
+	}
 
 	// --- Action Handlers (Stubs) ---
 
@@ -224,48 +224,48 @@ export default function App() {
 	};
 
 	const handleToggleComplete = async (id: number) => {
-    const taskToUpdate = allTasks.find(t => t.id === id);
-    if (!taskToUpdate) return;
+		const taskToUpdate = allTasks.find(t => t.id === id);
+		if (!taskToUpdate) return;
 
-    const now = Date.now();
-    const updatedTask = { ...taskToUpdate };
+		const now = Date.now();
+		const updatedTask = { ...taskToUpdate };
 
-    // Toggling to COMPLETED
-    if (!updatedTask.completed) {
-      updatedTask.completed = true;
-      updatedTask.completedAt = now;
-      updatedTask.gemClaimed = false;
+		// Toggling to COMPLETED
+		if (!updatedTask.completed) {
+			updatedTask.completed = true;
+			updatedTask.completedAt = now;
+			updatedTask.gemClaimed = false;
 
-      let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
-      let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
-      let timeLeft = activeDeadline - now;
+			let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
+			let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
+			let timeLeft = activeDeadline - now;
 
-      if (timeLeft > 0) {
-        updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
-      } else {
-        updatedTask.energyPercent = 0;
-      }
+			if (timeLeft > 0) {
+				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
+			} else {
+				updatedTask.energyPercent = 0;
+			}
 
-      // STREAK ADD LOGIC
-      const lastDate = await getMeta("lastStreakUpdate", 0);
-      let globalStreak = await getMeta("globalStreak", 0);
-      const todayDay = new Date(now).setHours(0, 0, 0, 0);
-      const lastStreakDay = new Date(lastDate).setHours(0, 0, 0, 0);
+			// STREAK ADD LOGIC
+			const lastDate = await getMeta("lastStreakUpdate", 0);
+			let globalStreak = await getMeta("globalStreak", 0);
+			const todayDay = new Date(now).setHours(0, 0, 0, 0);
+			const lastStreakDay = new Date(lastDate).setHours(0, 0, 0, 0);
 
-      if (lastDate === 0 || todayDay > lastStreakDay) {
-        globalStreak += 1;
-        await setMeta("globalStreak", globalStreak);
-        await setMeta("lastStreakUpdate", now);
-      }
-      
-      await saveTaskToDB(updatedTask);
-      forceRefresh();
-      triggerToast("Card completed!", 'complete', id);
+			if (lastDate === 0 || todayDay > lastStreakDay) {
+				globalStreak += 1;
+				await setMeta("globalStreak", globalStreak);
+				await setMeta("lastStreakUpdate", now);
+			}
+
+			await saveTaskToDB(updatedTask);
+			forceRefresh();
+			triggerToast("Card completed!", 'complete', id);
 
 			// 🎇 THE CELEBRATION ENGINE 🎇
-      
-      // 1. Play the Sound (with error handling in case the browser blocks it)
-      const audio = new Audio(successSound);
+
+			// 1. Play the Sound (with error handling in case the browser blocks it)
+			const audio = new Audio(successSound);
 			const volumeMap = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
 			audio.volume = volumeMap[volumeLevel];
 
@@ -274,42 +274,42 @@ export default function App() {
 				audio.play().catch(error => console.log("Audio blocked by browser:", error));
 			}
 
-      // 2. Fire the Confetti!
-      confetti({
-        particleCount: 150, // Number of pieces
-        spread: 80,         // How wide the explosion is
-        origin: { y: 0.6 }, // Starts slightly below the middle of the screen
-        colors: ['#f97316', '#fbbf24', '#34d399', '#3b82f6'] // Tailwind Orange, Yellow, Green, Blue
-      });
+			// 2. Fire the Confetti!
+			confetti({
+				particleCount: 150, // Number of pieces
+				spread: 80,         // How wide the explosion is
+				origin: { y: 0.6 }, // Starts slightly below the middle of the screen
+				colors: ['#f97316', '#fbbf24', '#34d399', '#3b82f6'] // Tailwind Orange, Yellow, Green, Blue
+			});
 
-    // UNDOING a Completion (Moving back to Active)
-    } else {
-      updatedTask.completed = false;
-      updatedTask.completedAt = null;
-      updatedTask.gemClaimed = false;
+			// UNDOING a Completion (Moving back to Active)
+		} else {
+			updatedTask.completed = false;
+			updatedTask.completedAt = null;
+			updatedTask.gemClaimed = false;
 			updatedTask.isArchived = false;
 
-      const todayDay = new Date(now).setHours(0, 0, 0, 0);
-      const otherCompletedTasks = allTasks.some(t => 
-        t.id !== updatedTask.id && t.completed && t.completedAt && 
-        new Date(t.completedAt).setHours(0, 0, 0, 0) === todayDay
-      );
+			const todayDay = new Date(now).setHours(0, 0, 0, 0);
+			const otherCompletedTasks = allTasks.some(t =>
+				t.id !== updatedTask.id && t.completed && t.completedAt &&
+				new Date(t.completedAt).setHours(0, 0, 0, 0) === todayDay
+			);
 
-      if (!otherCompletedTasks) {
-        let globalStreak = await getMeta("globalStreak", 0);
-        if (globalStreak > 0) {
-          globalStreak -= 1;
-          await setMeta("globalStreak", globalStreak);
-          const yesterday = now - (24 * 60 * 60 * 1000);
-          await setMeta("lastStreakUpdate", yesterday);
-        }
-      }
+			if (!otherCompletedTasks) {
+				let globalStreak = await getMeta("globalStreak", 0);
+				if (globalStreak > 0) {
+					globalStreak -= 1;
+					await setMeta("globalStreak", globalStreak);
+					const yesterday = now - (24 * 60 * 60 * 1000);
+					await setMeta("lastStreakUpdate", yesterday);
+				}
+			}
 
-      await saveTaskToDB(updatedTask);
-      forceRefresh();
-      triggerToast("Card restored to active.", 'complete', id);
-    }
-  };
+			await saveTaskToDB(updatedTask);
+			forceRefresh();
+			triggerToast("Card restored to active.", 'complete', id);
+		}
+	};
 
 	const handleTakeBreak = async (id: number) => {
 		const task = breakTasks.find(t => t.id === id);
@@ -321,14 +321,14 @@ export default function App() {
 
 		// 1. Reset the cooldown timer
 		task.lastDoneAt = Date.now();
-		task.energyPercent = 0; 
+		task.energyPercent = 0;
 		task.gemClaimed = false;
 
 		await saveTaskToDB(task);
 		forceRefresh();
-		
+
 		// 2. Change the toast to reflect the delayed gratification!
-		triggerToast(`Break taken! Gem will arrive at midnight 🌙`, 'break', id); 
+		triggerToast(`Break taken! Gem will arrive at midnight 🌙`, 'break', id);
 	};
 
 	const handleUndoBreak = async (id: number) => {
@@ -358,15 +358,15 @@ export default function App() {
 	};
 
 	const handleDelete = async (id: number) => {
-    const taskToTrash = allTasks.find(t => t.id === id);
-    
-    if (taskToTrash) {
-      taskToTrash.deletedAt = Date.now();
-      await saveTaskToDB(taskToTrash);
-      forceRefresh();
-      triggerToast("Card moved to trash.", 'delete', id);
-    }
-  };
+		const taskToTrash = allTasks.find(t => t.id === id);
+
+		if (taskToTrash) {
+			taskToTrash.deletedAt = Date.now();
+			await saveTaskToDB(taskToTrash);
+			forceRefresh();
+			triggerToast("Card moved to trash.", 'delete', id);
+		}
+	};
 
 	const handleRestore = async (id: number) => {
 		const task = deletedTasks.find(t => t.id === id);
@@ -444,7 +444,7 @@ export default function App() {
 			{/* TOP HEADER */}
 			<header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 mb-8">
 				<div className="max-w-7xl mx-auto flex justify-between items-center">
-					<button 
+					<button
 						onClick={() => setShowSummaryModal(true)}
 						className="flex items-center gap-3 focus:outline-none group transition-transform hover:scale-105 active:scale-95 cursor-pointer"
 						title="View Daily Summary"
@@ -455,7 +455,7 @@ export default function App() {
 							alt="Game of Life Logo"
 							className="w-8 h-8 text-orange-500 group-hover:drop-shadow-md transition-all"
 						/>
-						
+
 						<h1 className="text-2xl font-bold tracking-tight text-dark hidden sm:block group-hover:text-orange-600 transition-colors">
 							Game of Life
 						</h1>
@@ -489,7 +489,7 @@ export default function App() {
 
 							{isSettingsOpen && (
 								<div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in flex flex-col">
-									
+
 									{/* Volume Controls */}
 									<div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
 										<span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block text-center">
@@ -502,19 +502,18 @@ export default function App() {
 													onClick={async () => {
 														setVolumeLevel(level);
 														await setMeta("volumeLevel", level);
-														
+
 														// Play a tiny test sound when they click a level (if not muted)
 														if (level > 0) {
 															const testAudio = new Audio(successSound);
 															testAudio.volume = [0, 0.2, 0.4, 0.6, 0.8, 1.0][level];
-															testAudio.play().catch(() => {});
+															testAudio.play().catch(() => { });
 														}
 													}}
-													className={`w-8 h-8 rounded-full text-xs flex items-center justify-center transition-all ${
-														volumeLevel === level 
-															? 'bg-orange-500 text-white font-bold shadow-md scale-110' 
+													className={`w-8 h-8 rounded-full text-xs flex items-center justify-center transition-all ${volumeLevel === level
+															? 'bg-orange-500 text-white font-bold shadow-md scale-110'
 															: 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-100'
-													}`}
+														}`}
 												>
 													{level === 0 ? '🔇' : level}
 												</button>
@@ -523,8 +522,8 @@ export default function App() {
 									</div>
 
 									{/* Logout Button */}
-									<button 
-										onClick={logoutFromGoogle} 
+									<button
+										onClick={logoutFromGoogle}
 										className="px-4 py-3 text-sm font-bold text-left text-red-500 hover:bg-red-50 transition-colors flex items-center gap-3"
 									>
 										<span className="text-lg">🚪</span> Logout
@@ -612,11 +611,10 @@ export default function App() {
 				<div className="flex-1 flex justify-center relative" ref={moreMenuRef}>
 					<button
 						onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-						className={`flex flex-col items-center gap-1 transition-all ${
-							(activeTab === 'deleted' || activeTab === 'break')
+						className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'deleted' || activeTab === 'break')
 								? 'text-orange-500 scale-105'
 								: 'text-gray-400 hover:text-dark'
-						}`}
+							}`}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 							<path strokeLinecap="round" strokeLinejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
@@ -627,21 +625,21 @@ export default function App() {
 					{/* THE POPUP DROPDOWN */}
 					{isMoreMenuOpen && (
 						<div className="absolute bottom-full mb-4 right-4 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in flex flex-col">
-							<button 
+							<button
 								onClick={() => { setActiveTab('break'); setIsMoreMenuOpen(false); }}
 								className={`px-4 py-3 text-sm font-bold text-left hover:bg-orange-50 transition-colors flex items-center gap-2 ${activeTab === 'break' ? 'text-orange-500 bg-orange-50/50' : 'text-dark'}`}
 							>
 								<span className="text-lg">☕</span> Break
 							</button>
 
-							<button 
+							<button
 								onClick={() => { setActiveTab('archived'); setIsMoreMenuOpen(false); }}
 								className={`px-4 py-3 text-sm font-bold text-left hover:bg-blue-50 transition-colors border-t border-gray-100 flex items-center gap-2 ${activeTab === 'archived' ? 'text-blue-500 bg-blue-50/50' : 'text-dark'}`}
 							>
 								<span className="text-lg">🏛️</span> Archived
 							</button>
 
-							<button 
+							<button
 								onClick={() => { setActiveTab('deleted'); setIsMoreMenuOpen(false); }}
 								className={`px-4 py-3 text-sm font-bold text-left hover:bg-red-50 transition-colors border-t border-gray-100 flex items-center gap-2 ${activeTab === 'deleted' ? 'text-red-500 bg-red-50/50' : 'text-dark'}`}
 							>
@@ -663,30 +661,30 @@ export default function App() {
 			</button>
 
 			{/* TOAST NOTIFICATION */}
-      {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-          <div className="bg-dark text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-4 text-sm font-semibold border border-gray-700">
-            <span>{toast.message}</span>
-            <div className="w-px h-4 bg-gray-600"></div>
-            <button 
-              onClick={() => {
-                // Route the undo click to the correct function!
-                if (toast.action === 'delete') handleRestore(toast.taskId);
-                if (toast.action === 'complete') handleToggleComplete(toast.taskId);
+			{toast && (
+				<div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+					<div className="bg-dark text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-4 text-sm font-semibold border border-gray-700">
+						<span>{toast.message}</span>
+						<div className="w-px h-4 bg-gray-600"></div>
+						<button
+							onClick={() => {
+								// Route the undo click to the correct function!
+								if (toast.action === 'delete') handleRestore(toast.taskId);
+								if (toast.action === 'complete') handleToggleComplete(toast.taskId);
 								if (toast.action === 'restore') handleDelete(toast.taskId);
 								if (toast.action === 'break') handleUndoBreak(toast.taskId);
-                
-                // Close the toast immediately
-                setToast(null);
-                if (toastTimeout.current) clearTimeout(toastTimeout.current);
-              }}
-              className="text-orange-400 hover:text-orange-300 transition-colors uppercase tracking-wider text-xs px-1"
-            >
-              Undo
-            </button>
-          </div>
-        </div>
-      )}
+
+								// Close the toast immediately
+								setToast(null);
+								if (toastTimeout.current) clearTimeout(toastTimeout.current);
+							}}
+							className="text-orange-400 hover:text-orange-300 transition-colors uppercase tracking-wider text-xs px-1"
+						>
+							Undo
+						</button>
+					</div>
+				</div>
+			)}
 
 			{/* MODALS */}
 			<TaskModal

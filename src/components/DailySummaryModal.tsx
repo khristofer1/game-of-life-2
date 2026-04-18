@@ -88,8 +88,8 @@ export function DailySummaryModal({
                       onClick={() => onRevive(quest.id!)}
                       disabled={gems < 1}
                       className={`w-full py-2 border rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-sm transition-all ${gems >= 1
-                          ? 'bg-white border-red-200 text-red-600 hover:bg-red-600 hover:text-white cursor-pointer'
-                          : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'
+                        ? 'bg-white border-red-200 text-red-600 hover:bg-red-600 hover:text-white cursor-pointer'
+                        : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'
                         }`}
                     >
                       <span>{gems >= 1 ? 'Revive Card' : 'Not Enough Gems'}</span>
