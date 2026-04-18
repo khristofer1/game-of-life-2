@@ -1,3 +1,4 @@
+// src/App.tsx
 import { useState, useRef, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { User } from 'firebase/auth';
@@ -90,7 +91,7 @@ export default function App() {
 	
 	// --- DAILY SUMMARY STATE ---
 	const [showSummaryModal, setShowSummaryModal] = useState(false);
-	const [summaryData, setSummaryData] = useState({ completed: [] as Quest[], expired: [] as Quest[] });
+	const [summaryData, setSummaryData] = useState({ completed: [] as Quest[], expired: [] as Quest[], gemsGained: 0 });
 	const hasCheckedSummary = useRef(false);
 
 	// The Daily Check Engine & 7-Day Purge
@@ -100,19 +101,30 @@ export default function App() {
 			const lastSummary = await getMeta("lastSummaryDate", 0);
 
 			// 📊 1. ALWAYS CALCULATE THE DATA
-			// We do this outside the "if" block so the Logo button always has data!
 			const yesterdayStart = today - (24 * 60 * 60 * 1000);
 
 			const completedYesterday = allTasks.filter(t =>
-				t.completed && t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today
+					t.completed && t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today
 			);
 
 			const expiredOneTime = allTasks.filter(t =>
-				t.isOneTime && !t.completed && !t.deletedAt && t.deadline && t.deadline < today
+					t.isOneTime && !t.completed && !t.deletedAt && t.deadline && t.deadline < today
 			);
 
-			// Always set the state so it is ready for manual opening
-			setSummaryData({ completed: completedYesterday, expired: expiredOneTime });
+			// Find breaks taken yesterday to include them in the gem math
+			const breaksYesterday = allTasks.filter(t => 
+					t.isBreak && t.lastDoneAt && t.lastDoneAt >= yesterdayStart && t.lastDoneAt < today
+			);
+
+			// 1 gem per completed quest + 1 gem per break taken
+			const totalGemsGained = completedYesterday.length + breaksYesterday.length;
+
+			// ✅ Update the state setter to include the gemsGained
+			setSummaryData({ 
+					completed: completedYesterday, 
+					expired: expiredOneTime, 
+					gemsGained: totalGemsGained 
+			});
 
 			// 🧹 2. ONLY AUTO-POPUP & PURGE ONCE PER DAY
 			if (today > lastSummary) {
@@ -699,6 +711,7 @@ export default function App() {
 				completedYesterday={summaryData.completed}
 				expiredQuests={summaryData.expired}
 				gems={gems}
+				gemsGained={summaryData.gemsGained}
 				onRevive={handleReviveCard}
 			/>
 		</div>

@@ -6,18 +6,27 @@ interface DailySummaryModalProps {
   onClose: () => void;
   completedYesterday: Quest[];
   expiredQuests: Quest[];
-  gems: number; // Now we will actually use this!
+  gems: number;
+  gemsGained: number;
   onRevive: (taskId: number) => void;
 }
 
-export function DailySummaryModal({ isOpen, onClose, completedYesterday, expiredQuests, gems, onRevive }: DailySummaryModalProps) {
+export function DailySummaryModal({
+  isOpen,
+  onClose,
+  completedYesterday,
+  expiredQuests,
+  gems,
+  gemsGained,
+  onRevive
+}: DailySummaryModalProps) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-0 flex items-center justify-center">
       <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
       <div className="relative w-full max-w-md bg-white rounded-4xl shadow-2xl modal-enter overflow-hidden flex flex-col max-h-[85vh]">
-        
+
         <div className="bg-dark px-8 py-6 text-center shrink-0">
           <h2 className="text-2xl font-bold text-white mb-2">Daily Summary</h2>
           {/* ✅ UPDATED: Show their current gem balance here */}
@@ -27,7 +36,7 @@ export function DailySummaryModal({ isOpen, onClose, completedYesterday, expired
         </div>
 
         <div className="px-8 py-6 overflow-y-auto custom-scrollbar space-y-8">
-          
+
           {/* YESTERDAY'S WINS */}
           <div>
             <h3 className="text-lg font-bold text-dark mb-4 flex items-center gap-2">
@@ -47,6 +56,20 @@ export function DailySummaryModal({ isOpen, onClose, completedYesterday, expired
             )}
           </div>
 
+          {/* Loot Drop Display */}
+          {gemsGained > 0 && (
+            <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 mb-6 flex items-center justify-between shadow-inner">
+              <div>
+                <h3 className="text-orange-800 font-bold text-sm uppercase tracking-wider">Gems Earned</h3>
+                <p className="text-orange-600 text-xs mt-1">From yesterday's efforts</p>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100">
+                <span className="text-2xl">💎</span>
+                <span className="text-xl font-black text-orange-500">+{gemsGained}</span>
+              </div>
+            </div>
+          )}
+
           {/* EXPIRED CARDS */}
           {expiredQuests.length > 0 && (
             <div>
@@ -54,21 +77,20 @@ export function DailySummaryModal({ isOpen, onClose, completedYesterday, expired
                 <span>⚠️</span> Fallen Cards
               </h3>
               <p className="text-xs text-muted mb-4">These one-time cards expired. You can revive them for 1 Gem each to try again today.</p>
-              
+
               <div className="space-y-3">
                 {expiredQuests.map(quest => (
                   <div key={quest.id} className="flex flex-col gap-3 bg-red-50 px-4 py-4 rounded-2xl border border-red-100">
                     <div className="font-semibold text-red-900 text-sm">{quest.name}</div>
-                    
+
                     {/* ✅ UPDATED: Smart disabled state for the button */}
-                    <button 
+                    <button
                       onClick={() => onRevive(quest.id!)}
                       disabled={gems < 1}
-                      className={`w-full py-2 border rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-sm transition-all ${
-                        gems >= 1 
-                          ? 'bg-white border-red-200 text-red-600 hover:bg-red-600 hover:text-white cursor-pointer' 
+                      className={`w-full py-2 border rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-sm transition-all ${gems >= 1
+                          ? 'bg-white border-red-200 text-red-600 hover:bg-red-600 hover:text-white cursor-pointer'
                           : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'
-                      }`}
+                        }`}
                     >
                       <span>{gems >= 1 ? 'Revive Card' : 'Not Enough Gems'}</span>
                       <span className={`px-2 py-0.5 rounded-lg text-xs ${gems >= 1 ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-500'}`}>
