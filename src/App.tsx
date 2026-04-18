@@ -93,15 +93,29 @@ export default function App() {
 	const [summaryData, setSummaryData] = useState({ completed: [] as Quest[], expired: [] as Quest[] });
 	const hasCheckedSummary = useRef(false);
 
-	// The Daily Check Engine
-	// The Daily Check Engine & 3-Day Purge
+	// The Daily Check Engine & 7-Day Purge
 	useEffect(() => {
 		const checkDailySummary = async () => {
 			const today = new Date().setHours(0, 0, 0, 0);
 			const lastSummary = await getMeta("lastSummaryDate", 0);
 
+			// 📊 1. ALWAYS CALCULATE THE DATA
+			// We do this outside the "if" block so the Logo button always has data!
+			const yesterdayStart = today - (24 * 60 * 60 * 1000);
+
+			const completedYesterday = allTasks.filter(t =>
+				t.completed && t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today
+			);
+
+			const expiredOneTime = allTasks.filter(t =>
+				t.isOneTime && !t.completed && !t.deletedAt && t.deadline && t.deadline < today
+			);
+
+			// Always set the state so it is ready for manual opening
+			setSummaryData({ completed: completedYesterday, expired: expiredOneTime });
+
+			// 🧹 2. ONLY AUTO-POPUP & PURGE ONCE PER DAY
 			if (today > lastSummary) {
-				// 🧹 1. THE 7-DAY HISTORY PURGE
 				const sevenDaysAgo = today - (7 * 24 * 60 * 60 * 1000);
 				const tasksToPurge = allTasks.filter(t =>
 					t.isOneTime && t.completed && t.gemClaimed && t.completedAt && t.completedAt < sevenDaysAgo
@@ -111,20 +125,7 @@ export default function App() {
 					if (task.id) await deleteTaskFromDB(task.id);
 				}
 
-				// 📊 2. THE DAILY SUMMARY
-				const yesterdayStart = today - (24 * 60 * 60 * 1000);
-
-				// Now searching allTasks so it catches archived one-time cards!
-				const completedYesterday = allTasks.filter(t =>
-					t.completed && t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today
-				);
-
-				const expiredOneTime = allTasks.filter(t =>
-					t.isOneTime && !t.completed && !t.deletedAt && t.deadline && t.deadline < today
-				);
-
 				if (completedYesterday.length > 0 || expiredOneTime.length > 0) {
-					setSummaryData({ completed: completedYesterday, expired: expiredOneTime });
 					setShowSummaryModal(true);
 				} else {
 					await setMeta("lastSummaryDate", today);
