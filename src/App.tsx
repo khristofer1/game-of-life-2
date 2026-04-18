@@ -103,9 +103,13 @@ export default function App() {
 			// 📊 1. ALWAYS CALCULATE THE DATA
 			const yesterdayStart = today - (24 * 60 * 60 * 1000);
 
-			const completedYesterday = allTasks.filter(t =>
-				t.completed && t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today
-			);
+			const completedYesterday = allTasks.filter(t => {
+					// Look for the permanent stamp first, fallback to completedAt for older one-time cards
+					const completionTime = t.lastCompletedAt || t.completedAt;
+					
+					// We do NOT check t.completed here, because recurring quests will be false today!
+					return completionTime && completionTime >= yesterdayStart && completionTime < today;
+			});
 
 			const expiredOneTime = allTasks.filter(t =>
 				t.isOneTime && !t.completed && !t.deletedAt && t.deadline && t.deadline < today
@@ -234,6 +238,7 @@ export default function App() {
 		if (!updatedTask.completed) {
 			updatedTask.completed = true;
 			updatedTask.completedAt = now;
+			updatedTask.lastCompletedAt = now;
 			updatedTask.gemClaimed = false;
 
 			let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
@@ -286,6 +291,7 @@ export default function App() {
 		} else {
 			updatedTask.completed = false;
 			updatedTask.completedAt = null;
+			updatedTask.lastCompletedAt = null;
 			updatedTask.gemClaimed = false;
 			updatedTask.isArchived = false;
 

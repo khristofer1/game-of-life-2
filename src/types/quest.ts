@@ -54,4 +54,5 @@ export interface Quest {
 	gemClaimed?: boolean;
 	energyPercent: number;
 	streak: number;
+	lastCompletedAt?: number | null;
 }
