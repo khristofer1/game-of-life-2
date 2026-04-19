@@ -104,11 +104,14 @@ export default function App() {
 			const yesterdayStart = today - (24 * 60 * 60 * 1000);
 
 			const completedYesterday = allTasks.filter(t => {
-					// Look for the permanent stamp first, fallback to completedAt for older one-time cards
-					const completionTime = t.lastCompletedAt || t.completedAt;
+					// 1. Check the History Array for recurring quests
+					if (t.completionDates && t.completionDates.length > 0) {
+							// .some() returns true if ANY timestamp in the array was yesterday
+							return t.completionDates.some(date => date >= yesterdayStart && date < today);
+					}
 					
-					// We do NOT check t.completed here, because recurring quests will be false today!
-					return completionTime && completionTime >= yesterdayStart && completionTime < today;
+					// 2. Fallback for older one-time quests that don't have the array yet
+					return t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today;
 			});
 
 			const expiredOneTime = allTasks.filter(t =>
@@ -238,8 +241,16 @@ export default function App() {
 		if (!updatedTask.completed) {
 			updatedTask.completed = true;
 			updatedTask.completedAt = now;
-			updatedTask.lastCompletedAt = now;
 			updatedTask.gemClaimed = false;
+
+			if (!updatedTask.completionDates) updatedTask.completionDates = [];
+      
+      // 1. Add today's stamp
+      updatedTask.completionDates.push(now);
+      
+      // 2. Immediately filter out anything older than 7 days!
+      const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+      updatedTask.completionDates = updatedTask.completionDates.filter(date => date >= sevenDaysAgo);
 
 			let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
 			let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
@@ -291,9 +302,12 @@ export default function App() {
 		} else {
 			updatedTask.completed = false;
 			updatedTask.completedAt = null;
-			updatedTask.lastCompletedAt = null;
 			updatedTask.gemClaimed = false;
 			updatedTask.isArchived = false;
+
+			if (updatedTask.completionDates && updatedTask.completionDates.length > 0) {
+        updatedTask.completionDates.pop();
+      }
 
 			const todayDay = new Date(now).setHours(0, 0, 0, 0);
 			const otherCompletedTasks = allTasks.some(t =>
