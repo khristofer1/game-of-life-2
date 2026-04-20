@@ -15,6 +15,7 @@ import logo from './assets/logo.svg';
 import { DailySummaryModal } from './components/DailySummaryModal';
 import confetti from 'canvas-confetti';
 import successSound from './assets/success.mp3';
+import { TimeVaultModal } from './components/TimeVaultModal';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -88,6 +89,21 @@ export default function App() {
 		return parts.join(" ");
 	};
 
+	const formatShortTimeDeposit = (ms: number) => {
+		if (ms <= 0) return "0m";
+		const mins = Math.floor(ms / 60000);
+		const w = Math.floor(mins / (7 * 24 * 60));
+		const d = Math.floor((mins % (7 * 24 * 60)) / (24 * 60));
+		const h = Math.floor((mins % (24 * 60)) / 60);
+		const m = mins % 60;
+
+		// Return ONLY the highest non-zero unit
+		if (w > 0) return `${w}w`;
+		if (d > 0) return `${d}d`;
+		if (h > 0) return `${h}h`;
+		return `${m}m`;
+	};
+
 	// For debugging: shows all the cards object
 	// useEffect(() => {
 	// 	// We use (window as any) to stop TypeScript from complaining
@@ -111,6 +127,7 @@ export default function App() {
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [modalDefaultIsBreak, setModalDefaultIsBreak] = useState(false);
 	const [isShopOpen, setIsShopOpen] = useState(false);
+	const [isBankModalOpen, setIsBankModalOpen] = useState(false);
 
 	// --- DAILY SUMMARY STATE ---
 	const [showSummaryModal, setShowSummaryModal] = useState(false);
@@ -537,10 +554,14 @@ export default function App() {
 					</button>
 
 					<div className="flex items-center gap-4">
-						<div className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full font-bold shadow-sm border border-blue-100 transition-all cursor-default hover:scale-105">
+						<button
+							onClick={() => setIsBankModalOpen(true)}
+							className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full font-bold shadow-sm border border-blue-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
+							title="View Time Vault"
+						>
 							<span className="text-sm">⏳</span>
-							<span>{formatTimeDeposit(timeDeposit)}</span>
-						</div>
+							<span>{formatShortTimeDeposit(timeDeposit)}</span>
+						</button>
 						
 						<button
 							onClick={() => setIsShopOpen(true)}
@@ -781,6 +802,13 @@ export default function App() {
 				gems={gems}
 				freezes={freezes}
 				onBuyFreeze={handleBuyFreeze}
+			/>
+
+			<TimeVaultModal
+				isOpen={isBankModalOpen}
+				onClose={() => setIsBankModalOpen(false)}
+				timeDepositMs={timeDeposit}
+				formatFullTime={formatTimeDeposit}
 			/>
 
 			<DailySummaryModal
