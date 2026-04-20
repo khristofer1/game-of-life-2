@@ -71,6 +71,12 @@ export default function App() {
 	// Pull everything we need from our custom background engine!
 	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, freezes, streak, forceRefresh } = useTasks(user);
 
+	// For debugging: shows all the cards object
+	// useEffect(() => {
+	// 	// We use (window as any) to stop TypeScript from complaining
+	// 	(window as any).debugTasks = allTasks;
+	// }, [allTasks]);
+
 	// --- TOAST NOTIFICATION SYSTEM ---
 	const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete' | 'restore' | 'break', taskId: number } | null>(null);
 	const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
