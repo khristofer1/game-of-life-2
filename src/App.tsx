@@ -17,6 +17,9 @@ import confetti from 'canvas-confetti';
 import successSound from './assets/success.mp3';
 import { TimeVaultModal } from './components/TimeVaultModal';
 import { formatTimeDeposit, formatShortTimeDeposit } from './utils/timeFormat';
+import type { ToastAction } from './hooks/useToast';
+import { useToast } from './hooks/useToast';
+import { ToastContainer } from './components/ToastContainer';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -80,13 +83,13 @@ export default function App() {
 	// }, [allTasks]);
 
 	// --- TOAST NOTIFICATION SYSTEM ---
-	const [toast, setToast] = useState<{ id: number, message: string, action: 'delete' | 'complete' | 'restore' | 'break', taskId: number } | null>(null);
-	const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const triggerToast = (message: string, action: 'delete' | 'complete' | 'restore' | 'break', taskId: number) => {
-		if (toastTimeout.current) clearTimeout(toastTimeout.current);
-		setToast({ id: Date.now(), message, action, taskId });
-		// Toast disappears automatically after 5 seconds
-		toastTimeout.current = setTimeout(() => setToast(null), 5000);
+	const { toast, triggerToast, closeToast } = useToast();
+
+	const handleUndoAction = (action: ToastAction, taskId: number) => {
+		if (action === 'delete') handleRestore(taskId, true);
+		if (action === 'complete') handleToggleComplete(taskId, true);
+		if (action === 'restore') handleDelete(taskId, true);
+		if (action === 'break') handleUndoBreak(taskId);
 	};
 
 	// React State to manage the bottom navigation
@@ -731,30 +734,11 @@ export default function App() {
 			</button>
 
 			{/* TOAST NOTIFICATION */}
-			{toast && (
-				<div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-					<div className="bg-dark text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-4 text-sm font-semibold border border-gray-700">
-						<span>{toast.message}</span>
-						<div className="w-px h-4 bg-gray-600"></div>
-						<button
-							onClick={() => {
-								// Route the undo click to the correct function!
-								if (toast.action === 'delete') handleRestore(toast.taskId, true);
-								if (toast.action === 'complete') handleToggleComplete(toast.taskId, true);
-								if (toast.action === 'restore') handleDelete(toast.taskId, true);
-								if (toast.action === 'break') handleUndoBreak(toast.taskId);
-
-								// Close the toast immediately
-								setToast(null);
-								if (toastTimeout.current) clearTimeout(toastTimeout.current);
-							}}
-							className="text-orange-400 hover:text-orange-300 transition-colors uppercase tracking-wider text-xs px-1"
-						>
-							Undo
-						</button>
-					</div>
-				</div>
-			)}
+			<ToastContainer
+				toast={toast}
+				onClose={closeToast}
+				onUndo={handleUndoAction}
+			/>
 
 			{/* MODALS */}
 			<TaskModal
