@@ -452,15 +452,6 @@ export default function App() {
 
 					<div className="flex items-center gap-4">
 						<button
-							onClick={() => setIsBankModalOpen(true)}
-							className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full font-bold shadow-sm border border-blue-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
-							title="View Time Vault"
-						>
-							<span className="text-sm">⏳</span>
-							<span>{formatShortTimeDeposit(timeDeposit)}</span>
-						</button>
-						
-						<button
 							onClick={() => setIsShopOpen(true)}
 							className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-500 rounded-full font-bold shadow-sm border border-red-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
 						>
@@ -474,6 +465,15 @@ export default function App() {
 						>
 							<span className="text-sm">💎</span>
 							<span>{gems}</span>
+						</button>
+
+						<button
+							onClick={() => setIsBankModalOpen(true)}
+							className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full font-bold shadow-sm border border-blue-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
+							title="View Time Vault"
+						>
+							<span className="text-sm">⏳</span>
+							<span>{formatShortTimeDeposit(timeDeposit)}</span>
 						</button>
 
 						<div className="relative" ref={settingsRef}>
