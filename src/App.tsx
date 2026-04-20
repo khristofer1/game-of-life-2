@@ -270,7 +270,7 @@ export default function App() {
 		}
 	};
 
-	const handleToggleComplete = async (id: number) => {
+	const handleToggleComplete = async (id: number, isUndoFromToast = false) => {
 		const taskToUpdate = allTasks.find(t => t.id === id);
 		if (!taskToUpdate) return;
 
@@ -330,7 +330,7 @@ export default function App() {
 
 			await saveTaskToDB(updatedTask);
 			forceRefresh();
-			triggerToast("Card completed!", 'complete', id);
+			if (!isUndoFromToast) triggerToast("Card completed!", 'complete', id);
 
 			// 🎇 THE CELEBRATION ENGINE 🎇
 
@@ -388,7 +388,7 @@ export default function App() {
 
 			await saveTaskToDB(updatedTask);
 			forceRefresh();
-			triggerToast("Card restored to active.", 'complete', id);
+			if (!isUndoFromToast) triggerToast("Card restored to active.", 'complete', id);
 		}
 	};
 
@@ -449,24 +449,24 @@ export default function App() {
 		}
 	};
 
-	const handleDelete = async (id: number) => {
+	const handleDelete = async (id: number, isUndoFromToast = false) => {
 		const taskToTrash = allTasks.find(t => t.id === id);
 
 		if (taskToTrash) {
 			taskToTrash.deletedAt = Date.now();
 			await saveTaskToDB(taskToTrash);
 			forceRefresh();
-			triggerToast("Card moved to trash.", 'delete', id);
+			if (!isUndoFromToast) triggerToast("Card moved to trash.", 'delete', id);
 		}
 	};
 
-	const handleRestore = async (id: number) => {
+	const handleRestore = async (id: number, isUndoFromToast = false) => {
 		const task = deletedTasks.find(t => t.id === id);
 		if (task) {
 			delete task.deletedAt; // Remove the delete timestamp
 			await saveTaskToDB(task);
 			forceRefresh();
-			triggerToast("Card restored from trash.", 'restore', id);
+			if (!isUndoFromToast) triggerToast("Card restored from trash.", 'restore', id);
 		}
 	};
 
@@ -770,9 +770,9 @@ export default function App() {
 						<button
 							onClick={() => {
 								// Route the undo click to the correct function!
-								if (toast.action === 'delete') handleRestore(toast.taskId);
-								if (toast.action === 'complete') handleToggleComplete(toast.taskId);
-								if (toast.action === 'restore') handleDelete(toast.taskId);
+								if (toast.action === 'delete') handleRestore(toast.taskId, true);
+								if (toast.action === 'complete') handleToggleComplete(toast.taskId, true);
+								if (toast.action === 'restore') handleDelete(toast.taskId, true);
 								if (toast.action === 'break') handleUndoBreak(toast.taskId);
 
 								// Close the toast immediately
