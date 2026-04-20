@@ -20,6 +20,9 @@ import { formatTimeDeposit, formatShortTimeDeposit } from './utils/timeFormat';
 import type { ToastAction } from './hooks/useToast';
 import { useToast } from './hooks/useToast';
 import { ToastContainer } from './components/ToastContainer';
+import { useDailySummary } from './hooks/useDailySummary';
+import { BottomNav } from './components/layout/BottomNav';
+import type { TabType } from './components/layout/BottomNav';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -30,18 +33,12 @@ export default function App() {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [volumeLevel, setVolumeLevel] = useState(3);
 	const settingsRef = useRef<HTMLDivElement>(null);
-	const moreMenuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			// If the Settings menu is open AND the click was outside of it -> Close it
 			if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
 				setIsSettingsOpen(false);
-			}
-
-			// If the More menu is open AND the click was outside of it -> Close it
-			if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
-				setIsMoreMenuOpen(false);
 			}
 		};
 
@@ -76,6 +73,9 @@ export default function App() {
 	// Pull everything we need from our custom background engine!
 	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, freezes, streak, timeDeposit, forceRefresh } = useTasks(user);
 
+	// --- DAILY SUMMARY ENGINE ---
+	const { showSummaryModal, setShowSummaryModal, summaryData, setSummaryData, handleCloseSummary } = useDailySummary(allTasks);
+
 	// For debugging: shows all the cards object
 	// useEffect(() => {
 	// 	// We use (window as any) to stop TypeScript from complaining
@@ -93,8 +93,7 @@ export default function App() {
 	};
 
 	// React State to manage the bottom navigation
-	const [activeTab, setActiveTab] = useState<'active' | 'coming' | 'completed' | 'break' | 'deleted' | 'archived'>('active');
-	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+	const [activeTab, setActiveTab] = useState<TabType>('active');
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [modalDefaultIsBreak, setModalDefaultIsBreak] = useState(false);
@@ -102,80 +101,6 @@ export default function App() {
 	const [isBankModalOpen, setIsBankModalOpen] = useState(false);
 
 	// --- DAILY SUMMARY STATE ---
-	const [showSummaryModal, setShowSummaryModal] = useState(false);
-	const [summaryData, setSummaryData] = useState({ completed: [] as Quest[], expired: [] as Quest[], gemsGained: 0 });
-	const hasCheckedSummary = useRef(false);
-
-	// The Daily Check Engine & 7-Day Purge
-	useEffect(() => {
-		const checkDailySummary = async () => {
-			const today = new Date().setHours(0, 0, 0, 0);
-			const lastSummary = await getMeta("lastSummaryDate", 0);
-
-			// 📊 1. ALWAYS CALCULATE THE DATA
-			const yesterdayStart = today - (24 * 60 * 60 * 1000);
-
-			const completedYesterday = allTasks.filter(t => {
-					// 1. Check the History Array for recurring quests
-					if (t.completionDates && t.completionDates.length > 0) {
-							// .some() returns true if ANY timestamp in the array was yesterday
-							return t.completionDates.some(date => date >= yesterdayStart && date < today);
-					}
-					
-					// 2. Fallback for older one-time quests that don't have the array yet
-					return t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < today;
-			});
-
-			const expiredOneTime = allTasks.filter(t =>
-				t.isOneTime && !t.completed && !t.deletedAt && t.deadline && t.deadline < today
-			);
-
-			// Find breaks taken yesterday to include them in the gem math
-			const breaksYesterday = allTasks.filter(t =>
-				t.isBreak && t.lastDoneAt && t.lastDoneAt >= yesterdayStart && t.lastDoneAt < today
-			);
-
-			// 1 gem per completed quest + 1 gem per break taken
-			const totalGemsGained = completedYesterday.length + breaksYesterday.length;
-
-			// ✅ Update the state setter to include the gemsGained
-			setSummaryData({
-				completed: completedYesterday,
-				expired: expiredOneTime,
-				gemsGained: totalGemsGained
-			});
-
-			// 🧹 2. ONLY AUTO-POPUP & PURGE ONCE PER DAY
-			if (today > lastSummary) {
-				const sevenDaysAgo = today - (7 * 24 * 60 * 60 * 1000);
-				const tasksToPurge = allTasks.filter(t =>
-					t.isOneTime && t.completed && t.gemClaimed && t.completedAt && t.completedAt < sevenDaysAgo
-				);
-
-				for (const task of tasksToPurge) {
-					if (task.id) await deleteTaskFromDB(task.id);
-				}
-
-				if (completedYesterday.length > 0 || expiredOneTime.length > 0) {
-					setShowSummaryModal(true);
-				} else {
-					await setMeta("lastSummaryDate", today);
-				}
-			}
-		};
-
-		// Run check once data is loaded
-		if (!hasCheckedSummary.current && allTasks.length > 0) {
-			checkDailySummary();
-			hasCheckedSummary.current = true;
-		}
-	}, [allTasks]);
-
-	const handleCloseSummary = async () => {
-		setShowSummaryModal(false);
-		const today = new Date().setHours(0, 0, 0, 0);
-		await setMeta("lastSummaryDate", today); // Lock it so it doesn't show again today
-	};
 
 	const handleReviveCard = async (taskId: number) => {
 		if (gems < 1) return alert("Not enough gems to revive this card!");
@@ -640,88 +565,7 @@ export default function App() {
 			</main>
 
 			{/* BOTTOM NAVIGATION */}
-			<nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 px-6 py-2 flex justify-between items-center text-xs font-semibold pb-safe">
-				<button
-					onClick={() => setActiveTab('active')}
-					className={`flex-1 flex flex-col items-center gap-1 transition-all ${activeTab === 'active'
-						? 'text-orange-500 scale-105'
-						: 'text-gray-400 hover:text-dark'
-						}`}
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-						<path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-					</svg>
-					<span className="uppercase tracking-wider">Active</span>
-				</button>
-
-				<button
-					onClick={() => setActiveTab('coming')}
-					className={`flex-1 flex flex-col items-center gap-1 transition-all ${activeTab === 'coming'
-						? 'text-orange-500 scale-105'
-						: 'text-gray-400 hover:text-dark'
-						}`}
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-						<path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-					</svg>
-					<span className="uppercase tracking-wider">Coming</span>
-				</button>
-
-				<button
-					onClick={() => setActiveTab('completed')}
-					className={`flex-1 flex flex-col items-center gap-1 transition-all ${activeTab === 'completed'
-						? 'text-orange-500 scale-105'
-						: 'text-gray-400 hover:text-dark'
-						}`}
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-						<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-					</svg>
-					<span className="uppercase tracking-wider">Completed</span>
-				</button>
-
-				{/* MORE MENU (3 DOTS) */}
-				<div className="flex-1 flex justify-center relative" ref={moreMenuRef}>
-					<button
-						onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-						className={`flex flex-col items-center gap-1 transition-all ${(activeTab === 'deleted' || activeTab === 'break')
-								? 'text-orange-500 scale-105'
-								: 'text-gray-400 hover:text-dark'
-							}`}
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-							<path strokeLinecap="round" strokeLinejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-						</svg>
-						<span className="uppercase tracking-wider">More</span>
-					</button>
-
-					{/* THE POPUP DROPDOWN */}
-					{isMoreMenuOpen && (
-						<div className="absolute bottom-full mb-4 right-4 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in flex flex-col">
-							<button
-								onClick={() => { setActiveTab('break'); setIsMoreMenuOpen(false); }}
-								className={`px-4 py-3 text-sm font-bold text-left hover:bg-orange-50 transition-colors flex items-center gap-2 ${activeTab === 'break' ? 'text-orange-500 bg-orange-50/50' : 'text-dark'}`}
-							>
-								<span className="text-lg">☕</span> Break
-							</button>
-
-							<button
-								onClick={() => { setActiveTab('archived'); setIsMoreMenuOpen(false); }}
-								className={`px-4 py-3 text-sm font-bold text-left hover:bg-blue-50 transition-colors border-t border-gray-100 flex items-center gap-2 ${activeTab === 'archived' ? 'text-blue-500 bg-blue-50/50' : 'text-dark'}`}
-							>
-								<span className="text-lg">🏛️</span> Archived
-							</button>
-
-							<button
-								onClick={() => { setActiveTab('deleted'); setIsMoreMenuOpen(false); }}
-								className={`px-4 py-3 text-sm font-bold text-left hover:bg-red-50 transition-colors border-t border-gray-100 flex items-center gap-2 ${activeTab === 'deleted' ? 'text-red-500 bg-red-50/50' : 'text-dark'}`}
-							>
-								<span className="text-lg">🗑️</span> Deleted
-							</button>
-						</div>
-					)}
-				</div>
-			</nav>
+			<BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
 			{/* FLOATING ACTION BUTTON (Add Quest) */}
 			<button
