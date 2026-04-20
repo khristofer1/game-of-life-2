@@ -69,7 +69,24 @@ export default function App() {
 	}, []);
 
 	// Pull everything we need from our custom background engine!
-	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, freezes, streak, forceRefresh } = useTasks(user);
+	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, freezes, streak, timeDeposit, forceRefresh } = useTasks(user);
+
+	const formatTimeDeposit = (ms: number) => {
+		if (ms <= 0) return "0m";
+		const mins = Math.floor(ms / 60000);
+		const w = Math.floor(mins / (7 * 24 * 60));
+		const d = Math.floor((mins % (7 * 24 * 60)) / (24 * 60));
+		const h = Math.floor((mins % (24 * 60)) / 60);
+		const m = mins % 60;
+
+		const parts = [];
+		if (w > 0) parts.push(`${w}w`);
+		if (d > 0) parts.push(`${d}d`);
+		if (h > 0) parts.push(`${h}h`);
+		if (m > 0 || parts.length === 0) parts.push(`${m}m`);
+
+		return parts.join(" ");
+	};
 
 	// For debugging: shows all the cards object
 	// useEffect(() => {
@@ -264,6 +281,20 @@ export default function App() {
 
 			if (timeLeft > 0) {
 				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
+				
+				// Calculate Deposit: Cap at 1 Week (604,800,000 ms) AND cap at the original task duration
+				const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+				const depositAmount = Math.floor(Math.min(timeLeft, activeDuration, oneWeekMs));
+				
+				updatedTask.lastDepositMs = depositAmount;
+				await setMeta("timeDepositMs", timeDeposit + depositAmount);
+			} else {
+				updatedTask.energyPercent = 0;
+				updatedTask.lastDepositMs = 0;
+			}
+
+			if (timeLeft > 0) {
+				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
 			} else {
 				updatedTask.energyPercent = 0;
 			}
@@ -311,6 +342,13 @@ export default function App() {
 			updatedTask.gemClaimed = false;
 			updatedTask.isArchived = false;
 
+			if (updatedTask.lastDepositMs) {
+				// Don't let the bank go below 0 just in case
+				const newBankBalance = Math.max(0, timeDeposit - updatedTask.lastDepositMs);
+				await setMeta("timeDepositMs", newBankBalance);
+				updatedTask.lastDepositMs = 0;
+			}
+
 			if (updatedTask.completionDates && updatedTask.completionDates.length > 0) {
         updatedTask.completionDates.pop();
       }
@@ -341,6 +379,15 @@ export default function App() {
 		const task = breakTasks.find(t => t.id === id);
 		if (!task) return;
 
+		const breakCost = task.cooldownMs || 0;
+		if (timeDeposit < breakCost) {
+			triggerToast(`Not enough Time Deposits! You need ${formatTimeDeposit(breakCost)}.`, 'break', id);
+			return; // Stops them from taking the break!
+		}
+		
+		// Deduct from the bank
+		await setMeta("timeDepositMs", timeDeposit - breakCost);
+
 		// Save the previous state for the Undo button
 		task.previousLastDoneAt = task.lastDoneAt;
 		task.previousGemClaimed = task.gemClaimed;
@@ -361,6 +408,8 @@ export default function App() {
 		const allTasks = [...activeTasks, ...comingTasks, ...completedTasks, ...breakTasks];
 		const taskToUpdate = allTasks.find(t => t.id === id);
 		if (!taskToUpdate) return;
+		const breakCost = taskToUpdate.cooldownMs || 0;
+		await setMeta("timeDepositMs", timeDeposit + breakCost);
 
 		// 1. Restore the previous cooldown timer
 		taskToUpdate.lastDoneAt = taskToUpdate.previousLastDoneAt || 0;
@@ -488,6 +537,11 @@ export default function App() {
 					</button>
 
 					<div className="flex items-center gap-4">
+						<div className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full font-bold shadow-sm border border-blue-100 transition-all cursor-default hover:scale-105">
+							<span className="text-sm">⏳</span>
+							<span>{formatTimeDeposit(timeDeposit)}</span>
+						</div>
+						
 						<button
 							onClick={() => setIsShopOpen(true)}
 							className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-500 rounded-full font-bold shadow-sm border border-red-100 transition-all cursor-pointer hover:scale-105 active:scale-95"

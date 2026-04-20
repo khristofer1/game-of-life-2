@@ -12,6 +12,7 @@ export function useTasks(user: User | null) {
 	const [completedTasks, setCompletedTasks] = useState<Quest[]>([]);
   const [breakTasks, setBreakTasks] = useState<Quest[]>([]);
 	const [deletedTasks, setDeletedTasks] = useState<Quest[]>([]);
+  
   const archivedTasks = useMemo(() => 
     allTasks.filter(t => !t.deletedAt && t.isOneTime && t.completed && t.gemClaimed)
       .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)),
@@ -22,6 +23,7 @@ export function useTasks(user: User | null) {
 	const [gems, setGems] = useState<number>(0);
 	const [streak, setStreak] = useState<number>(0);
 	const [freezes, setFreezes] = useState<number>(0);
+  const [timeDeposit, setTimeDeposit] = useState<number>(0);
 
 	// 2. The Core Engine: Replaces your old refreshTasks() function
 	const refreshTasks = useCallback(async () => {
@@ -31,6 +33,7 @@ export function useTasks(user: User | null) {
 			let currentGems = await getMeta("gems", 0);
 			const globalFreezes = await getMeta("globalFreezes", 0);
 			const globalStreak = await getMeta("globalStreak", 0);
+      const globalTimeDeposit = await getMeta("timeDepositMs", 0);
 
 			const now = Date.now();
 			let tasksUpdated = false;
@@ -247,6 +250,7 @@ export function useTasks(user: User | null) {
 			setGems(currentGems);
 			setStreak(globalStreak);
 			setFreezes(globalFreezes);
+      setTimeDeposit(globalTimeDeposit);
 
 		} catch (error) {
 			console.error("Failed to refresh tasks:", error);
@@ -280,6 +284,7 @@ export function useTasks(user: User | null) {
 		gems,
 		streak,
 		freezes,
+    timeDeposit,
 		forceRefresh: refreshTasks
 	};
 }

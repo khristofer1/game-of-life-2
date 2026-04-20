@@ -55,4 +55,5 @@ export interface Quest {
 	energyPercent: number;
 	streak: number;
 	completionDates?: number[];
+	lastDepositMs?: number;
 }
