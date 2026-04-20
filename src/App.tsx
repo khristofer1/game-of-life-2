@@ -16,6 +16,7 @@ import { DailySummaryModal } from './components/DailySummaryModal';
 import confetti from 'canvas-confetti';
 import successSound from './assets/success.mp3';
 import { TimeVaultModal } from './components/TimeVaultModal';
+import { formatTimeDeposit, formatShortTimeDeposit } from './utils/timeFormat';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -71,38 +72,6 @@ export default function App() {
 
 	// Pull everything we need from our custom background engine!
 	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, freezes, streak, timeDeposit, forceRefresh } = useTasks(user);
-
-	const formatTimeDeposit = (ms: number) => {
-		if (ms <= 0) return "0m";
-		const mins = Math.floor(ms / 60000);
-		const w = Math.floor(mins / (7 * 24 * 60));
-		const d = Math.floor((mins % (7 * 24 * 60)) / (24 * 60));
-		const h = Math.floor((mins % (24 * 60)) / 60);
-		const m = mins % 60;
-
-		const parts = [];
-		if (w > 0) parts.push(`${w}w`);
-		if (d > 0) parts.push(`${d}d`);
-		if (h > 0) parts.push(`${h}h`);
-		if (m > 0 || parts.length === 0) parts.push(`${m}m`);
-
-		return parts.join(" ");
-	};
-
-	const formatShortTimeDeposit = (ms: number) => {
-		if (ms <= 0) return "0m";
-		const mins = Math.floor(ms / 60000);
-		const w = Math.floor(mins / (7 * 24 * 60));
-		const d = Math.floor((mins % (7 * 24 * 60)) / (24 * 60));
-		const h = Math.floor((mins % (24 * 60)) / 60);
-		const m = mins % 60;
-
-		// Return ONLY the highest non-zero unit
-		if (w > 0) return `${w}w`;
-		if (d > 0) return `${d}d`;
-		if (h > 0) return `${h}h`;
-		return `${m}m`;
-	};
 
 	// For debugging: shows all the cards object
 	// useEffect(() => {
