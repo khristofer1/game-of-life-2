@@ -33,7 +33,7 @@ export function TimeVaultModal({ isOpen, onClose, timeDepositMs, formatFullTime 
             </span>
           </div>
           
-          <p className="text-xs text-blue-400 mt-6 text-center max-w-[200px] leading-relaxed">
+          <p className="text-xs text-blue-400 mt-6 text-center max-w-50 leading-relaxed">
             Time earned by finishing quests early. You can spend this balance to take guilt-free Break Activities!
           </p>
         </div>
