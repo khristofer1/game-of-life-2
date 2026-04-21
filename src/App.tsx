@@ -269,13 +269,16 @@ export default function App() {
 					newMaxCapacity = 5;
 					leveledUp = true;
 				} else {
-					// Ensure we know the capacity even if we didn't level up
-					if (currentTier === 'standard') newMaxCapacity = 1;
-					if (currentTier === 'bronze') newMaxCapacity = 2;
-					if (currentTier === 'silver') newMaxCapacity = 3;
-					if (currentTier === 'gold') newMaxCapacity = 4;
-					if (currentTier === 'diamond') newMaxCapacity = 5;
-				}
+          // Optimized: Use a switch or else-if for mutually exclusive values
+          switch (currentTier) {
+            case 'standard': newMaxCapacity = 1; break;
+            case 'bronze':   newMaxCapacity = 2; break;
+            case 'silver':   newMaxCapacity = 3; break;
+            case 'gold':     newMaxCapacity = 4; break;
+            case 'diamond':  newMaxCapacity = 5; break;
+            default:         newMaxCapacity = 1;
+          }
+        }
 
 				// Override for Long-Cycle Quests (6+ days): Capacity is ALWAYS 1
 				if (daysInCycle >= 6) {
