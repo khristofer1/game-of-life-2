@@ -40,6 +40,47 @@ export const useDailySummary = (allTasks: Quest[]) => {
 
 			// 🧹 2. ONLY AUTO-POPUP & PURGE ONCE PER DAY
 			if (today > lastSummary) {
+				
+				// --- THE DOWNGRADE RULE (Shield Insurance) ---
+				const recurringToUpdate: Quest[] = [];
+				
+				for (const task of allTasks) {
+					if (!task.isOneTime && !task.isBreak && !task.completed && !task.deletedAt && task.cycleStart && task.activeDeadlineMs) {
+						const deadline = task.cycleStart + task.activeDeadlineMs;
+						
+						// If the deadline passed YESTERDAY (meaning it was missed and just entered the dead zone)
+						if (deadline >= yesterdayStart && deadline < today) {
+							let updatedTask = { ...task };
+							const daysInCycle = Math.max(1, Math.round(task.activeDeadlineMs / 86400000));
+							
+							// Calculate Insurance Cost
+							const shieldsNeeded = daysInCycle >= 6 ? 1 : daysInCycle;
+							const currentShields = task.shields || 0;
+
+							if (currentShields >= shieldsNeeded) {
+								// SAFE: Deduct shields to protect the tier
+								updatedTask.shields = currentShields - shieldsNeeded;
+								recurringToUpdate.push(updatedTask);
+							} else {
+								// DOWNGRADE: Not enough shields, reset everything!
+								if (task.tier !== 'standard' || currentShields > 0 || (task.accumulatedDays && task.accumulatedDays > 0)) {
+									updatedTask.tier = 'standard';
+									updatedTask.shields = 0;
+									updatedTask.accumulatedDays = 0;
+									updatedTask.streak = 0; 
+									recurringToUpdate.push(updatedTask);
+								}
+							}
+						}
+					}
+				}
+
+				// Save all penalized/protected tasks to the database
+				for (const t of recurringToUpdate) {
+					if (t.id) await saveTaskToDB(t);
+				}
+				// --- END DOWNGRADE RULE ---
+
 				const sevenDaysAgo = today - (7 * 24 * 60 * 60 * 1000);
 				const tasksToPurge = allTasks.filter(t =>
 					t.isOneTime && t.completed && t.gemClaimed && t.completedAt && t.completedAt < sevenDaysAgo

@@ -213,6 +213,61 @@ export default function App() {
 				updatedTask.energyPercent = 0;
 			}
 
+			// --- THE HIDDEN XP & LEVEL UP ENGINE ---
+			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
+				// 1. Calculate the days in this cycle
+				const activeDurationMs = updatedTask.activeDeadlineMs || 86400000;
+				const daysInCycle = Math.max(1, Math.round(activeDurationMs / 86400000));
+				
+				// 2. Add XP and increment Individual Streak
+				updatedTask.accumulatedDays = (updatedTask.accumulatedDays || 0) + daysInCycle;
+				updatedTask.streak = (updatedTask.streak || 0) + 1;
+
+				// 3. Level-Up Logic (No Double Leveling!)
+				const totalDays = updatedTask.accumulatedDays;
+				let currentTier = updatedTask.tier || 'standard';
+				let leveledUp = false;
+				let newMaxCapacity = 1;
+
+				if (currentTier === 'standard' && totalDays >= 7) {
+					updatedTask.tier = 'bronze';
+					newMaxCapacity = 2;
+					leveledUp = true;
+				} else if (currentTier === 'bronze' && totalDays >= 30) {
+					updatedTask.tier = 'silver';
+					newMaxCapacity = 3;
+					leveledUp = true;
+				} else if (currentTier === 'silver' && totalDays >= 180) {
+					updatedTask.tier = 'gold';
+					newMaxCapacity = 4;
+					leveledUp = true;
+				} else if (currentTier === 'gold' && totalDays >= 365) {
+					updatedTask.tier = 'diamond';
+					newMaxCapacity = 5;
+					leveledUp = true;
+				} else {
+					// Ensure we know the capacity even if we didn't level up
+					if (currentTier === 'standard') newMaxCapacity = 1;
+					if (currentTier === 'bronze') newMaxCapacity = 2;
+					if (currentTier === 'silver') newMaxCapacity = 3;
+					if (currentTier === 'gold') newMaxCapacity = 4;
+					if (currentTier === 'diamond') newMaxCapacity = 5;
+				}
+
+				// Override for Long-Cycle Quests (6+ days): Capacity is ALWAYS 1
+				if (daysInCycle >= 6) {
+					newMaxCapacity = 1;
+				}
+
+				// 4. The "Full Heal" Level-Up Bonus
+				if (leveledUp) {
+					updatedTask.shields = newMaxCapacity;
+					// Fire a special toast!
+					triggerToast(`Level Up! ${updatedTask.name} is now ${updatedTask.tier.toUpperCase()}! Shields refilled.`, 'complete', id);
+				}
+			}
+			// --- END HIDDEN XP ENGINE ---
+
 			// STREAK ADD LOGIC
 			const lastDate = await getMeta("lastStreakUpdate", 0);
 			let globalStreak = await getMeta("globalStreak", 0);
@@ -410,7 +465,10 @@ export default function App() {
 				cycleStart: newQuestData.startDate || now,
 				streak: 0,
 				completed: false,
-				energyPercent: 100
+				energyPercent: 100,
+				accumulatedDays: 0,
+				shields: 0,
+				tier: 'standard'
 			} as Quest;
 		}
 
