@@ -286,7 +286,7 @@ export default function App() {
 				if (leveledUp) {
 					updatedTask.shields = newMaxCapacity;
 					// Fire a special toast!
-					triggerToast(`Level Up! ${updatedTask.name} is now ${updatedTask.tier.toUpperCase()}! Shields refilled.`, 'complete', id);
+					triggerToast(`Level Up! ${updatedTask.name} is now ${(updatedTask.tier || 'standard').toUpperCase()}! Shields refilled.`, 'complete', id);
 				}
 			}
 			// --- END HIDDEN XP ENGINE ---

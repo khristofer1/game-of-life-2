@@ -1,6 +1,6 @@
 // src/hooks/useDailySummary.ts
 import { useState, useEffect, useRef } from 'react';
-import { getMeta, setMeta, deleteTaskFromDB } from '../services/db';
+import { getMeta, setMeta, deleteTaskFromDB, saveTaskToDB } from '../services/db';
 import type { Quest } from '../types/quest';
 
 export const useDailySummary = (allTasks: Quest[]) => {
