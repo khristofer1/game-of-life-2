@@ -40,19 +40,16 @@ export function useQuestActions(
 			let timeLeft = activeDeadline - now;
 
 			if (timeLeft > 0) {
+				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
+
 				const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
 				const depositAmount = Math.floor(Math.min(timeLeft, activeDuration, oneWeekMs));
 				
 				updatedTask.lastDepositMs = depositAmount;
 				await setMeta("timeDepositMs", timeDeposit + depositAmount);
 			} else {
-				updatedTask.lastDepositMs = 0;
-			}
-
-			if (timeLeft > 0) {
-				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
-			} else {
 				updatedTask.energyPercent = 0;
+				updatedTask.lastDepositMs = 0;
 			}
 
 			// --- THE HIDDEN XP & LEVEL UP ENGINE ---
