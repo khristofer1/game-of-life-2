@@ -167,6 +167,29 @@ export default function App() {
 		}
 	};
 
+	// --- SHIELD PURCHASE LOGIC ---
+	const handleBuyShield = async (taskId: number, cost: number) => {
+		if (gems < cost) {
+			alert(`Not enough gems! You need ${cost} 💎 to buy this shield.`);
+			return;
+		}
+
+		const taskToUpdate = allTasks.find(t => t.id === taskId);
+		if (!taskToUpdate) return;
+
+		// 1. Deduct the Gems
+		const newGems = gems - cost;
+		await setMeta("gems", newGems);
+
+		// 2. Equip the Shield
+		taskToUpdate.shields = (taskToUpdate.shields || 0) + 1;
+		await saveTaskToDB(taskToUpdate);
+
+		// 3. Update the UI
+		forceRefresh();
+		triggerToast(`Shield equipped to ${taskToUpdate.name}! 🛡️`, 'complete', taskId);
+	};
+
 	const handleToggleComplete = async (id: number, isUndoFromToast = false) => {
 		const taskToUpdate = allTasks.find(t => t.id === id);
 		if (!taskToUpdate) return;
@@ -621,6 +644,7 @@ export default function App() {
 								onRestore={handleRestore}
 								onHardDelete={handleHardDelete}
 								onTakeBreak={handleTakeBreak}
+								onBuyShield={handleBuyShield}
 							/>
 						))}
 					</div>
