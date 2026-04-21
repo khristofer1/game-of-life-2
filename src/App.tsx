@@ -22,6 +22,7 @@ import { useDailySummary } from './hooks/useDailySummary';
 import { BottomNav } from './components/layout/BottomNav';
 import type { TabType } from './components/layout/BottomNav';
 import { GemShopModal } from './components/GemShopModal';
+import { useGameEconomy } from './hooks/useGameEconomy';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -83,6 +84,9 @@ export default function App() {
 
 	// --- TOAST NOTIFICATION SYSTEM ---
 	const { toast, triggerToast, closeToast } = useToast();
+
+	// --- ECONOMY ENGINE ---
+	const { handleBuyShield, handleBuyGemWithTime, handleBuyTimeWithGem } = useGameEconomy(gems, timeDeposit, allTasks, forceRefresh, triggerToast);
 
 	const handleUndoAction = (action: ToastAction, taskId: number) => {
 		if (action === 'delete') handleRestore(taskId, true);
@@ -150,92 +154,6 @@ export default function App() {
 		setEditingQuest(null);
 		setIsModalOpen(true);
 	}
-
-	// --- SHIELD PURCHASE LOGIC ---
-	const handleBuyShield = async (taskId: number, cost: number) => {
-		const taskToUpdate = allTasks.find(t => t.id === taskId);
-		if (!taskToUpdate) return;
-
-		// 1. Check Wallet First
-		if (gems < cost) {
-			alert(`Not enough gems! You need ${cost} 💎 to buy this shield.`);
-			return;
-		}
-
-		// --- THE CONFIRMATION DIALOGUE ---
-		// We format it nicely with line breaks (\n) for readability
-		const isConfirmed = window.confirm(
-			`Equip a shield to "${taskToUpdate.name}"?\n\nCost: ${cost} 💎\nCurrent Balance: ${gems} 💎`
-		);
-		
-		// If they click "Cancel", we stop the function right here
-		if (!isConfirmed) return; 
-		// --- END CONFIRMATION ---
-
-		// 2. Deduct the Gems
-		const newGems = gems - cost;
-		await setMeta("gems", newGems);
-
-		// 3. Equip the Shield
-		taskToUpdate.shields = (taskToUpdate.shields || 0) + 1;
-		await saveTaskToDB(taskToUpdate);
-
-		// 4. Update the UI
-		forceRefresh();
-		// We can now safely call triggerToast with just ONE argument!
-		triggerToast(`Shield equipped to ${taskToUpdate.name}! 🛡️`);
-	};
-
-	const handleBuyGemWithTime = async () => {
-		const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-		
-		// 1. Check if they have enough Time Deposit
-		if (timeDeposit < oneWeekMs) {
-			alert("Not enough Time! You need at least 1 Week in your vault to buy a Gem.");
-			return;
-		}
-
-		// 2. Confirmation Dialog
-		const isConfirmed = window.confirm(
-			`Trade 1 Week of Time for 1 Gem? 💎\n\nThis will deduct 7 days from your Time Vault.`
-		);
-		if (!isConfirmed) return;
-
-		// 3. Process the Exchange
-		const newTime = timeDeposit - oneWeekMs;
-		await setMeta("timeDepositMs", newTime);
-
-		const newGems = gems + 1;
-		await setMeta("gems", newGems);
-
-		// 4. Update UI and Notify
-		forceRefresh();
-		triggerToast("Exchange complete! +1 Gem 💎");
-	};
-
-	// --- GEM -> TIME EXCHANGE LOGIC ---
-	const handleBuyTimeWithGem = async () => {
-		if (gems < 1) {
-			alert("Not enough Gems! You need at least 1 💎 to buy time.");
-			return;
-		}
-
-		const isConfirmed = window.confirm(
-			`Shatter 1 Gem for 6 Days of Time? ⏳\n\nThis will instantly add 7 days to your Time Vault.`
-		);
-		if (!isConfirmed) return;
-
-		// Deduct 1 Gem
-		const newGems = gems - 1;
-		await setMeta("gems", newGems);
-
-		// Add 6 Days of Time
-		const sixDaysMs = 6 * 24 * 60 * 60 * 1000;
-		await setMeta("timeDepositMs", timeDeposit + sixDaysMs);
-
-		forceRefresh();
-		triggerToast("Exchange complete! +6 Days ⏳");
-	};
 
 	const handleToggleComplete = async (id: number, isUndoFromToast = false) => {
 		const taskToUpdate = allTasks.find(t => t.id === id);
