@@ -361,6 +361,11 @@ export default function App() {
 				colors: ['#f97316', '#fbbf24', '#34d399', '#3b82f6'] // Tailwind Orange, Yellow, Green, Blue
 			});
 
+			// Save the task, refresh the UI, and pop the Undo toast!
+			await saveTaskToDB(updatedTask);
+			forceRefresh();
+			if (!isUndoFromToast) triggerToast(`Completed: ${updatedTask.name}`, 'complete', id);
+
 		// UNDOING a Completion (Moving back to Active)
 		} else {
 			updatedTask.completed = false;
