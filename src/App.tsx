@@ -21,6 +21,7 @@ import { ToastContainer } from './components/ToastContainer';
 import { useDailySummary } from './hooks/useDailySummary';
 import { BottomNav } from './components/layout/BottomNav';
 import type { TabType } from './components/layout/BottomNav';
+import { GemShopModal } from './components/GemShopModal';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -96,6 +97,7 @@ export default function App() {
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [modalDefaultIsBreak, setModalDefaultIsBreak] = useState(false);
 	const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+	const [isGemShopOpen, setIsGemShopOpen] = useState(false);
 
 	// --- DAILY SUMMARY STATE ---
 
@@ -209,6 +211,30 @@ export default function App() {
 		// 4. Update UI and Notify
 		forceRefresh();
 		triggerToast("Exchange complete! +1 Gem 💎");
+	};
+
+	// --- GEM -> TIME EXCHANGE LOGIC ---
+	const handleBuyTimeWithGem = async () => {
+		if (gems < 1) {
+			alert("Not enough Gems! You need at least 1 💎 to buy time.");
+			return;
+		}
+
+		const isConfirmed = window.confirm(
+			`Shatter 1 Gem for 6 Days of Time? ⏳\n\nThis will instantly add 7 days to your Time Vault.`
+		);
+		if (!isConfirmed) return;
+
+		// Deduct 1 Gem
+		const newGems = gems - 1;
+		await setMeta("gems", newGems);
+
+		// Add 6 Days of Time
+		const sixDaysMs = 6 * 24 * 60 * 60 * 1000;
+		await setMeta("timeDepositMs", timeDeposit + sixDaysMs);
+
+		forceRefresh();
+		triggerToast("Exchange complete! +6 Days ⏳");
 	};
 
 	const handleToggleComplete = async (id: number, isUndoFromToast = false) => {
@@ -560,6 +586,7 @@ export default function App() {
 						
 						{/* 1. GEMS */}
 						<button
+							onClick={() => setIsGemShopOpen(true)}
 							className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 bg-orange-50 text-orange-600 rounded-full font-bold shadow-sm border border-orange-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
 						>
 							<span className="text-xs sm:text-sm">💎</span>
@@ -698,7 +725,15 @@ export default function App() {
 				onClose={() => setIsBankModalOpen(false)}
 				timeDepositMs={timeDeposit}
 				formatFullTime={formatTimeDeposit}
+			/>
+
+			<GemShopModal
+				isOpen={isGemShopOpen}
+				onClose={() => setIsGemShopOpen(false)}
+				gems={gems}
+				timeDepositMs={timeDeposit}
 				onBuyGemWithTime={handleBuyGemWithTime}
+				onBuyTimeWithGem={handleBuyTimeWithGem}
 			/>
 
 			<DailySummaryModal
