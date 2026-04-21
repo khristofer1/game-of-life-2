@@ -9,8 +9,6 @@ import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
 import { saveTaskToDB, deleteTaskFromDB, getMeta, setMeta } from './services/db';
 import type { Quest } from './types/quest';
-import { ShopModal } from "./components/ShopModal";
-import { GAME_CONFIG } from './config/gameConstants';
 import logo from './assets/logo.svg';
 import { DailySummaryModal } from './components/DailySummaryModal';
 import confetti from 'canvas-confetti';
@@ -71,7 +69,7 @@ export default function App() {
 	}, []);
 
 	// Pull everything we need from our custom background engine!
-	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, freezes, streak, timeDeposit, forceRefresh } = useTasks(user);
+	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, timeDeposit, forceRefresh } = useTasks(user);
 
 	// --- DAILY SUMMARY ENGINE ---
 	const { showSummaryModal, setShowSummaryModal, summaryData, setSummaryData, handleCloseSummary } = useDailySummary(allTasks);
@@ -97,7 +95,6 @@ export default function App() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [modalDefaultIsBreak, setModalDefaultIsBreak] = useState(false);
-	const [isShopOpen, setIsShopOpen] = useState(false);
 	const [isBankModalOpen, setIsBankModalOpen] = useState(false);
 
 	// --- DAILY SUMMARY STATE ---
@@ -151,21 +148,6 @@ export default function App() {
 		setEditingQuest(null);
 		setIsModalOpen(true);
 	}
-
-	// Shop Logic
-	const handleBuyFreeze = async () => {
-		if (gems >= GAME_CONFIG.REWARDS.FREEZE_COST) {
-			const newGems = gems - GAME_CONFIG.REWARDS.FREEZE_COST;
-			const newFreezes = freezes + 1;
-
-			await setMeta("gems", newGems);
-			await setMeta("globalFreezes", newFreezes);
-
-			forceRefresh(); // Instantly update the UI
-		} else {
-			alert("Not enough gems!");
-		}
-	};
 
 	// --- SHIELD PURCHASE LOGIC ---
 	const handleBuyShield = async (taskId: number, cost: number) => {
@@ -306,22 +288,6 @@ export default function App() {
 			}
 			// --- END HIDDEN XP ENGINE ---
 
-			// STREAK ADD LOGIC
-			const lastDate = await getMeta("lastStreakUpdate", 0);
-			let globalStreak = await getMeta("globalStreak", 0);
-			const todayDay = new Date(now).setHours(0, 0, 0, 0);
-			const lastStreakDay = new Date(lastDate).setHours(0, 0, 0, 0);
-
-			if (lastDate === 0 || todayDay > lastStreakDay) {
-				globalStreak += 1;
-				await setMeta("globalStreak", globalStreak);
-				await setMeta("lastStreakUpdate", now);
-			}
-
-			await saveTaskToDB(updatedTask);
-			forceRefresh();
-			if (!isUndoFromToast) triggerToast("Card completed!", 'complete', id);
-
 			// 🎇 THE CELEBRATION ENGINE 🎇
 
 			// 1. Play the Sound (with error handling in case the browser blocks it)
@@ -390,22 +356,6 @@ export default function App() {
 			if (updatedTask.completionDates && updatedTask.completionDates.length > 0) {
         updatedTask.completionDates.pop();
       }
-
-			const todayDay = new Date(now).setHours(0, 0, 0, 0);
-			const otherCompletedTasks = allTasks.some(t =>
-				t.id !== updatedTask.id && t.completed && t.completedAt &&
-				new Date(t.completedAt).setHours(0, 0, 0, 0) === todayDay
-			);
-
-			if (!otherCompletedTasks) {
-				let globalStreak = await getMeta("globalStreak", 0);
-				if (globalStreak > 0) {
-					globalStreak -= 1;
-					await setMeta("globalStreak", globalStreak);
-					const yesterday = now - (24 * 60 * 60 * 1000);
-					await setMeta("lastStreakUpdate", yesterday);
-				}
-			}
 
 			await saveTaskToDB(updatedTask);
 			forceRefresh();
@@ -581,25 +531,15 @@ export default function App() {
 					{/* REWARDS AREA: Tighter gaps on mobile (gap-1.5) vs desktop (gap-4) */}
 					<div className="flex items-center gap-1.5 sm:gap-4">
 						
-						{/* 1. STREAK */}
+						{/* 1. GEMS */}
 						<button
-							onClick={() => setIsShopOpen(true)}
-							className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 bg-red-50 text-red-500 rounded-full font-bold shadow-sm border border-red-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
-						>
-							<span className="text-xs sm:text-sm">🔥</span>
-							<span className="text-sm sm:text-base">{streak}</span>
-						</button>
-
-						{/* 2. GEMS */}
-						<button
-							onClick={() => setIsShopOpen(true)}
 							className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 bg-orange-50 text-orange-600 rounded-full font-bold shadow-sm border border-orange-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
 						>
 							<span className="text-xs sm:text-sm">💎</span>
 							<span className="text-sm sm:text-base">{gems}</span>
 						</button>
 
-						{/* 3. TIME VAULT */}
+						{/* 2. TIME VAULT */}
 						<button
 							onClick={() => setIsBankModalOpen(true)}
 							className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 bg-blue-50 text-blue-600 rounded-full font-bold shadow-sm border border-blue-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
@@ -724,14 +664,6 @@ export default function App() {
 				initialData={editingQuest}
 				onSave={handleSaveQuest}
 				defaultIsBreak={modalDefaultIsBreak}
-			/>
-
-			<ShopModal
-				isOpen={isShopOpen}
-				onClose={() => setIsShopOpen(false)}
-				gems={gems}
-				freezes={freezes}
-				onBuyFreeze={handleBuyFreeze}
 			/>
 
 			<TimeVaultModal

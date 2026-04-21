@@ -21,8 +21,6 @@ export function useTasks(user: User | null) {
 
 	// Game Economy State
 	const [gems, setGems] = useState<number>(0);
-	const [streak, setStreak] = useState<number>(0);
-	const [freezes, setFreezes] = useState<number>(0);
   const [timeDeposit, setTimeDeposit] = useState<number>(0);
 
 	// 2. The Core Engine: Replaces your old refreshTasks() function
@@ -31,8 +29,6 @@ export function useTasks(user: User | null) {
 			// Fetch raw data from IndexedDB
 			const rawTasks: Quest[] = await getAllTasks();
 			let currentGems = await getMeta("gems", 0);
-			const globalFreezes = await getMeta("globalFreezes", 0);
-			const globalStreak = await getMeta("globalStreak", 0);
       const globalTimeDeposit = await getMeta("timeDepositMs", 0);
 
 			const now = Date.now();
@@ -248,8 +244,6 @@ export function useTasks(user: User | null) {
       setBreakTasks(breakList);
 			setDeletedTasks(deleted);
 			setGems(currentGems);
-			setStreak(globalStreak);
-			setFreezes(globalFreezes);
       setTimeDeposit(globalTimeDeposit);
 
 		} catch (error) {
@@ -282,8 +276,6 @@ export function useTasks(user: User | null) {
 		deletedTasks,
     archivedTasks,
 		gems,
-		streak,
-		freezes,
     timeDeposit,
 		forceRefresh: refreshTasks
 	};
