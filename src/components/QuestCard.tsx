@@ -137,7 +137,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
               return (
                 <button
                   key={i}
-                  disabled={isFilled || isPending || quest.completed}
+                  disabled={isFilled || isPending}
                   onClick={() => !isFilled && quest.id && onBuyShield && onBuyShield(quest.id, shieldCost)}
                   title={isFilled ? "Shield Active" : `Buy Shield (${shieldCost} Gems)`}
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition-all text-xs border ${
