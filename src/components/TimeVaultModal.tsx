@@ -5,10 +5,15 @@ interface TimeVaultModalProps {
   onClose: () => void;
   timeDepositMs: number;
   formatFullTime: (ms: number) => string;
+  onBuyGemWithTime: () => void; // <-- NEW PROP
 }
 
-export function TimeVaultModal({ isOpen, onClose, timeDepositMs, formatFullTime }: TimeVaultModalProps) {
+export function TimeVaultModal({ isOpen, onClose, timeDepositMs, formatFullTime, onBuyGemWithTime }: TimeVaultModalProps) {
   if (!isOpen) return null;
+
+  // Calculate if they can afford the gem (1 Week = 604,800,000 ms)
+  const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+  const canAffordGem = timeDepositMs >= oneWeekMs;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-0 flex items-center justify-center">
@@ -33,9 +38,30 @@ export function TimeVaultModal({ isOpen, onClose, timeDepositMs, formatFullTime 
             </span>
           </div>
           
-          <p className="text-xs text-blue-400 mt-6 text-center max-w-50 leading-relaxed">
-            Time earned by finishing quests early. You can spend this balance to take guilt-free Break Activities!
+          <p className="text-xs text-blue-400 mt-4 text-center max-w-50 leading-relaxed">
+            Time earned by finishing quests early. Spend this balance to take guilt-free Break Activities!
           </p>
+
+          {/* --- NEW: THE TIME EXCHANGE SHOP --- */}
+          <div className="mt-6 w-full bg-orange-50 border border-orange-100 rounded-2xl p-4 flex flex-col items-center shadow-sm">
+            <p className="text-orange-600 text-[10px] font-bold uppercase tracking-wider mb-1">Exchange Market</p>
+            <p className="text-xs text-orange-800 text-center mb-3">
+              Need more shields? Trade your spare time for premium currency.
+            </p>
+            <button
+              onClick={onBuyGemWithTime}
+              disabled={!canAffordGem}
+              className={`w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                canAffordGem 
+                  ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md cursor-pointer active:scale-95' 
+                  : 'bg-orange-200 text-orange-50 cursor-not-allowed opacity-70'
+              }`}
+            >
+              <span>Trade 1 Week ➔ 💎 1 Gem</span>
+            </button>
+          </div>
+          {/* --- END EXCHANGE SHOP --- */}
+
         </div>
 
         {/* FOOTER */}

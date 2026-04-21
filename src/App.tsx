@@ -184,6 +184,33 @@ export default function App() {
 		triggerToast(`Shield equipped to ${taskToUpdate.name}! 🛡️`);
 	};
 
+	const handleBuyGemWithTime = async () => {
+		const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+		
+		// 1. Check if they have enough Time Deposit
+		if (timeDeposit < oneWeekMs) {
+			alert("Not enough Time! You need at least 1 Week in your vault to buy a Gem.");
+			return;
+		}
+
+		// 2. Confirmation Dialog
+		const isConfirmed = window.confirm(
+			`Trade 1 Week of Time for 1 Gem? 💎\n\nThis will deduct 7 days from your Time Vault.`
+		);
+		if (!isConfirmed) return;
+
+		// 3. Process the Exchange
+		const newTime = timeDeposit - oneWeekMs;
+		await setMeta("timeDepositMs", newTime);
+
+		const newGems = gems + 1;
+		await setMeta("gems", newGems);
+
+		// 4. Update UI and Notify
+		forceRefresh();
+		triggerToast("Exchange complete! +1 Gem 💎");
+	};
+
 	const handleToggleComplete = async (id: number, isUndoFromToast = false) => {
 		const taskToUpdate = allTasks.find(t => t.id === id);
 		if (!taskToUpdate) return;
@@ -671,6 +698,7 @@ export default function App() {
 				onClose={() => setIsBankModalOpen(false)}
 				timeDepositMs={timeDeposit}
 				formatFullTime={formatTimeDeposit}
+				onBuyGemWithTime={handleBuyGemWithTime}
 			/>
 
 			<DailySummaryModal
