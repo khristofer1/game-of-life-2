@@ -169,24 +169,36 @@ export default function App() {
 
 	// --- SHIELD PURCHASE LOGIC ---
 	const handleBuyShield = async (taskId: number, cost: number) => {
+		const taskToUpdate = allTasks.find(t => t.id === taskId);
+		if (!taskToUpdate) return;
+
+		// 1. Check Wallet First
 		if (gems < cost) {
 			alert(`Not enough gems! You need ${cost} 💎 to buy this shield.`);
 			return;
 		}
 
-		const taskToUpdate = allTasks.find(t => t.id === taskId);
-		if (!taskToUpdate) return;
+		// --- THE CONFIRMATION DIALOGUE ---
+		// We format it nicely with line breaks (\n) for readability
+		const isConfirmed = window.confirm(
+			`Equip a shield to "${taskToUpdate.name}"?\n\nCost: ${cost} 💎\nCurrent Balance: ${gems} 💎`
+		);
+		
+		// If they click "Cancel", we stop the function right here
+		if (!isConfirmed) return; 
+		// --- END CONFIRMATION ---
 
-		// 1. Deduct the Gems
+		// 2. Deduct the Gems
 		const newGems = gems - cost;
 		await setMeta("gems", newGems);
 
-		// 2. Equip the Shield
+		// 3. Equip the Shield
 		taskToUpdate.shields = (taskToUpdate.shields || 0) + 1;
 		await saveTaskToDB(taskToUpdate);
 
-		// 3. Update the UI
+		// 4. Update the UI
 		forceRefresh();
+		// We can now safely call triggerToast with just ONE argument!
 		triggerToast(`Shield equipped to ${taskToUpdate.name}! 🛡️`);
 	};
 
