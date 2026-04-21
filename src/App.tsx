@@ -7,11 +7,10 @@ import { Login } from './components/Login';
 import { useTasks } from './hooks/useTasks';
 import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
-import { saveTaskToDB, deleteTaskFromDB, getMeta, setMeta } from './services/db';
+import { saveTaskToDB, getMeta, setMeta } from './services/db';
 import type { Quest } from './types/quest';
 import logo from './assets/logo.svg';
 import { DailySummaryModal } from './components/DailySummaryModal';
-import confetti from 'canvas-confetti';
 import successSound from './assets/success.mp3';
 import { TimeVaultModal } from './components/TimeVaultModal';
 import { formatTimeDeposit, formatShortTimeDeposit } from './utils/timeFormat';
@@ -23,6 +22,7 @@ import { BottomNav } from './components/layout/BottomNav';
 import type { TabType } from './components/layout/BottomNav';
 import { GemShopModal } from './components/GemShopModal';
 import { useGameEconomy } from './hooks/useGameEconomy';
+import { useQuestActions } from './hooks/useQuestActions';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -87,6 +87,15 @@ export default function App() {
 
 	// --- ECONOMY ENGINE ---
 	const { handleBuyShield, handleBuyGemWithTime, handleBuyTimeWithGem } = useGameEconomy(gems, timeDeposit, allTasks, forceRefresh, triggerToast);
+
+	// --- QUEST ACTIONS ENGINE ---
+	const { 
+		handleToggleComplete, handleTakeBreak, handleUndoBreak, 
+		handleDelete, handleRestore, handleHardDelete 
+	} = useQuestActions(
+		allTasks, breakTasks, deletedTasks, timeDeposit, 
+		volumeLevel, forceRefresh, triggerToast
+	);
 
 	const handleUndoAction = (action: ToastAction, taskId: number) => {
 		if (action === 'delete') handleRestore(taskId, true);
@@ -155,272 +164,11 @@ export default function App() {
 		setIsModalOpen(true);
 	}
 
-	const handleToggleComplete = async (id: number, isUndoFromToast = false) => {
-		const taskToUpdate = allTasks.find(t => t.id === id);
-		if (!taskToUpdate) return;
-
-		const now = Date.now();
-		const updatedTask = { ...taskToUpdate };
-
-		// Toggling to COMPLETED
-		if (!updatedTask.completed) {
-			updatedTask.completed = true;
-			updatedTask.completedAt = now;
-			updatedTask.gemClaimed = false;
-
-			if (!updatedTask.completionDates) updatedTask.completionDates = [];
-      
-      // 1. Add today's stamp
-      updatedTask.completionDates.push(now);
-      
-      // 2. Immediately filter out anything older than 7 days!
-      const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
-      updatedTask.completionDates = updatedTask.completionDates.filter(date => date >= sevenDaysAgo);
-
-			let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
-			let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
-			let timeLeft = activeDeadline - now;
-
-			if (timeLeft > 0) {
-				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
-				
-				// Calculate Deposit: Cap at 1 Week (604,800,000 ms) AND cap at the original task duration
-				const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-				const depositAmount = Math.floor(Math.min(timeLeft, activeDuration, oneWeekMs));
-				
-				updatedTask.lastDepositMs = depositAmount;
-				await setMeta("timeDepositMs", timeDeposit + depositAmount);
-			} else {
-				updatedTask.energyPercent = 0;
-				updatedTask.lastDepositMs = 0;
-			}
-
-			if (timeLeft > 0) {
-				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
-			} else {
-				updatedTask.energyPercent = 0;
-			}
-
-			// --- THE HIDDEN XP & LEVEL UP ENGINE ---
-			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
-				// 1. Calculate the days in this cycle
-				const activeDurationMs = updatedTask.activeDeadlineMs || 86400000;
-				const daysInCycle = Math.max(1, Math.round(activeDurationMs / 86400000));
-				
-				// 2. Add XP and increment Individual Streak
-				updatedTask.accumulatedDays = (updatedTask.accumulatedDays || 0) + daysInCycle;
-				updatedTask.streak = (updatedTask.streak || 0) + 1;
-
-				// 3. Level-Up Logic (No Double Leveling!)
-				const totalDays = updatedTask.accumulatedDays;
-				let currentTier = updatedTask.tier || 'standard';
-				let leveledUp = false;
-				let newMaxCapacity = 1;
-
-				if (currentTier === 'standard' && totalDays >= 7) {
-					updatedTask.tier = 'bronze';
-					newMaxCapacity = 2;
-					leveledUp = true;
-				} else if (currentTier === 'bronze' && totalDays >= 30) {
-					updatedTask.tier = 'silver';
-					newMaxCapacity = 3;
-					leveledUp = true;
-				} else if (currentTier === 'silver' && totalDays >= 180) {
-					updatedTask.tier = 'gold';
-					newMaxCapacity = 4;
-					leveledUp = true;
-				} else if (currentTier === 'gold' && totalDays >= 365) {
-					updatedTask.tier = 'diamond';
-					newMaxCapacity = 5;
-					leveledUp = true;
-				} else {
-          // Optimized: Use a switch or else-if for mutually exclusive values
-          switch (currentTier) {
-            case 'standard': newMaxCapacity = 1; break;
-            case 'bronze':   newMaxCapacity = 2; break;
-            case 'silver':   newMaxCapacity = 3; break;
-            case 'gold':     newMaxCapacity = 4; break;
-            case 'diamond':  newMaxCapacity = 5; break;
-            default:         newMaxCapacity = 1;
-          }
-        }
-
-				// Override for Long-Cycle Quests (6+ days): Capacity is ALWAYS 1
-				if (daysInCycle >= 6) {
-					newMaxCapacity = 1;
-				}
-
-				// 4. The "Full Heal" Level-Up Bonus
-				if (leveledUp) {
-					updatedTask.shields = newMaxCapacity;
-					// Fire a special toast!
-					triggerToast(`Level Up! ${updatedTask.name} is now ${(updatedTask.tier || 'standard').toUpperCase()}! Shields refilled.`, 'complete', id);
-				}
-			}
-			// --- END HIDDEN XP ENGINE ---
-
-			// 🎇 THE CELEBRATION ENGINE 🎇
-
-			// 1. Play the Sound (with error handling in case the browser blocks it)
-			const audio = new Audio(successSound);
-			const volumeMap = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
-			audio.volume = volumeMap[volumeLevel];
-
-			// Only play if it isn't muted!
-			if (volumeLevel > 0) {
-				audio.play().catch(error => console.log("Audio blocked by browser:", error));
-			}
-
-			// 2. Fire the Confetti!
-			confetti({
-				particleCount: 150, // Number of pieces
-				spread: 80,         // How wide the explosion is
-				origin: { y: 0.6 }, // Starts slightly below the middle of the screen
-				colors: ['#f97316', '#fbbf24', '#34d399', '#3b82f6'] // Tailwind Orange, Yellow, Green, Blue
-			});
-
-			// Save the task, refresh the UI, and pop the Undo toast!
-			await saveTaskToDB(updatedTask);
-			forceRefresh();
-			if (!isUndoFromToast) triggerToast(`Completed: ${updatedTask.name}`, 'complete', id);
-
-		// UNDOING a Completion (Moving back to Active)
-		} else {
-			updatedTask.completed = false;
-			updatedTask.completedAt = null;
-			updatedTask.gemClaimed = false;
-			updatedTask.isArchived = false;
-
-			// --- NEW: THE REVERSAL ENGINE (Undo XP and Tier) ---
-			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
-				const activeDurationMs = updatedTask.activeDeadlineMs || 86400000;
-				const daysInCycle = Math.max(1, Math.round(activeDurationMs / 86400000));
-
-				// 1. Revert the XP and Individual Streak
-				updatedTask.accumulatedDays = Math.max(0, (updatedTask.accumulatedDays || 0) - daysInCycle);
-				updatedTask.streak = Math.max(0, (updatedTask.streak || 0) - 1);
-
-				// 2. Strict Tier Recalculation (In case the undo drops them below a threshold)
-				const totalDays = updatedTask.accumulatedDays;
-				let newTier: 'standard' | 'bronze' | 'silver' | 'gold' | 'diamond' = 'standard';
-				let newMaxCapacity = 1;
-
-				if (totalDays >= 365) { newTier = 'diamond'; newMaxCapacity = 5; }
-				else if (totalDays >= 180) { newTier = 'gold'; newMaxCapacity = 4; }
-				else if (totalDays >= 30) { newTier = 'silver'; newMaxCapacity = 3; }
-				else if (totalDays >= 7) { newTier = 'bronze'; newMaxCapacity = 2; }
-
-				// Override for long cycles
-				if (daysInCycle >= 6) newMaxCapacity = 1;
-
-				updatedTask.tier = newTier;
-
-				// 3. Confiscate illegally held shields (if capacity dropped)
-				if ((updatedTask.shields || 0) > newMaxCapacity) {
-					updatedTask.shields = newMaxCapacity;
-				}
-			}
-			// --- END REVERSAL ENGINE ---
-
-			if (updatedTask.lastDepositMs) {
-				// Don't let the bank go below 0 just in case
-				const newBankBalance = Math.max(0, timeDeposit - updatedTask.lastDepositMs);
-				await setMeta("timeDepositMs", newBankBalance);
-				updatedTask.lastDepositMs = 0;
-			}
-
-			if (updatedTask.completionDates && updatedTask.completionDates.length > 0) {
-        updatedTask.completionDates.pop();
-      }
-
-			await saveTaskToDB(updatedTask);
-			forceRefresh();
-			if (!isUndoFromToast) triggerToast("Card restored to active.", 'complete', id);
-		}
-	};
-
-	const handleTakeBreak = async (id: number) => {
-		const task = breakTasks.find(t => t.id === id);
-		if (!task) return;
-
-		const breakCost = task.cooldownMs || 0;
-		if (timeDeposit < breakCost) {
-			triggerToast(`Not enough Time Deposits! You need ${formatTimeDeposit(breakCost)}.`, 'break', id);
-			return; // Stops them from taking the break!
-		}
-		
-		// Deduct from the bank
-		await setMeta("timeDepositMs", timeDeposit - breakCost);
-
-		// Save the previous state for the Undo button
-		task.previousLastDoneAt = task.lastDoneAt;
-		task.previousGemClaimed = task.gemClaimed;
-
-		// 1. Reset the cooldown timer
-		task.lastDoneAt = Date.now();
-		task.energyPercent = 0;
-		task.gemClaimed = false;
-
-		await saveTaskToDB(task);
-		forceRefresh();
-
-		// 2. Change the toast to reflect the delayed gratification!
-		triggerToast(`Break taken! Gem will arrive at midnight 🌙`, 'break', id);
-	};
-
-	const handleUndoBreak = async (id: number) => {
-		const allTasks = [...activeTasks, ...comingTasks, ...completedTasks, ...breakTasks];
-		const taskToUpdate = allTasks.find(t => t.id === id);
-		if (!taskToUpdate) return;
-		const breakCost = taskToUpdate.cooldownMs || 0;
-		await setMeta("timeDepositMs", timeDeposit + breakCost);
-
-		// 1. Restore the previous cooldown timer
-		taskToUpdate.lastDoneAt = taskToUpdate.previousLastDoneAt || 0;
-
-		// 2. Restore the previous gem flag
-		if (taskToUpdate.previousGemClaimed !== undefined) {
-			taskToUpdate.gemClaimed = taskToUpdate.previousGemClaimed;
-		}
-
-		await saveTaskToDB(taskToUpdate);
-		forceRefresh();
-	};
-
-	// 1. Click "Edit" on a card
 	const handleEdit = (id: number) => {
 		const quest = allTasks.find(t => t.id === id);
 		if (quest) {
 			setEditingQuest(quest);
 			setIsModalOpen(true);
-		}
-	};
-
-	const handleDelete = async (id: number, isUndoFromToast = false) => {
-		const taskToTrash = allTasks.find(t => t.id === id);
-
-		if (taskToTrash) {
-			taskToTrash.deletedAt = Date.now();
-			await saveTaskToDB(taskToTrash);
-			forceRefresh();
-			if (!isUndoFromToast) triggerToast("Card moved to trash.", 'delete', id);
-		}
-	};
-
-	const handleRestore = async (id: number, isUndoFromToast = false) => {
-		const task = deletedTasks.find(t => t.id === id);
-		if (task) {
-			delete task.deletedAt; // Remove the delete timestamp
-			await saveTaskToDB(task);
-			forceRefresh();
-			if (!isUndoFromToast) triggerToast("Card restored from trash.", 'restore', id);
-		}
-	};
-
-	const handleHardDelete = async (id: number) => {
-		if (window.confirm("Destroy this card forever?")) {
-			await deleteTaskFromDB(id);
-			forceRefresh();
 		}
 	};
 
