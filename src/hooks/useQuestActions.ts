@@ -96,7 +96,7 @@ export function useQuestActions(
 
 				if (leveledUp) {
 					updatedTask.shields = newMaxCapacity;
-					triggerToast(`Level Up! ${updatedTask.name} is now ${(updatedTask.tier || 'standard').toUpperCase()}! Shields refilled.`, 'complete', id);
+					triggerToast(`Level Up! ${updatedTask.name} is now ${updatedTask.tier!.toUpperCase()}! Shields refilled.`, 'complete', id);
 				}
 			}
 
