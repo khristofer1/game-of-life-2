@@ -1,3 +1,5 @@
+// src/types/quest.ts
+
 export interface Quest {
 	id?: number;
 	name: string;
@@ -56,4 +58,7 @@ export interface Quest {
 	streak: number;
 	completionDates?: number[];
 	lastDepositMs?: number;
+	accumulatedDays?: number;
+  shields?: number;
+  tier?: 'standard' | 'bronze' | 'silver' | 'gold' | 'diamond';
 }
