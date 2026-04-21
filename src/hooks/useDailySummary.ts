@@ -33,7 +33,7 @@ export const useDailySummary = (allTasks: Quest[]) => {
 			const totalGemsGained = completedYesterday.length + breaksYesterday.length;
 
 			setSummaryData({
-				completed: completedYesterday,
+				completed: [...completedYesterday, ...breaksYesterday],
 				expired: expiredOneTime,
 				gemsGained: totalGemsGained
 			});
