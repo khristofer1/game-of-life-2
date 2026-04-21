@@ -160,8 +160,12 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
         <div className="flex justify-between items-end mb-1">
           <span className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-2">
             {quest.displayFreq}
-            {/* Show Hidden XP next to the frequency! */}
-            {isRecurring && <span className="text-[10px] text-orange-400 normal-case bg-orange-50 px-1.5 rounded-sm">Lv.{quest.accumulatedDays || 0}</span>}
+            {/* Show the actual Streak count with a flame! */}
+            {isRecurring && (
+              <span className="text-xs text-orange-500 font-bold normal-case bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                🔥 {quest.streak || 0}
+              </span>
+            )}
           </span>
           <div className="text-right">
             <span className={`text-sm font-bold ${isPending ? 'text-gray-400' : (quest.completed ? 'text-green-500' : 'text-orange-500')}`}>

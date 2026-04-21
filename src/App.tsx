@@ -342,12 +342,43 @@ export default function App() {
 				colors: ['#f97316', '#fbbf24', '#34d399', '#3b82f6'] // Tailwind Orange, Yellow, Green, Blue
 			});
 
-			// UNDOING a Completion (Moving back to Active)
+		// UNDOING a Completion (Moving back to Active)
 		} else {
 			updatedTask.completed = false;
 			updatedTask.completedAt = null;
 			updatedTask.gemClaimed = false;
 			updatedTask.isArchived = false;
+
+			// --- NEW: THE REVERSAL ENGINE (Undo XP and Tier) ---
+			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
+				const activeDurationMs = updatedTask.activeDeadlineMs || 86400000;
+				const daysInCycle = Math.max(1, Math.round(activeDurationMs / 86400000));
+
+				// 1. Revert the XP and Individual Streak
+				updatedTask.accumulatedDays = Math.max(0, (updatedTask.accumulatedDays || 0) - daysInCycle);
+				updatedTask.streak = Math.max(0, (updatedTask.streak || 0) - 1);
+
+				// 2. Strict Tier Recalculation (In case the undo drops them below a threshold)
+				const totalDays = updatedTask.accumulatedDays;
+				let newTier: 'standard' | 'bronze' | 'silver' | 'gold' | 'diamond' = 'standard';
+				let newMaxCapacity = 1;
+
+				if (totalDays >= 365) { newTier = 'diamond'; newMaxCapacity = 5; }
+				else if (totalDays >= 180) { newTier = 'gold'; newMaxCapacity = 4; }
+				else if (totalDays >= 30) { newTier = 'silver'; newMaxCapacity = 3; }
+				else if (totalDays >= 7) { newTier = 'bronze'; newMaxCapacity = 2; }
+
+				// Override for long cycles
+				if (daysInCycle >= 6) newMaxCapacity = 1;
+
+				updatedTask.tier = newTier;
+
+				// 3. Confiscate illegally held shields (if capacity dropped)
+				if ((updatedTask.shields || 0) > newMaxCapacity) {
+					updatedTask.shields = newMaxCapacity;
+				}
+			}
+			// --- END REVERSAL ENGINE ---
 
 			if (updatedTask.lastDepositMs) {
 				// Don't let the bank go below 0 just in case
