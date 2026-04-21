@@ -187,7 +187,7 @@ export default function App() {
 
 		// 3. Update the UI
 		forceRefresh();
-		triggerToast(`Shield equipped to ${taskToUpdate.name}! 🛡️`, 'complete', taskId);
+		triggerToast(`Shield equipped to ${taskToUpdate.name}! 🛡️`);
 	};
 
 	const handleToggleComplete = async (id: number, isUndoFromToast = false) => {

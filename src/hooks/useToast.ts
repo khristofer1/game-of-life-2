@@ -7,8 +7,8 @@ export type ToastAction = 'delete' | 'complete' | 'restore' | 'break';
 export interface ToastState {
 	id: number;
 	message: string;
-	action: ToastAction;
-	taskId: number;
+	action?: ToastAction;
+	taskId?: number;
 }
 
 export const useToast = () => {
@@ -16,7 +16,7 @@ export const useToast = () => {
 	const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	// useCallback ensures this function doesn't get recreated on every render
-	const triggerToast = useCallback((message: string, action: ToastAction, taskId: number) => {
+	const triggerToast = useCallback((message: string, action?: ToastAction, taskId?: number) => {
 		if (toastTimeout.current) clearTimeout(toastTimeout.current);
 		setToast({ id: Date.now(), message, action, taskId });
 		
