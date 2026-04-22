@@ -4,6 +4,9 @@ import type { Quest } from '../types/quest';
 import { formatQuestDuration } from '../utils/timeFormat';
 import { useSmartTextarea } from '../hooks/useSmartTextarea';
 import { calculateQuestData } from '../utils/questCalculations';
+import { BreakSettings } from './forms/BreakSettings';
+import { OneTimeSettings } from './forms/OneTimeSettings';
+import { RecurringSettings } from './forms/RecurringSettings';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -319,132 +322,39 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
 
             {/* ONE-TIME SETTINGS */}
             {questType === 'onetime' && (
-              <div className="space-y-6 animate-fade-in">
-                <div>
-                  <label className="block font-semibold text-dark mb-2">Deadline Type</label>
-                  <select value={otType} onChange={e => setOtType(e.target.value as 'duration' | 'date')} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer">
-                    <option value="duration">By Duration (Days/Weeks/Months)</option>
-                    <option value="date">By Specific Date & Time</option>
-                  </select>
-                </div>
-                {otType === 'duration' ? (
-                  <div className="flex gap-3">
-                    <input type="number" min="1" value={otNum} onChange={e => setOtNum(parseInt(e.target.value))} className="w-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark text-center" />
-                    <select value={otUnit} onChange={e => setOtUnit(e.target.value)} className="grow px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark">
-                      <option value="days">Days</option><option value="weeks">Weeks</option><option value="months">Months</option><option value="years">Years</option>
-                    </select>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block font-semibold text-dark mb-2">Hard Deadline <span className="text-red-500">*</span></label>
-                    <input type="datetime-local" value={otDeadlineStr} onChange={e => setOtDeadlineStr(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer text-center" />
-                  </div>
-                )}
-              </div>
+              <OneTimeSettings 
+                otType={otType} setOtType={setOtType}
+                otNum={otNum} setOtNum={setOtNum}
+                otUnit={otUnit} setOtUnit={setOtUnit}
+                otDeadlineStr={otDeadlineStr} setOtDeadlineStr={setOtDeadlineStr}
+              />
             )}
 
             {/* RECURRING SETTINGS */}
             {questType === 'recurring' && (
-              <div className="space-y-6 animate-fade-in">
-                <div>
-                  <label className="block font-semibold text-dark mb-2">Repeat Every</label>
-                  <div className="flex gap-3">
-                    <input type="number" min="1" value={freqNum} onChange={e => setFreqNum(parseInt(e.target.value))} className="w-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark text-center" />
-                    <select value={freqUnit} onChange={e => setFreqUnit(e.target.value)} className="grow px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark">
-                      <option value="days">Days</option><option value="weeks">Weeks</option><option value="months">Months</option><option value="years">Years</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-gray-100 mb-4">
-                  <label className="flex items-center gap-2 cursor-pointer mb-3">
-                    <input type="checkbox" checked={hasShorterDeadline} onChange={e => setHasShorterDeadline(e.target.checked)} className="w-4 h-4 text-orange-500 rounded focus:ring-orange-400" />
-                    <span className="font-semibold text-dark">Use a custom deadline</span>
-                  </label>
-                  
-                  {hasShorterDeadline && (
-                    <div className="space-y-3 animate-fade-in">
-                      <select 
-                        value={activeWindowType} 
-                        onChange={e => setActiveWindowType(e.target.value as 'duration' | 'date')} 
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer"
-                      >
-                        <option value="date">By Specific Date & Time</option>
-                        <option value="duration">By Duration</option>
-                      </select>
-
-                      {activeWindowType === 'duration' ? (
-                        <div className="flex gap-3">
-                          <input type="number" min="1" value={activeNum} onChange={e => setActiveNum(parseInt(e.target.value))} className="w-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark text-center" />
-                          <select value={activeUnit} onChange={e => setActiveUnit(e.target.value)} className="grow px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark">
-                            <option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option><option value="weeks">Weeks</option>
-                          </select>
-                        </div>
-                      ) : (
-                        <div>
-                          <input 
-                            type="datetime-local" 
-                            value={activeWindowDateStr} 
-                            onChange={e => setActiveWindowDateStr(e.target.value)} 
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer text-center" 
-                          />
-                          <p className="text-xs text-muted mt-2 px-1">
-                            Note: The exact time difference between your Start Date and this Deadline will become the standard active window for all future cycles.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-4 border-t border-gray-100">
-                  <label className="flex items-center gap-2 cursor-pointer mb-3">
-                    <input type="checkbox" checked={hasLimit} onChange={e => setHasLimit(e.target.checked)} className="w-4 h-4 text-orange-500 rounded focus:ring-orange-400" />
-                    <span className="font-semibold text-dark">This quest has a time limit</span>
-                  </label>
-                  {hasLimit && (
-                    <div className="space-y-3 animate-fade-in">
-                      <select value={limitType} onChange={e => setLimitType(e.target.value as any)} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark">
-                        <option value="duration">By Duration</option><option value="date">By Specific Date</option><option value="occurrences">By Occurrences</option>
-                      </select>
-                      {limitType === 'duration' && (
-                        <div className="flex gap-3">
-                          <input type="number" min="1" value={limitNum} onChange={e => setLimitNum(parseInt(e.target.value))} className="w-20 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-center" />
-                          <select value={limitUnit} onChange={e => setLimitUnit(e.target.value)} className="grow px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl">
-                            <option value="days">Days</option><option value="weeks">Weeks</option><option value="months">Months</option><option value="years">Years</option>
-                          </select>
-                        </div>
-                      )}
-                      {limitType === 'date' && (
-                        <input type="datetime-local" value={limitDateStr} onChange={e => setLimitDateStr(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-center" />
-                      )}
-                      {limitType === 'occurrences' && (
-                        <div className="flex items-center gap-3">
-                          <div className="font-semibold text-muted px-2">Ends after</div>
-                          <input type="number" min="1" value={limitOccurrences} onChange={e => setLimitOccurrences(parseInt(e.target.value))} className="w-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-center" />
-                          <div className="font-semibold text-muted px-2">times</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <RecurringSettings 
+                freqNum={freqNum} setFreqNum={setFreqNum}
+                freqUnit={freqUnit} setFreqUnit={setFreqUnit}
+                hasShorterDeadline={hasShorterDeadline} setHasShorterDeadline={setHasShorterDeadline}
+                activeWindowType={activeWindowType} setActiveWindowType={setActiveWindowType}
+                activeNum={activeNum} setActiveNum={setActiveNum}
+                activeUnit={activeUnit} setActiveUnit={setActiveUnit}
+                activeWindowDateStr={activeWindowDateStr} setActiveWindowDateStr={setActiveWindowDateStr}
+                hasLimit={hasLimit} setHasLimit={setHasLimit}
+                limitType={limitType} setLimitType={setLimitType}
+                limitNum={limitNum} setLimitNum={setLimitNum}
+                limitUnit={limitUnit} setLimitUnit={setLimitUnit}
+                limitDateStr={limitDateStr} setLimitDateStr={setLimitDateStr}
+                limitOccurrences={limitOccurrences} setLimitOccurrences={setLimitOccurrences}
+              />
             )}
 
             {/* BREAK ACTIVITY SETTINGS */}
             {questType === 'break' && (
-              <div className="space-y-6 animate-fade-in">
-                <div>
-                  <label className="block font-semibold text-dark mb-2">Cooldown Duration</label>
-                  <p className="text-xs text-muted mb-3">How long until you are allowed to do this activity again?</p>
-                  <div className="flex gap-3">
-                    <input type="number" min="1" value={breakNum} onChange={e => setBreakNum(parseInt(e.target.value))} className="w-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark text-center" />
-                    <select value={breakUnit} onChange={e => setBreakUnit(e.target.value)} className="grow px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark">
-                      <option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option><option value="weeks">Weeks</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+              <BreakSettings 
+                breakNum={breakNum} setBreakNum={setBreakNum}
+                breakUnit={breakUnit} setBreakUnit={setBreakUnit}
+              />
             )}
           </form>
         </div>
