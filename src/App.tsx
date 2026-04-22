@@ -1,19 +1,17 @@
 // src/App.tsx
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { User } from 'firebase/auth';
-import { auth, logoutFromGoogle } from './services/firebase';
+import { auth } from './services/firebase';
 import { Login } from './components/Login';
 import { useTasks } from './hooks/useTasks';
 import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
 import { saveTaskToDB, getMeta, setMeta } from './services/db';
 import type { Quest } from './types/quest';
-import logo from './assets/logo.svg';
 import { DailySummaryModal } from './components/DailySummaryModal';
-import successSound from './assets/success.mp3';
 import { TimeVaultModal } from './components/TimeVaultModal';
-import { formatTimeDeposit, formatShortTimeDeposit } from './utils/timeFormat';
+import { formatTimeDeposit } from './utils/timeFormat';
 import type { ToastAction } from './hooks/useToast';
 import { useToast } from './hooks/useToast';
 import { ToastContainer } from './components/ToastContainer';
@@ -23,6 +21,7 @@ import type { TabType } from './components/layout/BottomNav';
 import { GemShopModal } from './components/GemShopModal';
 import { useGameEconomy } from './hooks/useGameEconomy';
 import { useQuestActions } from './hooks/useQuestActions';
+import { Header } from './components/layout/Header';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -30,24 +29,7 @@ export default function App() {
 	const [isAuthLoading, setIsAuthLoading] = useState(true);
 
 	// --- UI & SETTINGS STATE ---
-	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [volumeLevel, setVolumeLevel] = useState(3);
-	const settingsRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			// If the Settings menu is open AND the click was outside of it -> Close it
-			if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
-				setIsSettingsOpen(false);
-			}
-		};
-
-		// Attach the listener
-		document.addEventListener("mousedown", handleClickOutside);
-
-		// Clean up the listener when the component unmounts
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, []);
 
 	// Load saved volume on mount
 	useEffect(() => {
@@ -232,103 +214,15 @@ export default function App() {
 	return (
 		<div className="min-h-screen pb-20 bg-gray-50/50 animate-fade-in">
 			{/* TOP HEADER */}
-			<header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 py-3 sm:py-4 mb-8">
-				<div className="max-w-7xl mx-auto flex justify-between items-center">
-					
-					{/* LOGO AREA: Added shrink-0 so the logo never gets crushed */}
-					<button
-						onClick={() => setShowSummaryModal(true)}
-						className="flex items-center gap-2 sm:gap-3 focus:outline-none group transition-transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-						title="View Daily Summary"
-					>
-						<img
-							src={logo}
-							alt="Game of Life Logo"
-							className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500 group-hover:drop-shadow-md transition-all"
-						/>
-						{/* Text stays hidden on mobile, appears on sm screens and up */}
-						<h1 className="text-xl sm:text-2xl font-bold tracking-tight text-dark hidden sm:block group-hover:text-orange-600 transition-colors">
-							Game of Life
-						</h1>
-					</button>
-
-					{/* REWARDS AREA: Tighter gaps on mobile (gap-1.5) vs desktop (gap-4) */}
-					<div className="flex items-center gap-1.5 sm:gap-4">
-						
-						{/* 1. GEMS */}
-						<button
-							onClick={() => setIsGemShopOpen(true)}
-							className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 bg-orange-50 text-orange-600 rounded-full font-bold shadow-sm border border-orange-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
-						>
-							<span className="text-xs sm:text-sm">💎</span>
-							<span className="text-sm sm:text-base">{gems}</span>
-						</button>
-
-						{/* 2. TIME VAULT */}
-						<button
-							onClick={() => setIsBankModalOpen(true)}
-							className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 bg-blue-50 text-blue-600 rounded-full font-bold shadow-sm border border-blue-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
-							title="View Time Vault"
-						>
-							<span className="text-xs sm:text-sm">⏳</span>
-							<span className="text-sm sm:text-base">{formatShortTimeDeposit(timeDeposit)}</span>
-						</button>
-
-						{/* SETTINGS GEAR */}
-						<div className="relative ml-1 sm:ml-0" ref={settingsRef}>
-							<button
-								onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-								className="text-xl sm:text-2xl p-1 hover:bg-gray-100 rounded-full transition-all focus:outline-none cursor-pointer hover:scale-110 active:scale-95 grayscale hover:grayscale-0"
-								title="Settings"
-							>
-								⚙️
-							</button>
-
-							{/* Settings Dropdown Menu (No changes here, just paste your existing one back in if needed) */}
-							{isSettingsOpen && (
-								<div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in flex flex-col">
-									{/* Volume Controls */}
-									<div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-										<span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block text-center">
-											Sound Effects
-										</span>
-										<div className="flex justify-between items-center gap-1">
-											{[0, 1, 2, 3, 4, 5].map((level) => (
-												<button
-													key={level}
-													onClick={async () => {
-														setVolumeLevel(level);
-														await setMeta("volumeLevel", level);
-														if (level > 0) {
-															const testAudio = new Audio(successSound);
-															testAudio.volume = [0, 0.2, 0.4, 0.6, 0.8, 1.0][level];
-															testAudio.play().catch(() => { });
-														}
-													}}
-													className={`w-8 h-8 rounded-full text-xs flex items-center justify-center transition-all ${volumeLevel === level
-															? 'bg-orange-500 text-white font-bold shadow-md scale-110'
-															: 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-100'
-														}`}
-												>
-													{level === 0 ? '🔇' : level}
-												</button>
-											))}
-										</div>
-									</div>
-
-									{/* Logout Button */}
-									<button
-										onClick={logoutFromGoogle}
-										className="px-4 py-3 text-sm font-bold text-left text-red-500 hover:bg-red-50 transition-colors flex items-center gap-3"
-									>
-										<span className="text-lg">🚪</span> Logout
-									</button>
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
-			</header>
+			<Header 
+				gems={gems}
+				timeDeposit={timeDeposit}
+				volumeLevel={volumeLevel}
+				setVolumeLevel={setVolumeLevel}
+				onOpenSummary={() => setShowSummaryModal(true)}
+				onOpenGemShop={() => setIsGemShopOpen(true)}
+				onOpenTimeVault={() => setIsBankModalOpen(true)}
+			/>
 
 			{/* MAIN CONTENT AREA */}
 			<main className="max-w-7xl mx-auto px-6 pb-24">
