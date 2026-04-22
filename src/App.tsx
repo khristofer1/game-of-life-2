@@ -11,7 +11,6 @@ import { getMeta } from './services/db';
 import type { Quest } from './types/quest';
 import { DailySummaryModal } from './components/DailySummaryModal';
 import { TimeVaultModal } from './components/TimeVaultModal';
-import { formatTimeDeposit } from './utils/timeFormat';
 import type { ToastAction } from './hooks/useToast';
 import { useToast } from './hooks/useToast';
 import { ToastContainer } from './components/ToastContainer';
@@ -54,7 +53,7 @@ export default function App() {
 	}, []);
 
 	// Pull everything we need from our custom background engine!
-	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, timeDeposit, forceRefresh } = useTasks(user);
+	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, timePoints, forceRefresh } = useTasks(user);
 
 	// --- DAILY SUMMARY ENGINE ---
 	const { showSummaryModal, setShowSummaryModal, summaryData, setSummaryData, handleCloseSummary } = useDailySummary(allTasks);
@@ -74,14 +73,14 @@ export default function App() {
 	const { toast, triggerToast, closeToast } = useToast();
 
 	// --- ECONOMY ENGINE ---
-	const { handleBuyShield, handleBuyGemWithTime, handleBuyTimeWithGem } = useGameEconomy(gems, timeDeposit, allTasks, forceRefresh, triggerToast);
+	const { handleBuyShield, handleBuyGemWithTime, handleBuyTimeWithGem } = useGameEconomy(gems, timePoints, allTasks, forceRefresh, triggerToast);
 
 	// --- QUEST ACTIONS ENGINE ---
 	const { 
 		handleToggleComplete, handleTakeBreak, handleUndoBreak, 
 		handleDelete, handleRestore, handleHardDelete 
 	} = useQuestActions(
-		allTasks, breakTasks, deletedTasks, timeDeposit, 
+		allTasks, breakTasks, deletedTasks, timePoints, 
 		volumeLevel, forceRefresh, triggerToast
 	);
 
@@ -142,7 +141,7 @@ export default function App() {
 			{/* TOP HEADER */}
 			<Header 
 				gems={gems}
-				timeDeposit={timeDeposit}
+				timePoints={timePoints}
 				volumeLevel={volumeLevel}
 				setVolumeLevel={setVolumeLevel}
 				onOpenSummary={() => setShowSummaryModal(true)}
@@ -214,15 +213,14 @@ export default function App() {
 			<TimeVaultModal
 				isOpen={isBankModalOpen}
 				onClose={() => setIsBankModalOpen(false)}
-				timeDepositMs={timeDeposit}
-				formatFullTime={formatTimeDeposit}
+				timePoints={timePoints}
 			/>
 
 			<GemShopModal
 				isOpen={isGemShopOpen}
 				onClose={() => setIsGemShopOpen(false)}
 				gems={gems}
-				timeDepositMs={timeDeposit}
+				timePoints={timePoints}
 				onBuyGemWithTime={handleBuyGemWithTime}
 				onBuyTimeWithGem={handleBuyTimeWithGem}
 			/>

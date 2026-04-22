@@ -48,35 +48,3 @@ export const formatQuestDuration = (startDateStr: string, deadlineStr: string): 
   const years = Math.round(diffInDays / 365);
   return years === 1 ? '1 Year' : `${years} Years`;
 };
-
-export const formatTimeDeposit = (ms: number): string => {
-  if (ms <= 0) return "0m";
-  const mins = Math.floor(ms / 60000);
-  const w = Math.floor(mins / (7 * 24 * 60));
-  const d = Math.floor((mins % (7 * 24 * 60)) / (24 * 60));
-  const h = Math.floor((mins % (24 * 60)) / 60);
-  const m = mins % 60;
-
-  const parts = [];
-  if (w > 0) parts.push(`${w}w`);
-  if (d > 0) parts.push(`${d}d`);
-  if (h > 0) parts.push(`${h}h`);
-  if (m > 0 || parts.length === 0) parts.push(`${m}m`);
-
-  return parts.join(" ");
-};
-
-export const formatShortTimeDeposit = (ms: number): string => {
-  if (ms <= 0) return "0m";
-  const mins = Math.floor(ms / 60000);
-  const w = Math.floor(mins / (7 * 24 * 60));
-  const d = Math.floor((mins % (7 * 24 * 60)) / (24 * 60));
-  const h = Math.floor((mins % (24 * 60)) / 60);
-  const m = mins % 60;
-
-  // Return ONLY the highest non-zero unit
-  if (w > 0) return `${w}w`;
-  if (d > 0) return `${d}d`;
-  if (h > 0) return `${h}h`;
-  return `${m}m`;
-};

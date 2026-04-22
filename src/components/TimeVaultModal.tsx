@@ -4,7 +4,6 @@ interface TimeVaultModalProps {
   isOpen: boolean;
   onClose: () => void;
   timePoints: number;
-  formatFullTime: (ms: number) => string;
 }
 
 export function TimeVaultModal({ isOpen, onClose, timePoints }: TimeVaultModalProps) {
