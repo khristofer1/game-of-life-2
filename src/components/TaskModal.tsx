@@ -1,9 +1,9 @@
 // src/components/TaskModal.tsx
-import { useState, useEffect, useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import type { Quest } from '../types/quest';
 import { formatQuestDuration } from '../utils/timeFormat';
-import { useSmartTextarea } from '../hooks/useSmartTextarea';
 import { calculateQuestData } from '../utils/questCalculations';
+import { useTaskFormState } from '../hooks/useTaskFormState';
 import { BreakSettings } from './forms/BreakSettings';
 import { OneTimeSettings } from './forms/OneTimeSettings';
 import { RecurringSettings } from './forms/RecurringSettings';
@@ -16,230 +16,49 @@ interface TaskModalProps {
   defaultIsBreak?: boolean;
 }
 
-// Helper to format timestamps for the <input type="datetime-local">
-const formatDateTimeLocal = (timestamp?: number) => {
-  if (!timestamp) return '';
-  const d = new Date(timestamp);
-  const tzoffset = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - tzoffset).toISOString().slice(0, 16);
-};
-
 export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak }: TaskModalProps) {
   const nameInputRef = useRef<HTMLInputElement>(null);
   
-  // --- FORM STATE ---
-  const [name, setName] = useState('');
-  const { desc, setDesc, handleDescChange, handleDescKeyDown } = useSmartTextarea('');
-  const [startDateStr, setStartDateStr] = useState('');
-  const [questType, setQuestType] = useState<'onetime' | 'recurring' | 'break'>('onetime');
-  const [hasManuallySetTime, setHasManuallySetTime] = useState(false);
+  // 1. Pull all state and logic from our custom hook
+  const state = useTaskFormState(initialData, isOpen, defaultIsBreak);
 
-  // One-Time State
-  const [otType, setOtType] = useState<'duration' | 'date'>('duration');
-  const [otNum, setOtNum] = useState(1);
-  const [otUnit, setOtUnit] = useState('weeks');
-  const [otDeadlineStr, setOtDeadlineStr] = useState('');
-
-  // Recurring State
-  const [freqNum, setFreqNum] = useState(1);
-  const [freqUnit, setFreqUnit] = useState('weeks');
-  const [hasShorterDeadline, setHasShorterDeadline] = useState(false);
-  const [activeNum, setActiveNum] = useState(3);
-  const [activeUnit, setActiveUnit] = useState('hours');
-  const [hasLimit, setHasLimit] = useState(false);
-  const [limitType, setLimitType] = useState<'duration' | 'date' | 'occurrences'>('duration');
-  const [limitNum, setLimitNum] = useState(1);
-  const [limitUnit, setLimitUnit] = useState('months');
-  const [limitDateStr, setLimitDateStr] = useState('');
-  const [limitOccurrences, setLimitOccurrences] = useState(10);
-  const [activeWindowType, setActiveWindowType] = useState<'duration' | 'date'>('duration');
-  const [activeWindowDateStr, setActiveWindowDateStr] = useState('');
-
-  // Break activity state
-  const [breakNum, setBreakNum] = useState(1);
-  const [breakUnit, setBreakUnit] = useState('days');
-
-  // --- INITIALIZATION (Runs when modal opens) ---
+  // 2. Focus input on open
   useEffect(() => {
     if (isOpen) {
-      if (initialData) {
-        // EDIT MODE: Populate fields
-        setName(initialData.name);
-        setDesc(initialData.desc || '');
-        setStartDateStr(formatDateTimeLocal(initialData.startDate));
-        setHasManuallySetTime(true);
-
-        if (initialData.isBreak) {
-          setQuestType('break');
-          if (initialData.cooldownData) {
-            setBreakNum(initialData.cooldownData.num || 1);
-            setBreakUnit(initialData.cooldownData.unit || 'days');
-          }
-        } else {
-          setQuestType(initialData.isOneTime ? 'onetime' : 'recurring');
-        }
-        
-        if (initialData.isOneTime) {
-          if (initialData.oneTimeData) {
-            setOtType(initialData.oneTimeData.type as 'duration' | 'date');
-            setOtNum(initialData.oneTimeData.num || 1);
-            setOtUnit(initialData.oneTimeData.unit || 'days');
-            setOtDeadlineStr(formatDateTimeLocal(initialData.deadline));
-          }
-        } else {
-          setFreqNum(initialData.freqNum || 1);
-          setFreqUnit(initialData.freqUnit || 'weeks');
-
-          if (initialData.activeDeadlineMs && initialData.activeDeadlineMs < initialData.durationMs) {
-            setHasShorterDeadline(true);
-            
-            // Check if they previously saved using the new data object
-            if (initialData.activeWindowData) {
-              setActiveWindowType(initialData.activeWindowData.type as 'duration' | 'date');
-              if (initialData.activeWindowData.type === 'duration') {
-                setActiveNum(initialData.activeWindowData.num || 3);
-                setActiveUnit(initialData.activeWindowData.unit || 'hours');
-              } else {
-                setActiveWindowDateStr(initialData.activeWindowData.dateStr || '');
-              }
-            } else {
-              // Fallback for older quests created before this update
-              setActiveWindowType('duration');
-              let ms = initialData.activeDeadlineMs;
-              if (ms % (7 * 24 * 60 * 60 * 1000) === 0) { setActiveNum(ms / (7 * 24 * 60 * 60 * 1000)); setActiveUnit('weeks'); }
-              else if (ms % (24 * 60 * 60 * 1000) === 0) { setActiveNum(ms / (24 * 60 * 60 * 1000)); setActiveUnit('days'); }
-              else if (ms % (60 * 60 * 1000) === 0) { setActiveNum(ms / (60 * 60 * 1000)); setActiveUnit('hours'); }
-              else { setActiveNum(Math.floor(ms / (60 * 1000))); setActiveUnit('minutes'); }
-            }
-          } else {
-            setHasShorterDeadline(false);
-            setActiveWindowType('duration');
-            setActiveNum(3);
-            setActiveUnit('hours');
-            setActiveWindowDateStr('');
-          }
-
-          setHasLimit(initialData.hasLimit || false);
-          if (initialData.limitData) {
-            setLimitType(initialData.limitData.type as any);
-            setLimitNum(initialData.limitData.num || 1);
-            setLimitUnit(initialData.limitData.unit || 'months');
-            setLimitDateStr(formatDateTimeLocal(initialData.expireAt));
-            setLimitOccurrences(initialData.limitData.count || 10);
-          }
-        }
-      } else {
-        // ADD MODE: Reset to defaults
-        setName('');
-        setDesc('');
-        setQuestType(defaultIsBreak ? 'break' : 'onetime');
-        setHasShorterDeadline(false);
-        setHasLimit(false);
-        setActiveWindowType('date');
-
-        // 1. Set Start Date exactly to NOW
-        const now = new Date();
-        const tzoffset = now.getTimezoneOffset() * 60000;
-        setStartDateStr(new Date(now.getTime() - tzoffset).toISOString().slice(0, 16));
-        setHasManuallySetTime(false);
-
-        // 2. Set Deadlines to today at 09:00 PM
-        const tonight = new Date();
-        tonight.setHours(21, 0, 0, 0);
-        const tonightIso = new Date(tonight.getTime() - tzoffset).toISOString().slice(0, 16);
-        
-        // 3. Feed this 9 PM string to the states that actually control your inputs!
-        setOtDeadlineStr(tonightIso);         // For One-Time Quests
-        setActiveWindowDateStr(tonightIso);   // For Recurring Quests (Custom Deadline)
-
-        // Focus the input slightly after the modal finishes rendering and animating
-        setTimeout(() => {
-          if (nameInputRef.current) {
-            nameInputRef.current.focus();
-          }
-        }, 100);
-      }
+      setTimeout(() => {
+        if (nameInputRef.current) nameInputRef.current.focus();
+      }, 100);
     }
-  }, [isOpen, initialData, defaultIsBreak]);
-
-  // --- TEXTAREA AUTO-FORMATTING ---
-  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value; 
-    if (!newValue) {
-      setStartDateStr('');
-      return;
-    }
-
-    if (hasManuallySetTime) {
-      // The user already locked in a specific time. Respect whatever they do.
-      setStartDateStr(newValue);
-    } else {
-      // Split the ISO string into [Date, Time] -> e.g. ["2026-04-17", "21:33"]
-      const oldTime = startDateStr.split('T')[1];
-      const newTime = newValue.split('T')[1];
-      const newDate = newValue.split('T')[0];
-
-      if (oldTime !== newTime) {
-        // The time part changed! That means they clicked the clock. Lock it in!
-        setHasManuallySetTime(true);
-        setStartDateStr(newValue);
-      } else {
-        // The time is identical, which means they only changed the calendar date.
-        // Snap the time to 06:00 AM!
-        setStartDateStr(`${newDate}T06:00`);
-      }
-    }
-  };
+  }, [isOpen]);
 
   const handleClose = () => {
-    let hasUnsavedChanges = false;
+    const hasUnsavedChanges = initialData 
+      ? (state.name !== initialData.name || state.desc !== (initialData.desc || ''))
+      : (state.name.trim() !== '' || state.desc.trim() !== '');
 
-    if (initialData) {
-      // EDIT MODE: Check if the current name or description differ from the original data
-      hasUnsavedChanges = 
-        name !== initialData.name || 
-        desc !== (initialData.desc || '');
-    } else {
-      // ADD MODE: Check if they have typed anything at all
-      hasUnsavedChanges = name.trim() !== '' || desc.trim() !== '';
-    }
-
-    // If there are changes, show the native confirmation dialog
     if (hasUnsavedChanges) {
-      const confirmDiscard = window.confirm("You have unsaved changes. Are you sure you want to discard them?");
-      
-      // If the user clicks "Cancel" on the dialog, stop here and keep the modal open
-      if (!confirmDiscard) {
-        return; 
-      }
+      if (!window.confirm("You have unsaved changes. Are you sure you want to discard them?")) return; 
     }
-
-    // If there are no changes, OR if the user clicked "OK" to discard, close it
     onClose();
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return alert("Please enter a card name.");
+    if (!state.name) return alert("Please enter a card name.");
 
     try {
-      // Gather all current state variables into one object
       const formData = {
-        name, desc, startDateStr, questType,
-        otType, otNum, otUnit, otDeadlineStr,
-        freqNum, freqUnit, hasShorterDeadline, activeWindowType, activeNum, activeUnit, activeWindowDateStr,
-        hasLimit, limitType, limitNum, limitUnit, limitDateStr, limitOccurrences,
-        breakNum, breakUnit, lastDoneAt: initialData?.lastDoneAt
+        name: state.name, desc: state.desc, startDateStr: state.startDateStr, questType: state.questType,
+        otType: state.otType, otNum: state.otNum, otUnit: state.otUnit, otDeadlineStr: state.otDeadlineStr,
+        freqNum: state.freqNum, freqUnit: state.freqUnit, hasShorterDeadline: state.hasShorterDeadline, 
+        activeWindowType: state.activeWindowType, activeNum: state.activeNum, activeUnit: state.activeUnit, activeWindowDateStr: state.activeWindowDateStr,
+        hasLimit: state.hasLimit, limitType: state.limitType, limitNum: state.limitNum, limitUnit: state.limitUnit, limitDateStr: state.limitDateStr, limitOccurrences: state.limitOccurrences,
+        breakNum: state.breakNum, breakUnit: state.breakUnit, lastDoneAt: initialData?.lastDoneAt
       };
 
-      // Let the pure function do all the heavy lifting!
       const finalQuestData = calculateQuestData(formData, formatQuestDuration);
-      
-      // Send it back up to App.tsx
       onSave(finalQuestData);
-
     } catch (error: any) {
-      // Our utility throws an Error if the user forgets a deadline, so we catch it here and alert them!
       alert(error.message);
     }
   };
@@ -263,8 +82,8 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
               <input
                 ref={nameInputRef}
                 type="text"
-                value={name}
-                onChange={e => setName(e.target.value)} required
+                value={state.name}
+                onChange={e => state.setName(e.target.value)} required
                 placeholder="e.g. Read 1 Chapter..."
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-semibold"
               />
@@ -275,28 +94,18 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
                 Description <span className="text-muted font-normal">(Optional)</span>
               </label>
               <textarea 
-                value={desc} 
-                onChange={handleDescChange} 
-                onKeyDown={handleDescKeyDown}
+                value={state.desc} 
+                onChange={state.handleDescChange} 
+                onKeyDown={state.handleDescKeyDown}
                 placeholder="Card details..." 
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all resize-none field-sizing-content"
               ></textarea>
 
-              {(desc.match(/(https?:\/\/[^\s]+)/g) || []).length > 0 && (
+              {(state.desc.match(/(https?:\/\/[^\s]+)/g) || []).length > 0 && (
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 animate-fade-in">
-                  {(desc.match(/(https?:\/\/[^\s]+)/g) || []).map((link, i) => (
-                    <a
-                      key={i}
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      // 1. ADDED `min-w-0` to the parent so the grid allows it to shrink
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 hover:scale-105 transition-all shadow-sm min-w-0"
-                    >
-                      {/* 2. ADDED `shrink-0` so the emoji never gets squished */}
+                  {(state.desc.match(/(https?:\/\/[^\s]+)/g) || []).map((link, i) => (
+                    <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 hover:scale-105 transition-all shadow-sm min-w-0">
                       <span className="shrink-0">🔗</span> 
-                      
-                      {/* 3. ADDED `truncate` and removed the Javascript substring! */}
                       <span className="truncate">{link}</span>
                     </a>
                   ))}
@@ -304,56 +113,45 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
               )}
             </div>
 
-            {/* START DATE */}
+            {/* START DATE & TYPE SELECTOR */}
             <div>
               <label className="block font-semibold text-dark mb-2">Start Date & Time</label>
-              <input type="datetime-local" value={startDateStr} onChange={handleStartDateChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer text-center" />
+              <input type="datetime-local" value={state.startDateStr} onChange={state.handleStartDateChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer text-center" />
             </div>
 
-             {/* TYPE SELECTOR */}
             <div>
               <label className="block font-semibold text-dark mb-2">Card Type</label>
-              <select value={questType} onChange={e => setQuestType(e.target.value as 'onetime' | 'recurring' | 'break')} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer">
+              <select value={state.questType} onChange={e => state.setQuestType(e.target.value as 'onetime' | 'recurring' | 'break')} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-400 outline-none transition-all font-medium text-dark cursor-pointer">
                 <option value="onetime">🎯 One-Time Quest</option>
                 <option value="recurring">🔁 Recurring Quest</option>
                 <option value="break">☕ Break Activity</option>
               </select>
             </div>
 
-            {/* ONE-TIME SETTINGS */}
-            {questType === 'onetime' && (
+            {/* DYNAMIC FORM COMPONENTS */}
+            {state.questType === 'onetime' && (
               <OneTimeSettings 
-                otType={otType} setOtType={setOtType}
-                otNum={otNum} setOtNum={setOtNum}
-                otUnit={otUnit} setOtUnit={setOtUnit}
-                otDeadlineStr={otDeadlineStr} setOtDeadlineStr={setOtDeadlineStr}
+                otType={state.otType} setOtType={state.setOtType} otNum={state.otNum} setOtNum={state.setOtNum}
+                otUnit={state.otUnit} setOtUnit={state.setOtUnit} otDeadlineStr={state.otDeadlineStr} setOtDeadlineStr={state.setOtDeadlineStr}
               />
             )}
 
-            {/* RECURRING SETTINGS */}
-            {questType === 'recurring' && (
+            {state.questType === 'recurring' && (
               <RecurringSettings 
-                freqNum={freqNum} setFreqNum={setFreqNum}
-                freqUnit={freqUnit} setFreqUnit={setFreqUnit}
-                hasShorterDeadline={hasShorterDeadline} setHasShorterDeadline={setHasShorterDeadline}
-                activeWindowType={activeWindowType} setActiveWindowType={setActiveWindowType}
-                activeNum={activeNum} setActiveNum={setActiveNum}
-                activeUnit={activeUnit} setActiveUnit={setActiveUnit}
-                activeWindowDateStr={activeWindowDateStr} setActiveWindowDateStr={setActiveWindowDateStr}
-                hasLimit={hasLimit} setHasLimit={setHasLimit}
-                limitType={limitType} setLimitType={setLimitType}
-                limitNum={limitNum} setLimitNum={setLimitNum}
-                limitUnit={limitUnit} setLimitUnit={setLimitUnit}
-                limitDateStr={limitDateStr} setLimitDateStr={setLimitDateStr}
-                limitOccurrences={limitOccurrences} setLimitOccurrences={setLimitOccurrences}
+                freqNum={state.freqNum} setFreqNum={state.setFreqNum} freqUnit={state.freqUnit} setFreqUnit={state.setFreqUnit}
+                hasShorterDeadline={state.hasShorterDeadline} setHasShorterDeadline={state.setHasShorterDeadline}
+                activeWindowType={state.activeWindowType} setActiveWindowType={state.setActiveWindowType}
+                activeNum={state.activeNum} setActiveNum={state.setActiveNum} activeUnit={state.activeUnit} setActiveUnit={state.setActiveUnit}
+                activeWindowDateStr={state.activeWindowDateStr} setActiveWindowDateStr={state.setActiveWindowDateStr}
+                hasLimit={state.hasLimit} setHasLimit={state.setHasLimit} limitType={state.limitType} setLimitType={state.setLimitType}
+                limitNum={state.limitNum} setLimitNum={state.setLimitNum} limitUnit={state.limitUnit} setLimitUnit={state.setLimitUnit}
+                limitDateStr={state.limitDateStr} setLimitDateStr={state.setLimitDateStr} limitOccurrences={state.limitOccurrences} setLimitOccurrences={state.setLimitOccurrences}
               />
             )}
 
-            {/* BREAK ACTIVITY SETTINGS */}
-            {questType === 'break' && (
+            {state.questType === 'break' && (
               <BreakSettings 
-                breakNum={breakNum} setBreakNum={setBreakNum}
-                breakUnit={breakUnit} setBreakUnit={setBreakUnit}
+                breakNum={state.breakNum} setBreakNum={state.setBreakNum} breakUnit={state.breakUnit} setBreakUnit={state.setBreakUnit}
               />
             )}
           </form>
