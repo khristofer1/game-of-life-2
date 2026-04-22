@@ -54,7 +54,10 @@ export function calculateQuestData(data: TaskFormState, formatDuration: (start: 
   const startDate = data.startDateStr ? new Date(data.startDateStr).getTime() : new Date().setHours(0, 0, 0, 0);
   const isOneTime = data.questType === 'onetime';
 
+  // not modified variables
   const { name, desc, freqNum, freqUnit, hasLimit } = data;
+
+  // modified variables
   let durationMs = 0;
   let deadline = undefined;
   let oneTimeData = null;
