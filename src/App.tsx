@@ -7,7 +7,7 @@ import { Login } from './components/Login';
 import { useTasks } from './hooks/useTasks';
 import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
-import { saveTaskToDB, getMeta, setMeta } from './services/db';
+import { getMeta } from './services/db';
 import type { Quest } from './types/quest';
 import { DailySummaryModal } from './components/DailySummaryModal';
 import { TimeVaultModal } from './components/TimeVaultModal';
@@ -22,6 +22,7 @@ import { GemShopModal } from './components/GemShopModal';
 import { useGameEconomy } from './hooks/useGameEconomy';
 import { useQuestActions } from './hooks/useQuestActions';
 import { Header } from './components/layout/Header';
+import { useQuestManager } from './hooks/useQuestManager';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -57,6 +58,11 @@ export default function App() {
 
 	// --- DAILY SUMMARY ENGINE ---
 	const { showSummaryModal, setShowSummaryModal, summaryData, setSummaryData, handleCloseSummary } = useDailySummary(allTasks);
+
+	// --- QUEST MANAGER ENGINE ---
+	const { handleSaveQuest, handleReviveCard } = useQuestManager(
+		activeTasks, comingTasks, deletedTasks, gems, forceRefresh, setSummaryData
+	);
 
 	// For debugging: shows all the cards object
 	// useEffect(() => {
@@ -94,38 +100,6 @@ export default function App() {
 	const [isBankModalOpen, setIsBankModalOpen] = useState(false);
 	const [isGemShopOpen, setIsGemShopOpen] = useState(false);
 
-	// --- DAILY SUMMARY STATE ---
-
-	const handleReviveCard = async (taskId: number) => {
-		if (gems < 1) return alert("Not enough gems to revive this card!");
-
-		const taskToRevive = [...activeTasks, ...comingTasks, ...deletedTasks].find(t => t.id === taskId);
-		if (!taskToRevive) return;
-
-		// Removes it from the "Trash" state
-		delete taskToRevive.deletedAt;
-
-		// Deduct 1 gem
-		const newGems = gems - 1;
-		await setMeta("gems", newGems);
-
-		// Reset the card times to NOW, keeping the original duration
-		const now = Date.now();
-		taskToRevive.startDate = now;
-		taskToRevive.deadline = now + taskToRevive.durationMs;
-		taskToRevive.cycleStart = now;
-		taskToRevive.energyPercent = 100; // Refill the progress bar
-
-		await saveTaskToDB(taskToRevive);
-		forceRefresh();
-
-		// Immediately remove it from the summary modal list
-		setSummaryData(prev => ({
-			...prev,
-			expired: prev.expired.filter(t => t.id !== taskId)
-		}));
-	};
-
 	if (isAuthLoading) {
 		return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-muted animate-pulse">Loading Game of Life...</div>;
 	}
@@ -152,54 +126,6 @@ export default function App() {
 			setEditingQuest(quest);
 			setIsModalOpen(true);
 		}
-	};
-
-	// 2. Click "Save" inside the Modal
-	const handleSaveQuest = async (newQuestData: Partial<Quest>) => {
-		const now = Date.now();
-		let finalQuest: Quest;
-
-		if (editingQuest) {
-			// MERGE EDIT DATA
-			finalQuest = { ...editingQuest, ...newQuestData } as Quest;
-
-			// UNCONDITIONAL SYNC: Nuke the ghost time. 
-			// Whatever is in the UI form is now the absolute truth.
-			finalQuest.cycleStart = newQuestData.startDate;
-
-			const isPending = finalQuest.startDate && now < finalQuest.startDate;
-			if (isPending) {
-				finalQuest.energyPercent = 100;
-			} else if (!finalQuest.completed) {
-				if (finalQuest.isOneTime) {
-					const timeLeft = (finalQuest.deadline || 0) - now;
-					finalQuest.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / finalQuest.durationMs) * 100)));
-				} else {
-					const activeTimeLeft = (finalQuest.cycleStart || 0) + (finalQuest.activeDeadlineMs || 0) - now;
-					finalQuest.energyPercent = activeTimeLeft > 0
-						? Math.max(0, Math.min(100, Math.round((activeTimeLeft / (finalQuest.activeDeadlineMs || 1)) * 100)))
-						: 0;
-				}
-			}
-		} else {
-			// BRAND NEW QUEST
-			finalQuest = {
-				...newQuestData,
-				isArchived: false,
-				createdAt: newQuestData.startDate || now,
-				cycleStart: newQuestData.startDate || now,
-				streak: 0,
-				completed: false,
-				energyPercent: 100,
-				accumulatedDays: 0,
-				shields: 0,
-				tier: 'standard'
-			} as Quest;
-		}
-
-		await saveTaskToDB(finalQuest);
-		setIsModalOpen(false);
-		forceRefresh(); // Trigger the background engine to re-sweep the UI!
 	};
 
 	// --- Render Logic ---
@@ -281,7 +207,7 @@ export default function App() {
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
 				initialData={editingQuest}
-				onSave={handleSaveQuest}
+				onSave={(newQuestData) => handleSaveQuest(newQuestData, editingQuest, () => setIsModalOpen(false))}
 				defaultIsBreak={modalDefaultIsBreak}
 			/>
 
