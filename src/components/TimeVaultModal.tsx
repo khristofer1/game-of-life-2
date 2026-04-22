@@ -7,7 +7,7 @@ interface TimeVaultModalProps {
   formatFullTime: (ms: number) => string;
 }
 
-export function TimeVaultModal({ isOpen, onClose, timeDepositMs, formatFullTime }: TimeVaultModalProps) {
+export function TimeVaultModal({ isOpen, onClose, timeDepositMs }: TimeVaultModalProps) {
   if (!isOpen) return null;
 
   return (
