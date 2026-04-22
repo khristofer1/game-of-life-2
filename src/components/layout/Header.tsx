@@ -67,7 +67,7 @@ export function Header({
 					>
 						<span className="text-xs sm:text-sm">⏳</span>
 						{/* THE NEW TP DISPLAY */}
-						<span className="text-sm sm:text-base">{timePoints} TP</span>
+						<span className="text-sm sm:text-base">{timePoints}</span>
 					</button>
 
 					{/* SETTINGS GEAR */}
