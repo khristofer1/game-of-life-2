@@ -38,47 +38,29 @@ export function useGameEconomy(
 	};
 
 	const handleBuyGemWithTime = async () => {
-		const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-		
-		if (timeDeposit < oneWeekMs) {
-			alert("Not enough Time! You need at least 1 Week in your vault to buy a Gem.");
+		// It costs exactly 10 TP to mint a new Gem
+		if (timeDeposit < 10) {
+			triggerToast("Not enough Time Points! You need 10 TP to mint a Gem.");
 			return;
 		}
 
-		const isConfirmed = window.confirm(
-			`Trade 1 Week of Time for 1 Gem? 💎\n\nThis will deduct 7 days from your Time Vault.`
-		);
-		if (!isConfirmed) return;
-
-		const newTime = timeDeposit - oneWeekMs;
-		await setMeta("timeDepositMs", newTime);
-
-		const newGems = gems + 1;
-		await setMeta("gems", newGems);
-
+		await setMeta("timeDepositMs", timeDeposit - 10);
+		await setMeta("gems", gems + 1);
 		forceRefresh();
-		triggerToast("Exchange complete! +1 Gem 💎");
+		triggerToast("Gem minted successfully! 💎");
 	};
 
 	const handleBuyTimeWithGem = async () => {
 		if (gems < 1) {
-			alert("Not enough Gems! You need at least 1 💎 to buy time.");
+			triggerToast("You don't have any Gems to shatter!");
 			return;
 		}
 
-		const isConfirmed = window.confirm(
-			`Shatter 1 Gem for 6 Days of Time? ⏳\n\nThis will instantly add 6 days to your Time Vault.`
-		);
-		if (!isConfirmed) return;
-
-		const newGems = gems - 1;
-		await setMeta("gems", newGems);
-
-		const sixDaysMs = 6 * 24 * 60 * 60 * 1000;
-		await setMeta("timeDepositMs", timeDeposit + sixDaysMs);
-
+		// The Exchange Tax: Shattering a Gem only yields 9 TP
+		await setMeta("gems", gems - 1);
+		await setMeta("timeDepositMs", timeDeposit + 9);
 		forceRefresh();
-		triggerToast("Exchange complete! +6 Days ⏳");
+		triggerToast("Gem shattered! Gained 9 TP ⏳");
 	};
 
 	// Expose these functions to whoever uses the hook!

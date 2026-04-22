@@ -4,7 +4,6 @@ import type { Quest } from '../types/quest';
 import type { ToastAction } from './useToast';
 import confetti from 'canvas-confetti';
 import successSound from '../assets/success.mp3';
-import { formatTimeDeposit } from '../utils/timeFormat';
 
 export function useQuestActions(
 	allTasks: Quest[],
