@@ -31,7 +31,7 @@ export function useQuestActions(
 
 			if (!updatedTask.completionDates) updatedTask.completionDates = [];
 			updatedTask.completionDates.push(now);
-			
+
 			const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
 			updatedTask.completionDates = updatedTask.completionDates.filter(date => date >= sevenDaysAgo);
 
@@ -40,11 +40,18 @@ export function useQuestActions(
 			let timeLeft = activeDeadline - now;
 
 			if (timeLeft > 0) {
+				// 1. Visual Progress Bar
 				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
 
-				const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-				const depositAmount = Math.floor(Math.min(timeLeft, activeDuration, oneWeekMs));
-				
+				// 2. THE NEW TP ECONOMY
+				const hoursSaved = timeLeft / (1000 * 60 * 60); // Convert raw ms to hours
+				const earnedTP = Math.floor(hoursSaved);        // 1 Hour = 1 TP (Integers only)
+
+				// Cap the reward at exactly 10 TP maximum per quest
+				const depositAmount = Math.min(earnedTP, 10);
+
+				// Note: We are keeping the variable names `lastDepositMs` and `timeDepositMs` 
+				// to avoid rewriting your entire database structure, but they now store TP!
 				updatedTask.lastDepositMs = depositAmount;
 				await setMeta("timeDepositMs", timeDeposit + depositAmount);
 			} else {
@@ -56,7 +63,7 @@ export function useQuestActions(
 			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
 				const activeDurationMs = updatedTask.activeDeadlineMs || 86400000;
 				const daysInCycle = Math.max(1, Math.round(activeDurationMs / 86400000));
-				
+
 				updatedTask.accumulatedDays = (updatedTask.accumulatedDays || 0) + daysInCycle;
 				updatedTask.streak = (updatedTask.streak || 0) + 1;
 
@@ -84,11 +91,11 @@ export function useQuestActions(
 				} else {
 					switch (currentTier) {
 						case 'standard': newMaxCapacity = 1; break;
-						case 'bronze':   newMaxCapacity = 2; break;
-						case 'silver':   newMaxCapacity = 3; break;
-						case 'gold':     newMaxCapacity = 4; break;
-						case 'diamond':  newMaxCapacity = 5; break;
-						default:         newMaxCapacity = 1;
+						case 'bronze': newMaxCapacity = 2; break;
+						case 'silver': newMaxCapacity = 3; break;
+						case 'gold': newMaxCapacity = 4; break;
+						case 'diamond': newMaxCapacity = 5; break;
+						default: newMaxCapacity = 1;
 					}
 				}
 
@@ -120,7 +127,7 @@ export function useQuestActions(
 			forceRefresh();
 			if (!isUndoFromToast) triggerToast(`Completed: ${updatedTask.name}`, 'complete', id);
 
-		// --- UNDOING A COMPLETION ---
+			// --- UNDOING A COMPLETION ---
 		} else {
 			updatedTask.completed = false;
 			updatedTask.completedAt = null;
@@ -172,13 +179,18 @@ export function useQuestActions(
 		const task = breakTasks.find(t => t.id === id);
 		if (!task) return;
 
-		const breakCost = task.cooldownMs || 0;
-		if (timeDeposit < breakCost) {
-			triggerToast(`Not enough Time! You need ${formatTimeDeposit(breakCost)}.`);
-			return; 
+		const cooldownDays = (task.cooldownMs || 0) / (1000 * 60 * 60 * 24);
+		const tpCost = Math.max(1, Math.floor(cooldownDays)); // 1 TP per day, minimum cost of 1
+
+		// Check if they can afford it
+		if (timeDeposit < tpCost) {
+			triggerToast(`Not enough Focus! You need ${tpCost} TP to take this break.`);
+			return;
 		}
-		
-		await setMeta("timeDepositMs", timeDeposit - breakCost);
+
+		// Deduct the TP
+		await setMeta("timeDepositMs", timeDeposit - tpCost);
+
 		task.previousLastDoneAt = task.lastDoneAt;
 		task.previousGemClaimed = task.gemClaimed;
 		task.lastDoneAt = Date.now();
@@ -193,9 +205,12 @@ export function useQuestActions(
 	const handleUndoBreak = async (id: number) => {
 		const taskToUpdate = allTasks.find(t => t.id === id);
 		if (!taskToUpdate) return;
+
+		// Recalculate the TP cost to refund it accurately
+		const cooldownDays = (taskToUpdate.cooldownMs || 0) / (1000 * 60 * 60 * 24);
+		const tpRefund = Math.max(1, Math.floor(cooldownDays));
 		
-		const breakCost = taskToUpdate.cooldownMs || 0;
-		await setMeta("timeDepositMs", timeDeposit + breakCost);
+		await setMeta("timeDepositMs", timeDeposit + tpRefund);
 
 		taskToUpdate.lastDoneAt = taskToUpdate.previousLastDoneAt || 0;
 		if (taskToUpdate.previousGemClaimed !== undefined) {
@@ -219,7 +234,7 @@ export function useQuestActions(
 	const handleRestore = async (id: number, isUndoFromToast = false) => {
 		const task = deletedTasks.find(t => t.id === id);
 		if (task) {
-			delete task.deletedAt; 
+			delete task.deletedAt;
 			await saveTaskToDB(task);
 			forceRefresh();
 			if (!isUndoFromToast) triggerToast("Card restored from trash.", 'restore', id);

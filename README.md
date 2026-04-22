@@ -73,3 +73,4 @@ export default defineConfig([
 ```
 
 A debugging hook: debugTasks is available in App.tsx. Keyword: "For debugging"
+Shift + Alt + F: Format indentations
