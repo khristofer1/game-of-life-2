@@ -14,7 +14,7 @@ export function ToastContainer({ toast, onClose, onUndo }: ToastContainerProps) 
 	const hasUndoAction = toast.action !== undefined && toast.taskId !== undefined;
 
 	return (
-		<div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+		<div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-55 animate-fade-in">
 			<div className="bg-dark text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-4 text-sm font-semibold border border-gray-700">
 				<span>{toast.message}</span>
 				
