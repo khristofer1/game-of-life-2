@@ -4,7 +4,6 @@ import { logoutFromGoogle } from '../../services/firebase';
 import { setMeta } from '../../services/db';
 import successSound from '../../assets/success.mp3';
 import logo from '../../assets/logo.svg';
-import { formatShortTimeDeposit } from '../../utils/timeFormat';
 
 interface HeaderProps {
 	gems: number;
@@ -67,7 +66,8 @@ export function Header({
 						title="View Time Vault"
 					>
 						<span className="text-xs sm:text-sm">⏳</span>
-						<span className="text-sm sm:text-base">{formatShortTimeDeposit(timeDeposit)}</span>
+						{/* THE NEW TP DISPLAY */}
+						<span className="text-sm sm:text-base">{timeDeposit} TP</span>
 					</button>
 
 					{/* SETTINGS GEAR */}

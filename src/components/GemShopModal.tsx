@@ -13,8 +13,7 @@ export function GemShopModal({ isOpen, onClose, gems, timeDepositMs, onBuyGemWit
   if (!isOpen) return null;
 
   // Economy Math
-  const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-  const canAffordGem = timeDepositMs >= oneWeekMs;
+  const canAffordGem = timeDepositMs >= 10;
   const canAffordTime = gems >= 1;
 
   return (
@@ -37,10 +36,10 @@ export function GemShopModal({ isOpen, onClose, gems, timeDepositMs, onBuyGemWit
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3">
             <div className="flex justify-between items-center">
               <span className="font-bold text-dark">Mint a Gem</span>
-              <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-md">Cost: 1 Week</span>
+              <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-md">Cost: 10 TP</span>
             </div>
             <p className="text-xs text-muted leading-relaxed">
-              Convert 7 days of stored time into 1 Premium Gem. Use Gems to buy shields for your quests.
+              Convert 10 Time Points into 1 Premium Gem. Use Gems to buy shields for your quests.
             </p>
             <button
               onClick={onBuyGemWithTime}
@@ -51,18 +50,18 @@ export function GemShopModal({ isOpen, onClose, gems, timeDepositMs, onBuyGemWit
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
             >
-              Trade 7 Days ➔ 💎 +1
+              Trade 10 TP ➔ 💎 +1
             </button>
           </div>
 
-          {/* Option 2: Buy Time (The 6-Day Spread) */}
+          {/* Option 2: Buy Time Points */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3">
             <div className="flex justify-between items-center">
               <span className="font-bold text-dark">Buy Time</span>
               <span className="text-xs font-bold bg-orange-50 text-orange-600 px-2 py-1 rounded-md">Cost: 1 Gem</span>
             </div>
             <p className="text-xs text-muted leading-relaxed">
-              Shatter 1 Premium Gem to instantly add 6 days to your Time Vault. Careful, the exchange rate is heavily taxed!
+              Shatter 1 Premium Gem to instantly add 9 TP to your Time Vault. Careful, the exchange rate is taxed!
             </p>
             <button
               onClick={onBuyTimeWithGem}
@@ -73,7 +72,7 @@ export function GemShopModal({ isOpen, onClose, gems, timeDepositMs, onBuyGemWit
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
             >
-              Trade 1 Gem ➔ ⏳ +6 Days
+              Trade 1 Gem ➔ ⏳ 9 TP
             </button>
           </div>
 

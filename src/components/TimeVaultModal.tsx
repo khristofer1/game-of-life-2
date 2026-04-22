@@ -20,21 +20,22 @@ export function TimeVaultModal({ isOpen, onClose, timeDepositMs, formatFullTime 
         <div className="bg-blue-600 px-8 py-6 text-center shrink-0">
           <div className="text-4xl mb-2">⏳</div>
           <h2 className="text-2xl font-bold text-white mb-1">Time Vault</h2>
-          <p className="text-blue-100 text-sm font-medium">Your stored potential.</p>
+          <p className="text-blue-100 text-sm font-medium">Your stored Time Points.</p>
         </div>
 
         {/* CONTENT */}
         <div className="px-8 py-8 flex flex-col items-center justify-center bg-blue-50">
-          <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Time Saved</p>
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Balance</p>
           
           <div className="bg-white px-6 py-4 rounded-2xl shadow-inner border border-blue-100 w-full text-center">
+            {/* Display the integer TP directly! */}
             <span className="text-3xl font-black text-blue-600 tracking-tight">
-              {formatFullTime(timeDepositMs)}
+              {timeDepositMs} TP
             </span>
           </div>
           
-          <p className="text-xs text-blue-400 mt-6 text-center max-w-50 leading-relaxed">
-            Time earned by finishing quests early. You can spend this balance to take guilt-free Break Activities!
+          <p className="text-xs text-blue-400 mt-6 text-center max-w-60 leading-relaxed">
+            1 Hour saved = 1 TP. Max 10 TP per quest. Spend this balance to take guilt-free Break Activities!
           </p>
         </div>
 
