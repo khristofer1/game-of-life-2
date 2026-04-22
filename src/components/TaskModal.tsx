@@ -1,8 +1,8 @@
 // src/components/TaskModal.tsx
 import { useState, useEffect, useRef } from 'react';
-import { flushSync } from 'react-dom';
 import type { Quest } from '../types/quest';
 import { formatQuestDuration } from '../utils/timeFormat';
+import { useSmartTextarea } from '../hooks/useSmartTextarea';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -25,7 +25,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
   
   // --- FORM STATE ---
   const [name, setName] = useState('');
-  const [desc, setDesc] = useState('');
+  const { desc, setDesc, handleDescChange, handleDescKeyDown } = useSmartTextarea('');
   const [startDateStr, setStartDateStr] = useState('');
   const [questType, setQuestType] = useState<'onetime' | 'recurring' | 'break'>('onetime');
   const [hasManuallySetTime, setHasManuallySetTime] = useState(false);
@@ -183,86 +183,6 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
         // The time is identical, which means they only changed the calendar date.
         // Snap the time to 06:00 AM!
         setStartDateStr(`${newDate}T06:00`);
-      }
-    }
-  };
-  
-  const handleDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const target = e.target;
-    const cursorPosition = target.selectionStart;
-    const originalValue = target.value;
-    
-    // Capture the current scroll position
-    const scrollContainer = target.closest('.overflow-y-auto');
-    const scrollPosition = scrollContainer ? scrollContainer.scrollTop : 0;
-    
-    // Convert ONLY "* " at the start of any line into a proper bullet "• "
-    const newValue = originalValue.replace(/(^|\n)\* /g, '$1• ');
-
-    if (newValue !== originalValue) {
-      // Force React to update the DOM synchronously, pausing the browser paint
-      flushSync(() => {
-        setDesc(newValue);
-      });
-      
-      // Now we can restore the cursor and scroll perfectly BEFORE the screen flashes
-      target.selectionStart = target.selectionEnd = cursorPosition;
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollPosition;
-      }
-    } else {
-      // If it's just normal typing, let React handle it normally
-      setDesc(newValue);
-    }
-  };
-
-  const handleDescKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Grab the element and cursor details first so both keys can use them
-    const target = e.target as HTMLTextAreaElement;
-    const cursorPosition = target.selectionStart;
-    
-    const textBeforeCursor = target.value.substring(0, cursorPosition);
-    const textAfterCursor = target.value.substring(cursorPosition);
-
-    const lines = textBeforeCursor.split('\n');
-    const currentLine = lines[lines.length - 1];
-
-    // --- ENTER KEY LOGIC ---
-    if (e.key === 'Enter') {
-      if (currentLine.startsWith('• ')) {
-        e.preventDefault(); 
-
-        if (currentLine === '• ') {
-          const newTextBefore = textBeforeCursor.substring(0, textBeforeCursor.length - 2);
-          setDesc(newTextBefore + textAfterCursor);
-          
-          setTimeout(() => {
-            target.selectionStart = target.selectionEnd = newTextBefore.length;
-          }, 0);
-        } else {
-          setDesc(textBeforeCursor + '\n• ' + textAfterCursor);
-          
-          setTimeout(() => {
-            target.selectionStart = target.selectionEnd = cursorPosition + 3;
-          }, 0);
-        }
-      }
-    } 
-    
-    // --- BACKSPACE KEY LOGIC ---
-    else if (e.key === 'Backspace') {
-      // If they hit Backspace while sitting exactly at the end of an empty bullet point
-      if (currentLine === '• ') {
-        e.preventDefault(); 
-
-        // Strip the 2 characters ("• ") off the end of the text before the cursor
-        const newTextBefore = textBeforeCursor.substring(0, textBeforeCursor.length - 2);
-        
-        setDesc(newTextBefore + textAfterCursor);
-        
-        setTimeout(() => {
-          target.selectionStart = target.selectionEnd = newTextBefore.length;
-        }, 0);
       }
     }
   };
