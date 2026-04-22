@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { Quest } from '../types/quest';
 import { formatQuestDuration } from '../utils/timeFormat';
 import { useSmartTextarea } from '../hooks/useSmartTextarea';
+import { calculateQuestData } from '../utils/questCalculations';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -218,152 +219,26 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
     e.preventDefault();
     if (!name) return alert("Please enter a card name.");
 
-    // SAVE LOGIC FOR BREAKS
-    if (questType === 'break') {
-      let multi = 1;
-      if (breakUnit === 'minutes') multi = 60 * 1000;
-      if (breakUnit === 'hours') multi = 60 * 60 * 1000;
-      if (breakUnit === 'days') multi = 24 * 60 * 60 * 1000;
-      if (breakUnit === 'weeks') multi = 7 * 24 * 60 * 60 * 1000;
+    try {
+      // Gather all current state variables into one object
+      const formData = {
+        name, desc, startDateStr, questType,
+        otType, otNum, otUnit, otDeadlineStr,
+        freqNum, freqUnit, hasShorterDeadline, activeWindowType, activeNum, activeUnit, activeWindowDateStr,
+        hasLimit, limitType, limitNum, limitUnit, limitDateStr, limitOccurrences,
+        breakNum, breakUnit, lastDoneAt: initialData?.lastDoneAt
+      };
+
+      // Let the pure function do all the heavy lifting!
+      const finalQuestData = calculateQuestData(formData, formatQuestDuration);
       
-      const cooldownMs = breakNum * multi;
-      const cooldownData = { num: breakNum, unit: breakUnit };
+      // Send it back up to App.tsx
+      onSave(finalQuestData);
 
-      const unitText = breakNum === 1 ? breakUnit.slice(0, -1) : breakUnit;
-      const displayFreq = `Cooldown: ${breakNum} ${unitText.charAt(0).toUpperCase() + unitText.slice(1)}`;
-
-      onSave({
-        name, desc, isBreak: true, cooldownMs, cooldownData, displayFreq,
-        // Zero out standard fields safely
-        isOneTime: false, startDate: new Date().getTime(), lastDoneAt: initialData?.lastDoneAt || 0
-      });
-      return;
+    } catch (error: any) {
+      // Our utility throws an Error if the user forgets a deadline, so we catch it here and alert them!
+      alert(error.message);
     }
-
-    const startDate = startDateStr ? new Date(startDateStr).getTime() : new Date().setHours(0, 0, 0, 0);
-    const isOneTime = questType === 'onetime';
-
-    let durationMs = 0;
-    let deadline = undefined;
-    let oneTimeData = null;
-    let expireAt = undefined;
-    let activeDeadlineMs = 0;
-    let displayFreq = '';
-    let limitData = { type: 'none' } as any;
-    let activeWindowData: any = undefined;
-
-    if (isOneTime) {
-      if (otType === 'duration') {
-        let days = otNum;
-        if (otUnit === 'weeks') days = otNum * 7;
-        if (otUnit === 'months') days = otNum * 30;
-        if (otUnit === 'years') days = otNum * 365;
-        durationMs = days * 24 * 60 * 60 * 1000;
-        deadline = startDate + durationMs;
-        oneTimeData = { type: 'duration', num: otNum, unit: otUnit };
-        
-        // Build the string directly from the duration inputs
-        const unitText = otNum === 1 ? otUnit.slice(0, -1) : otUnit;
-        displayFreq = `${otNum} ${unitText.charAt(0).toUpperCase() + unitText.slice(1)}`;
-
-      } else {
-        if (!otDeadlineStr) return alert("Please set a hard deadline.");
-        deadline = new Date(otDeadlineStr).getTime();
-        if (deadline <= startDate) return alert("Deadline must be after Start Date.");
-        durationMs = deadline - startDate;
-        oneTimeData = { type: 'date', dateStr: otDeadlineStr };
-        
-        // Only use the timeFormat utility when calculating specific dates!
-        displayFreq = formatQuestDuration(startDateStr, otDeadlineStr);
-      }
-      activeDeadlineMs = durationMs;
-    } else {
-      // Recurring Math
-      let days = freqNum;
-      if (freqUnit === 'weeks') days = freqNum * 7;
-      if (freqUnit === 'months') days = freqNum * 30;
-      if (freqUnit === 'years') days = freqNum * 365;
-      durationMs = days * 24 * 60 * 60 * 1000;
-
-      // 1. Calculate the Active Deadline FIRST
-      if (hasShorterDeadline) {
-        if (activeWindowType === 'duration') {
-          let activeMulti = 1;
-          if (activeUnit === 'minutes') activeMulti = 60 * 1000;
-          if (activeUnit === 'hours') activeMulti = 60 * 60 * 1000;
-          if (activeUnit === 'days') activeMulti = 24 * 60 * 60 * 1000;
-          if (activeUnit === 'weeks') activeMulti = 7 * 24 * 60 * 60 * 1000;
-          activeDeadlineMs = activeNum * activeMulti;
-          activeWindowData = { type: 'duration', num: activeNum, unit: activeUnit };
-        } else {
-          if (!activeWindowDateStr) return alert("Please select a specific date and time for the active window.");
-          const targetTime = new Date(activeWindowDateStr).getTime();
-          activeDeadlineMs = targetTime - startDate;
-          
-          if (activeDeadlineMs <= 0) return alert("The active window deadline must be after the Start Date.");
-          activeWindowData = { type: 'date', dateStr: activeWindowDateStr };
-        }
-
-        if (activeDeadlineMs > durationMs) return alert("Active window cannot be longer than the repeat interval!");
-      } else {
-        activeDeadlineMs = durationMs;
-      }
-
-      // 2. NOW construct the "1 Day every 2 Weeks" string
-      const freqBaseUnit = freqNum === 1 ? freqUnit.slice(0, -1) : freqUnit;
-      const freqBaseStr = `${freqNum} ${freqBaseUnit}`;
-
-      if (hasShorterDeadline) {
-        let activeStr = '';
-        if (activeWindowType === 'duration') {
-          const aUnit = activeNum === 1 ? activeUnit.slice(0, -1) : activeUnit;
-          activeStr = `${activeNum} ${aUnit}`;
-        } else {
-          // If they chose a specific date, mathematically convert the milliseconds back into readable text
-          const ms = activeDeadlineMs;
-          const d = Math.floor(ms / (24 * 60 * 60 * 1000));
-          const h = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-          const m = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
-          
-          if (d > 0) activeStr = `${d} day${d !== 1 ? 's' : ''}`;
-          else if (h > 0) activeStr = `${h} hour${h !== 1 ? 's' : ''}`;
-          else activeStr = `${m} min${m !== 1 ? 's' : ''}`;
-        }
-        
-        displayFreq = `${activeStr} every ${freqBaseStr}`;
-        // Capitalize the very first letter for the UI
-        displayFreq = displayFreq.charAt(0).toUpperCase() + displayFreq.slice(1);
-        
-      } else {
-        // Fallback: If they didn't set a custom deadline, just show "Every 2 weeks"
-        displayFreq = `Every ${freqBaseStr}`;
-        displayFreq = displayFreq.charAt(0).toUpperCase() + displayFreq.slice(1);
-      }
-
-      if (hasLimit) {
-        if (limitType === 'duration') {
-          let lDays = limitNum;
-          if (limitUnit === 'weeks') lDays = limitNum * 7;
-          if (limitUnit === 'months') lDays = limitNum * 30;
-          if (limitUnit === 'years') lDays = limitNum * 365;
-          expireAt = startDate + (lDays * 24 * 60 * 60 * 1000);
-          limitData = { type: 'duration', num: limitNum, unit: limitUnit };
-        } else if (limitType === 'date') {
-          if (!limitDateStr) return alert("Please select an end date.");
-          expireAt = new Date(limitDateStr).getTime();
-          limitData = { type: 'date', dateStr: limitDateStr };
-        } else if (limitType === 'occurrences') {
-          expireAt = startDate + (limitOccurrences * durationMs);
-          limitData = { type: 'occurrences', count: limitOccurrences };
-        }
-      }
-    }
-
-    // Pass the calculated data back to App.tsx to save!
-    onSave({
-      name, desc, startDate, isOneTime, durationMs, deadline, oneTimeData,
-      freqNum, freqUnit, displayFreq, hasLimit, limitData, expireAt, activeDeadlineMs, activeWindowData
-    });
   };
 
   if (!isOpen) return null;
