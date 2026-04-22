@@ -9,7 +9,7 @@ export function useQuestActions(
 	allTasks: Quest[],
 	breakTasks: Quest[],
 	deletedTasks: Quest[],
-	timeDeposit: number,
+	timePoints: number,
 	volumeLevel: number,
 	forceRefresh: () => void,
 	triggerToast: (message: string, action?: ToastAction, taskId?: number) => void
@@ -49,10 +49,8 @@ export function useQuestActions(
 				// Cap the reward at exactly 10 TP maximum per quest
 				const depositAmount = Math.min(earnedTP, 10);
 
-				// Note: We are keeping the variable names `lastDepositMs` and `timeDepositMs` 
-				// to avoid rewriting your entire database structure, but they now store TP!
 				updatedTask.lastDepositMs = depositAmount;
-				await setMeta("timeDepositMs", timeDeposit + depositAmount);
+				await setMeta("timePoints", timePoints + depositAmount);
 			} else {
 				updatedTask.energyPercent = 0;
 				updatedTask.lastDepositMs = 0;
@@ -159,8 +157,8 @@ export function useQuestActions(
 			}
 
 			if (updatedTask.lastDepositMs) {
-				const newBankBalance = Math.max(0, timeDeposit - updatedTask.lastDepositMs);
-				await setMeta("timeDepositMs", newBankBalance);
+				const newBankBalance = Math.max(0, timePoints - updatedTask.lastDepositMs);
+				await setMeta("timePoints", newBankBalance);
 				updatedTask.lastDepositMs = 0;
 			}
 
@@ -182,13 +180,13 @@ export function useQuestActions(
 		const tpCost = Math.max(1, Math.floor(cooldownDays)); // 1 TP per day, minimum cost of 1
 
 		// Check if they can afford it
-		if (timeDeposit < tpCost) {
+		if (timePoints < tpCost) {
 			triggerToast(`Not enough Focus! You need ${tpCost} TP to take this break.`);
 			return;
 		}
 
 		// Deduct the TP
-		await setMeta("timeDepositMs", timeDeposit - tpCost);
+		await setMeta("timePoints", timePoints - tpCost);
 
 		task.previousLastDoneAt = task.lastDoneAt;
 		task.previousGemClaimed = task.gemClaimed;
@@ -209,7 +207,7 @@ export function useQuestActions(
 		const cooldownDays = (taskToUpdate.cooldownMs || 0) / (1000 * 60 * 60 * 24);
 		const tpRefund = Math.max(1, Math.floor(cooldownDays));
 		
-		await setMeta("timeDepositMs", timeDeposit + tpRefund);
+		await setMeta("timePoints", timePoints + tpRefund);
 
 		taskToUpdate.lastDoneAt = taskToUpdate.previousLastDoneAt || 0;
 		if (taskToUpdate.previousGemClaimed !== undefined) {

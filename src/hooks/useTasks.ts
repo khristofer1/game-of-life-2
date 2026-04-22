@@ -21,7 +21,7 @@ export function useTasks(user: User | null) {
 
 	// Game Economy State
 	const [gems, setGems] = useState<number>(0);
-  const [timeDeposit, setTimeDeposit] = useState<number>(0);
+  const [timePoints, setTimePoints] = useState<number>(0);
 
 	// 2. The Core Engine: Replaces your old refreshTasks() function
 	const refreshTasks = useCallback(async () => {
@@ -29,7 +29,7 @@ export function useTasks(user: User | null) {
 			// Fetch raw data from IndexedDB
 			const rawTasks: Quest[] = await getAllTasks();
 			let currentGems = await getMeta("gems", 0);
-      const globalTimeDeposit = await getMeta("timeDepositMs", 0);
+      const globalTP = await getMeta("timePoints", 0);
 
 			const now = Date.now();
 			let tasksUpdated = false;
@@ -244,7 +244,7 @@ export function useTasks(user: User | null) {
       setBreakTasks(breakList);
 			setDeletedTasks(deleted);
 			setGems(currentGems);
-      setTimeDeposit(globalTimeDeposit);
+      setTimePoints(globalTP);
 
 		} catch (error) {
 			console.error("Failed to refresh tasks:", error);
@@ -276,7 +276,7 @@ export function useTasks(user: User | null) {
 		deletedTasks,
     archivedTasks,
 		gems,
-    timeDeposit,
+    timePoints,
 		forceRefresh: refreshTasks
 	};
 }

@@ -3,11 +3,11 @@
 interface TimeVaultModalProps {
   isOpen: boolean;
   onClose: () => void;
-  timeDepositMs: number;
+  timePoints: number;
   formatFullTime: (ms: number) => string;
 }
 
-export function TimeVaultModal({ isOpen, onClose, timeDepositMs }: TimeVaultModalProps) {
+export function TimeVaultModal({ isOpen, onClose, timePoints }: TimeVaultModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -30,7 +30,7 @@ export function TimeVaultModal({ isOpen, onClose, timeDepositMs }: TimeVaultModa
           <div className="bg-white px-6 py-4 rounded-2xl shadow-inner border border-blue-100 w-full text-center">
             {/* Display the integer TP directly! */}
             <span className="text-3xl font-black text-blue-600 tracking-tight">
-              {timeDepositMs} TP
+              {timePoints} TP
             </span>
           </div>
           

@@ -6,7 +6,7 @@ import type { ToastAction } from './useToast';
 // We pass in the state and functions this hook needs to do its job
 export function useGameEconomy(
 	gems: number,
-	timeDeposit: number,
+	timePoints: number,
 	allTasks: Quest[],
 	forceRefresh: () => void,
 	triggerToast: (message: string, action?: ToastAction, taskId?: number) => void
@@ -39,12 +39,12 @@ export function useGameEconomy(
 
 	const handleBuyGemWithTime = async () => {
 		// It costs exactly 10 TP to mint a new Gem
-		if (timeDeposit < 10) {
+		if (timePoints < 10) {
 			triggerToast("Not enough Time Points! You need 10 TP to mint a Gem.");
 			return;
 		}
 
-		await setMeta("timeDepositMs", timeDeposit - 10);
+		await setMeta("timePoints", timePoints - 10);
 		await setMeta("gems", gems + 1);
 		forceRefresh();
 		triggerToast("Gem minted successfully! 💎");
@@ -58,7 +58,7 @@ export function useGameEconomy(
 
 		// The Exchange Tax: Shattering a Gem only yields 9 TP
 		await setMeta("gems", gems - 1);
-		await setMeta("timeDepositMs", timeDeposit + 9);
+		await setMeta("timePoints", timePoints + 9);
 		forceRefresh();
 		triggerToast("Gem shattered! Gained 9 TP ⏳");
 	};

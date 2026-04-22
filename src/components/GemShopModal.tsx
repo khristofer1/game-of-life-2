@@ -4,16 +4,16 @@ interface GemShopModalProps {
   isOpen: boolean;
   onClose: () => void;
   gems: number;
-  timeDepositMs: number;
+  timePoints: number;
   onBuyGemWithTime: () => void;
   onBuyTimeWithGem: () => void;
 }
 
-export function GemShopModal({ isOpen, onClose, gems, timeDepositMs, onBuyGemWithTime, onBuyTimeWithGem }: GemShopModalProps) {
+export function GemShopModal({ isOpen, onClose, gems, timePoints, onBuyGemWithTime, onBuyTimeWithGem }: GemShopModalProps) {
   if (!isOpen) return null;
 
   // Economy Math
-  const canAffordGem = timeDepositMs >= 10;
+  const canAffordGem = timePoints >= 10;
   const canAffordTime = gems >= 1;
 
   return (

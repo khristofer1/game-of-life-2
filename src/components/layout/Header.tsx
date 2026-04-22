@@ -7,7 +7,7 @@ import logo from '../../assets/logo.svg';
 
 interface HeaderProps {
 	gems: number;
-	timeDeposit: number;
+	timePoints: number;
 	volumeLevel: number;
 	setVolumeLevel: (level: number) => void;
 	onOpenSummary: () => void;
@@ -16,7 +16,7 @@ interface HeaderProps {
 }
 
 export function Header({
-	gems, timeDeposit, volumeLevel, setVolumeLevel,
+	gems, timePoints, volumeLevel, setVolumeLevel,
 	onOpenSummary, onOpenGemShop, onOpenTimeVault
 }: HeaderProps) {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -67,7 +67,7 @@ export function Header({
 					>
 						<span className="text-xs sm:text-sm">⏳</span>
 						{/* THE NEW TP DISPLAY */}
-						<span className="text-sm sm:text-base">{timeDeposit} TP</span>
+						<span className="text-sm sm:text-base">{timePoints} TP</span>
 					</button>
 
 					{/* SETTINGS GEAR */}
