@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { setMeta } from '../services/db';
 import confetti from 'canvas-confetti';
-import openChestSound from '../assets/openChest.mp3';
+import rattleSound from '../assets/rattle.mp3';
 import rareChestSound from '../assets/rareChest.mp3';
 import legendaryChestSound from "../assets/legendaryChest.mp3";
 import { GAME_CONFIG } from '../config/gameRules';
@@ -39,7 +39,7 @@ export function useChestGacha(
     const currentVol = volumeMap[volumeLevel] || 0;
 
     if (currentVol > 0) {
-      const baseAudio = new Audio(openChestSound);
+      const baseAudio = new Audio(rattleSound);
       baseAudio.volume = currentVol;
       baseAudio.play().catch(error => console.log("Audio blocked:", error));
     }

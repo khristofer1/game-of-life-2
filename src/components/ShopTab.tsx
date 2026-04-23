@@ -13,9 +13,9 @@ interface ShopTabProps {
 export function ShopTab({ keys, openChest, openingTier, recentResults, onCloseResults }: ShopTabProps) {
   
   const chests: { id: ChestTier; name: string; color: string; icon: string; desc: string }[] = [
-    { id: 'bronze', name: 'Bronze Chest', color: 'from-orange-400 to-red-500', icon: '🥉', desc: 'A modest reward for completing late tasks.' },
-    { id: 'silver', name: 'Silver Chest', color: 'from-gray-300 to-gray-500', icon: '🥈', desc: 'Standard rewards. Has a chance for rare loot.' },
-    { id: 'gold', name: 'Gold Chest', color: 'from-yellow-300 to-yellow-500', icon: '🥇', desc: 'High tier rewards for proactive energy!' }
+    { id: 'bronze', name: 'Bronze Lottery', color: 'from-orange-400 to-red-500', icon: '🥉', desc: 'A modest reward for completing late tasks.' },
+    { id: 'silver', name: 'Silver Lottery', color: 'from-gray-300 to-gray-500', icon: '🥈', desc: 'Standard rewards. Has a chance for rare loot.' },
+    { id: 'gold', name: 'Gold Lottery', color: 'from-yellow-300 to-yellow-500', icon: '🥇', desc: 'High tier rewards for proactive energy!' }
   ];
 
   return (
