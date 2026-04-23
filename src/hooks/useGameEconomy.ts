@@ -2,6 +2,7 @@
 import { setMeta, getMeta, saveTaskToDB } from '../services/db';
 import type { Quest } from '../types/quest';
 import type { ToastAction } from './useToast';
+import { GAME_CONFIG } from '../config/gameRules';
 
 // We pass in the state and functions this hook needs to do its job
 export function useGameEconomy(
@@ -38,13 +39,13 @@ export function useGameEconomy(
 	};
 
 	const handleBuyGemWithTime = async () => {
-		// It costs exactly 10 TP to mint a new Gem
-		if (timePoints < 10) {
-			triggerToast("Not enough Time Points! You need 10 TP to mint a Gem.");
+		const cost = GAME_CONFIG.economy.mintGemCostTP
+		if (timePoints < cost) {
+			triggerToast("Not enough Time Points! You need ${cost} TP to mint a Gem.");
 			return;
 		}
 
-		await setMeta("timePoints", timePoints - 10);
+		await setMeta("timePoints", timePoints - cost);
 		await setMeta("gems", gems + 1);
 		forceRefresh();
 		triggerToast("Gem minted successfully! 💎");
@@ -56,11 +57,11 @@ export function useGameEconomy(
 			return;
 		}
 
-		// The Exchange Tax: Shattering a Gem only yields 9 TP
+		const yieldTP = GAME_CONFIG.economy.shatterGemYieldTP;
 		await setMeta("gems", gems - 1);
-		await setMeta("timePoints", timePoints + 9);
+		await setMeta("timePoints", timePoints + yieldTP);
 		forceRefresh();
-		triggerToast("Gem shattered! Gained 9 TP ⏳");
+		triggerToast("Gem shattered! Gained ${yieldTP} TP ⏳");
 	};
 
 	const handleClaimRewards = async (
@@ -85,6 +86,7 @@ export function useGameEconomy(
 		// 2. Clear the pending buckets
 		await setMeta("unclaimedGems", 0);
 		await setMeta("unclaimedTP", 0);
+		await setMeta("unclaimedKeys", { bronze: 0, silver: 0, gold: 0 });
 		
 		// 3. Mark today as claimed
 		await setMeta("lastClaimDate", todayStr);
