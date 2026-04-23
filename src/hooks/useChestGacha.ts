@@ -54,19 +54,22 @@ export function useChestGacha(
       const roll = Math.random(); // 0.0 to 1.0
       let result: GachaResult = { gems: 0, tp: 0, rarity: 'common', tier };
 
+      const commonChance = 0.80;
+      const rareChance = 0.95;
+
       if (tier === 'bronze') {
-        if (roll < 0.80) result = Math.random() > 0.5 ? { ...result, gems: 1 } : { ...result, tp: 2 };
-        else if (roll < 0.95) result = { ...result, rarity: 'rare', gems: 1, tp: 5 };
+        if (roll < commonChance) result = Math.random() > 0.5 ? { ...result, gems: 1 } : { ...result, tp: 2 };
+        else if (roll < rareChance) result = { ...result, rarity: 'rare', gems: 1, tp: 5 };
         else result = { ...result, rarity: 'legendary', gems: 2, tp: 10 };
       } 
       else if (tier === 'silver') {
-        if (roll < 0.80) result = Math.random() > 0.5 ? { ...result, gems: 2 } : { ...result, tp: 5 };
-        else if (roll < 0.95) result = { ...result, rarity: 'rare', gems: 3, tp: 10 };
+        if (roll < commonChance) result = Math.random() > 0.5 ? { ...result, gems: 2 } : { ...result, tp: 5 };
+        else if (roll < rareChance) result = { ...result, rarity: 'rare', gems: 3, tp: 10 };
         else result = { ...result, rarity: 'legendary', gems: 5, tp: 20 };
       } 
       else if (tier === 'gold') {
-        if (roll < 0.80) result = Math.random() > 0.5 ? { ...result, gems: 5 } : { ...result, tp: 10 };
-        else if (roll < 0.95) result = { ...result, rarity: 'rare', gems: 10, tp: 25 };
+        if (roll < commonChance) result = Math.random() > 0.5 ? { ...result, gems: 5 } : { ...result, tp: 10 };
+        else if (roll < rareChance) result = { ...result, rarity: 'rare', gems: 10, tp: 25 };
         else result = { ...result, rarity: 'legendary', gems: 15, tp: 50 };
       }
 
