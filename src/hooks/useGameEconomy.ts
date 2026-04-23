@@ -63,10 +63,28 @@ export function useGameEconomy(
 		triggerToast("Gem shattered! Gained 9 TP ⏳");
 	};
 
+	const handleClaimRewards = async (pendingGems: number, pendingTP: number) => {
+		const todayStr = new Date().toISOString().split('T')[0];
+		
+		// 1. Move pending to actual balance
+		await setMeta("gems", gems + pendingGems);
+		await setMeta("timePoints", timePoints + pendingTP);
+		
+		// 2. Clear the pending buckets
+		await setMeta("unclaimedGems", 0);
+		await setMeta("unclaimedTP", 0);
+		
+		// 3. Mark today as claimed
+		await setMeta("lastClaimDate", todayStr);
+		
+		forceRefresh();
+	};
+
 	// Expose these functions to whoever uses the hook!
 	return {
 		handleBuyShield,
 		handleBuyGemWithTime,
-		handleBuyTimeWithGem
+		handleBuyTimeWithGem,
+		handleClaimRewards
 	};
 }

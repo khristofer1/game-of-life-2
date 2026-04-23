@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllTasks, saveTaskToDB, getMeta, setMeta, deleteTaskFromDB } from '../services/db';
 import type { Quest } from '../types/quest';
 import type { User } from 'firebase/auth';
+import type { PendingRewards } from '../types/pendingRewards';
 
 export function useTasks(user: User | null) {
 	// 1. React State: This replaces your manual DOM manipulation
@@ -12,6 +13,10 @@ export function useTasks(user: User | null) {
 	const [completedTasks, setCompletedTasks] = useState<Quest[]>([]);
   const [breakTasks, setBreakTasks] = useState<Quest[]>([]);
 	const [deletedTasks, setDeletedTasks] = useState<Quest[]>([]);
+
+  const [pendingRewards, setPendingRewards] = useState<PendingRewards>({
+    gems: 0, tp: 0, hasClaimedToday: false
+  });
   
   const archivedTasks = useMemo(() => 
     allTasks.filter(t => !t.deletedAt && t.isOneTime && t.completed && t.gemClaimed)
@@ -176,10 +181,19 @@ export function useTasks(user: User | null) {
 				}
 			}
 
-			if (totalGemsEarned > 0) {
-				currentGems += totalGemsEarned;
-				await setMeta("gems", currentGems);
-			}
+			// --- THE PENDING VAULT ---
+      if (totalGemsEarned > 0) {
+        const existingUnclaimed = await getMeta("unclaimedGems", 0);
+        await setMeta("unclaimedGems", existingUnclaimed + totalGemsEarned);
+      }
+
+      // Fetch the UI Claim State
+      const lastClaimDate = await getMeta("lastClaimDate", "");
+      const todayStr = new Date().toISOString().split('T')[0];
+      const hasClaimedToday = lastClaimDate === todayStr;
+
+      const unclaimedGems = await getMeta("unclaimedGems", 0);
+      const unclaimedTP = await getMeta("unclaimedTP", 0);
 
 			// 3. Sorting & Filtering for the UI
       const getRealDeadline = (t: Quest) => t.isOneTime ? (t.deadline || 0) : ((t.cycleStart || 0) + (t.activeDeadlineMs || 0));
@@ -245,6 +259,7 @@ export function useTasks(user: User | null) {
 			setDeletedTasks(deleted);
 			setGems(currentGems);
       setTimePoints(globalTP);
+      setPendingRewards({ gems: unclaimedGems, tp: unclaimedTP, hasClaimedToday });
 
 		} catch (error) {
 			console.error("Failed to refresh tasks:", error);
@@ -277,6 +292,7 @@ export function useTasks(user: User | null) {
     archivedTasks,
 		gems,
     timePoints,
+    pendingRewards,
 		forceRefresh: refreshTasks
 	};
 }
