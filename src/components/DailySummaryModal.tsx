@@ -104,14 +104,15 @@ export function DailySummaryModal({
             </div>
 
             {/* Loot Drop Display */}
-            {gemsGained > 0 && (
+            {(gemsGained > 0 || rewards.tp > 0) && (
               <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 flex items-center justify-between shadow-inner">
                 <div>
-                  <h3 className="text-orange-800 font-bold text-sm uppercase tracking-wider">Gems Earned</h3>
+                  <h3 className="text-orange-800 font-bold text-sm uppercase tracking-wider">Rewards Earned</h3>
                   <p className="text-orange-600 text-xs mt-1">From yesterday's efforts</p>
                 </div>
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100">
-                  <span className="font-black text-orange-500">💎+{gemsGained}</span>
+                <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100">
+                  {gemsGained > 0 && <span className="font-black text-orange-500">💎 +{gemsGained}</span>}
+                  {rewards.tp > 0 && <span className="font-black text-blue-600">⏳ +{rewards.tp}</span>}
                 </div>
               </div>
             )}

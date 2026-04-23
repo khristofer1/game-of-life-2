@@ -39,6 +39,7 @@ export function useTasks(user: User | null) {
 			const now = Date.now();
 			let tasksUpdated = false;
 			let totalGemsEarned = 0;
+      let totalTPEarned = 0;
 
 			// Engine Sweep: Process logic for every task
       const processedTasks: Quest[] = [];
@@ -110,13 +111,19 @@ export function useTasks(user: User | null) {
           continue;                  
         }
 
-        // 3. Midnight Sweeper (Daily Gem Claim)
+        // 3. Midnight Sweeper (Daily Reward Claim)
         if (task.completed && !task.gemClaimed && task.completedAt) {
           const todayDay = new Date(now).setHours(0, 0, 0, 0);
           const completedDay = new Date(task.completedAt).setHours(0, 0, 0, 0);
 
           if (todayDay > completedDay) {
             totalGemsEarned += 1;
+
+            if (task.lastDepositMs) {
+              totalTPEarned += task.lastDepositMs;
+              task.lastDepositMs = 0; // Clear it so it doesn't get swept twice
+            }
+            
             task.gemClaimed = true;
             tasksUpdated = true;
             if (task.isOneTime) task.isArchived = true;
@@ -185,6 +192,12 @@ export function useTasks(user: User | null) {
       if (totalGemsEarned > 0) {
         const existingUnclaimed = await getMeta("unclaimedGems", 0);
         await setMeta("unclaimedGems", existingUnclaimed + totalGemsEarned);
+      }
+
+      // --- SAVE UNCLAIMED TP ---
+      if (totalTPEarned > 0) {
+        const existingUnclaimedTP = await getMeta("unclaimedTP", 0);
+        await setMeta("unclaimedTP", existingUnclaimedTP + totalTPEarned);
       }
 
       // Fetch the UI Claim State

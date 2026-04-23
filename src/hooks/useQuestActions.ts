@@ -42,7 +42,7 @@ export function useQuestActions(
 				// 1. Visual Progress Bar
 				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
 
-				// 2. THE NEW TP ECONOMY
+				// 2. TP ECONOMY
 				const hoursSaved = timeLeft / (1000 * 60 * 60); // Convert raw ms to hours
 				const earnedTP = Math.floor(hoursSaved);        // 1 Hour = 1 TP (Integers only)
 
@@ -50,7 +50,6 @@ export function useQuestActions(
 				const depositAmount = Math.min(earnedTP, 10);
 
 				updatedTask.lastDepositMs = depositAmount;
-				await setMeta("timePoints", timePoints + depositAmount);
 			} else {
 				updatedTask.energyPercent = 0;
 				updatedTask.lastDepositMs = 0;
@@ -157,8 +156,6 @@ export function useQuestActions(
 			}
 
 			if (updatedTask.lastDepositMs) {
-				const newBankBalance = Math.max(0, timePoints - updatedTask.lastDepositMs);
-				await setMeta("timePoints", newBankBalance);
 				updatedTask.lastDepositMs = 0;
 			}
 
