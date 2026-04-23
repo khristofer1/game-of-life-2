@@ -1,7 +1,7 @@
 // src/components/layout/BottomNav.tsx
 import { useState, useRef, useEffect } from 'react';
 
-export type TabType = 'active' | 'coming' | 'completed' | 'break' | 'deleted' | 'archived';
+export type TabType = 'active' | 'coming' | 'completed' | 'break' | 'deleted' | 'archived' | 'shop';
 
 interface BottomNavProps {
 	activeTab: TabType;
@@ -68,6 +68,13 @@ export function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
 
 				{isMoreMenuOpen && (
 					<div className="absolute bottom-full mb-4 right-4 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in flex flex-col">
+						<button
+							onClick={() => { setActiveTab('shop'); setIsMoreMenuOpen(false); }}
+							className={`px-4 py-3 text-sm font-bold text-left hover:bg-purple-50 transition-colors flex items-center gap-2 ${activeTab === 'shop' ? 'text-purple-500 bg-purple-50/50' : 'text-dark'}`}
+						>
+							<span className="text-lg">🏪</span> Loot Shop
+						</button>
+						
 						<button
 							onClick={() => { setActiveTab('break'); setIsMoreMenuOpen(false); }}
 							className={`px-4 py-3 text-sm font-bold text-left hover:bg-orange-50 transition-colors flex items-center gap-2 ${activeTab === 'break' ? 'text-orange-500 bg-orange-50/50' : 'text-dark'}`}

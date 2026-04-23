@@ -22,6 +22,7 @@ import { useGameEconomy } from './hooks/useGameEconomy';
 import { useQuestActions } from './hooks/useQuestActions';
 import { Header } from './components/layout/Header';
 import { useQuestManager } from './hooks/useQuestManager';
+import { ShopTab } from './components/ShopTab';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -158,31 +159,39 @@ export default function App() {
 			<main className="max-w-7xl mx-auto px-6 pb-24">
 				<div className="flex items-center justify-between mb-6 border-b border-gray-200 pb-2">
 					<h2 className="text-2xl font-bold text-dark capitalize">
-						{activeTab === 'break' ? 'Break Activities' : `${activeTab} Quests`}
+						{activeTab === 'break' ? 'Break Activities' : 
+						 activeTab === 'shop' ? 'Loot Shop' : 
+						 `${activeTab} Quests`}
 					</h2>
 				</div>
 
-				{displayedTasks.length === 0 ? (
-					<div className="text-center py-10">
-						<p className="text-muted text-sm italic">No cards found in this tab.</p>
-					</div>
+				{activeTab === 'shop' ? (
+					<ShopTab 
+						// We will pass the necessary props here in the next step!
+					/>
 				) : (
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-sm md:max-w-3xl lg:max-w-none">
-						{/* THE MAGIC LOOP: Render a QuestCard for every item in the array */}
-						{displayedTasks.map(quest => (
-							<QuestCard
-								key={quest.id}
-								quest={quest}
-								onToggleComplete={handleToggleComplete}
-								onEdit={handleEdit}
-								onDelete={handleDelete}
-								onRestore={handleRestore}
-								onHardDelete={handleHardDelete}
-								onTakeBreak={handleTakeBreak}
-								onBuyShield={handleBuyShield}
-							/>
-						))}
-					</div>
+					displayedTasks.length === 0 ? (
+						<div className="text-center py-10">
+							<p className="text-muted text-sm italic">No cards found in this tab.</p>
+						</div>
+					) : (
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-sm md:max-w-3xl lg:max-w-none">
+							{/* THE MAGIC LOOP */}
+							{displayedTasks.map(quest => (
+								<QuestCard
+									key={quest.id}
+									quest={quest}
+									onToggleComplete={handleToggleComplete}
+									onEdit={handleEdit}
+									onDelete={handleDelete}
+									onRestore={handleRestore}
+									onHardDelete={handleHardDelete}
+									onTakeBreak={handleTakeBreak}
+									onBuyShield={handleBuyShield}
+								/>
+							))}
+						</div>
+					)
 				)}
 			</main>
 
