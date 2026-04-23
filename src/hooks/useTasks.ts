@@ -40,6 +40,9 @@ export function useTasks(user: User | null) {
 			let tasksUpdated = false;
 			let totalGemsEarned = 0;
       let totalTPEarned = 0;
+      let newBronzeKeys = 0;
+      let newSilverKeys = 0;
+      let newGoldKeys = 0;
 
 			// Engine Sweep: Process logic for every task
       const processedTasks: Quest[] = [];
@@ -122,6 +125,12 @@ export function useTasks(user: User | null) {
             if (task.lastDepositMs) {
               totalTPEarned += task.lastDepositMs;
             }
+
+            if (task.pendingKey) {
+              if (task.pendingKey === 'gold') newGoldKeys++;
+              else if (task.pendingKey === 'silver') newSilverKeys++;
+              else if (task.pendingKey === 'bronze') newBronzeKeys++;
+            }
             
             task.gemClaimed = true;
             tasksUpdated = true;
@@ -197,6 +206,16 @@ export function useTasks(user: User | null) {
       if (totalTPEarned > 0) {
         const existingUnclaimedTP = await getMeta("unclaimedTP", 0);
         await setMeta("unclaimedTP", existingUnclaimedTP + totalTPEarned);
+      }
+
+      // --- SAVE UNCLAIMED KEYS ---
+      if (newBronzeKeys > 0 || newSilverKeys > 0 || newGoldKeys > 0) {
+        const existingKeys = await getMeta("unclaimedKeys", { bronze: 0, silver: 0, gold: 0 });
+        await setMeta("unclaimedKeys", {
+            bronze: existingKeys.bronze + newBronzeKeys,
+            silver: existingKeys.silver + newSilverKeys,
+            gold: existingKeys.gold + newGoldKeys
+        });
       }
 
       // Fetch the UI Claim State

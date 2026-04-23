@@ -42,6 +42,15 @@ export function useQuestActions(
 				// 1. Visual Progress Bar
 				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
 
+				// --- THE KEY REWARD SYSTEM ---
+        if (updatedTask.energyPercent > 50) {
+            updatedTask.pendingKey = 'gold';
+        } else if (updatedTask.energyPercent > 25) {
+            updatedTask.pendingKey = 'silver';
+        } else {
+            updatedTask.pendingKey = 'bronze';
+        }
+
 				// 2. TP ECONOMY
 				const hoursSaved = timeLeft / (1000 * 60 * 60); // Convert raw ms to hours
 				const earnedTP = Math.floor(hoursSaved);        // 1 Hour = 1 TP (Integers only)
@@ -158,6 +167,11 @@ export function useQuestActions(
 			if (updatedTask.lastDepositMs) {
 				updatedTask.lastDepositMs = 0;
 			}
+
+			// --- ERASE THE PENDING KEY ---
+      if (updatedTask.pendingKey) {
+        delete updatedTask.pendingKey;
+      }
 
 			if (updatedTask.completionDates && updatedTask.completionDates.length > 0) {
 				updatedTask.completionDates.pop();

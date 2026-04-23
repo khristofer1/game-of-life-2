@@ -61,4 +61,5 @@ export interface Quest {
 	accumulatedDays?: number;
   shields?: number;
   tier?: 'standard' | 'bronze' | 'silver' | 'gold' | 'diamond';
+	pendingKey?: 'bronze' | 'silver' | 'gold' | null;
 }
