@@ -33,6 +33,16 @@ export function useChestGacha(
 
     setOpeningTier(tier);
 
+    // --- STEP 1: IMMEDIATE CLICK SOUND ---
+    const volumeMap = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+    const currentVol = volumeMap[volumeLevel] || 0;
+
+    if (currentVol > 0) {
+      const baseAudio = new Audio(openChestSound);
+      baseAudio.volume = currentVol;
+      baseAudio.play().catch(error => console.log("Audio blocked:", error));
+    }
+
     let totalGems = 0;
     let totalTP = 0;
     const results: GachaResult[] = [];
@@ -73,18 +83,10 @@ export function useChestGacha(
     await setMeta("gems", gems + totalGems);
     await setMeta("timePoints", timePoints + totalTP);
 
-    // --- THE SUSPENSE REVEAL ---
+    // --- STEP 2: THE SUSPENSE REVEAL (1.2s LATER) ---
     setTimeout(() => {
-      const volumeMap = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
-      const currentVol = volumeMap[volumeLevel] || 0;
-
+      // Trigger special sounds only on the reveal!
       if (currentVol > 0) {
-        // 1. ALWAYS play the base chest sound
-        const baseAudio = new Audio(openChestSound);
-        baseAudio.volume = currentVol;
-        baseAudio.play().catch(error => console.log("Audio blocked:", error));
-
-        // 2. Layer the Rare or Legendary sound on top
         if (hitLegendary) {
           const legAudio = new Audio(legendaryChestSound);
           legAudio.volume = currentVol;
@@ -107,9 +109,10 @@ export function useChestGacha(
       }
       
       setRecentResults(results);
-      setOpeningTier(null); 
+      setOpeningTier(null); // Stop shaking
       forceRefresh();
-    }, 1200);
-  }
+    }, 1200); 
+  };
+  
   return { openChest, openingTier, recentResults, setRecentResults };
 }
