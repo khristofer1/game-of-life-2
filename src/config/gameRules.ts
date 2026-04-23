@@ -18,7 +18,7 @@ export const GAME_CONFIG = {
 
   // CD2: Development & Accomplishment (Energy & Keys)
   energy: {
-    goldKeyThreshold: 50,    // Energy > 50% gives Gold
-    silverKeyThreshold: 25,  // Energy > 25% gives Silver
+    greenThreshold: 50,    // Energy > 50% gives Gold
+    yellowThreshold: 25,  // Energy > 25% gives Silver
   }
 };

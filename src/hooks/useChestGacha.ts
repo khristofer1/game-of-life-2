@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti';
 import openChestSound from '../assets/openChest.mp3';
 import rareChestSound from '../assets/rareChest.mp3';
 import legendaryChestSound from "../assets/legendaryChest.mp3";
+import { GAME_CONFIG } from '../config/gameRules';
 
 export type ChestTier = 'bronze' | 'silver' | 'gold';
 export interface GachaResult {
@@ -53,23 +54,21 @@ export function useChestGacha(
     for (let i = 0; i < amount; i++) {
       const roll = Math.random(); // 0.0 to 1.0
       let result: GachaResult = { gems: 0, tp: 0, rarity: 'common', tier };
-
-      const commonChance = 0.80;
-      const rareChance = 0.95;
+      const dropRates = GAME_CONFIG.gacha[tier];
 
       if (tier === 'bronze') {
-        if (roll < commonChance) result = Math.random() > 0.5 ? { ...result, gems: 1 } : { ...result, tp: 2 };
-        else if (roll < rareChance) result = { ...result, rarity: 'rare', gems: 1, tp: 5 };
+        if (roll < dropRates.rareThreshold) result = Math.random() > 0.5 ? { ...result, gems: 1 } : { ...result, tp: 2 };
+        else if (roll < dropRates.legendaryThreshold) result = { ...result, rarity: 'rare', gems: 1, tp: 5 };
         else result = { ...result, rarity: 'legendary', gems: 2, tp: 10 };
       } 
       else if (tier === 'silver') {
-        if (roll < commonChance) result = Math.random() > 0.5 ? { ...result, gems: 2 } : { ...result, tp: 5 };
-        else if (roll < rareChance) result = { ...result, rarity: 'rare', gems: 3, tp: 10 };
+        if (roll < dropRates.rareThreshold) result = Math.random() > 0.5 ? { ...result, gems: 2 } : { ...result, tp: 5 };
+        else if (roll < dropRates.legendaryThreshold) result = { ...result, rarity: 'rare', gems: 3, tp: 10 };
         else result = { ...result, rarity: 'legendary', gems: 5, tp: 20 };
       } 
       else if (tier === 'gold') {
-        if (roll < commonChance) result = Math.random() > 0.5 ? { ...result, gems: 5 } : { ...result, tp: 10 };
-        else if (roll < rareChance) result = { ...result, rarity: 'rare', gems: 10, tp: 25 };
+        if (roll < dropRates.rareThreshold) result = Math.random() > 0.5 ? { ...result, gems: 5 } : { ...result, tp: 10 };
+        else if (roll < dropRates.legendaryThreshold) result = { ...result, rarity: 'rare', gems: 10, tp: 25 };
         else result = { ...result, rarity: 'legendary', gems: 15, tp: 50 };
       }
 

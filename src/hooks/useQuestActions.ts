@@ -4,6 +4,7 @@ import type { Quest } from '../types/quest';
 import type { ToastAction } from './useToast';
 import confetti from 'canvas-confetti';
 import successSound from '../assets/success.mp3';
+import { GAME_CONFIG } from '../config/gameRules';
 
 export function useQuestActions(
 	allTasks: Quest[],
@@ -43,9 +44,9 @@ export function useQuestActions(
 				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
 
 				// --- THE KEY REWARD SYSTEM ---
-        if (updatedTask.energyPercent > 50) {
+        if (updatedTask.energyPercent >= GAME_CONFIG.energy.greenThreshold) {
             updatedTask.pendingKey = 'gold';
-        } else if (updatedTask.energyPercent > 25) {
+        } else if (updatedTask.energyPercent >= GAME_CONFIG.energy.yellowThreshold) {
             updatedTask.pendingKey = 'silver';
         } else {
             updatedTask.pendingKey = 'bronze';
