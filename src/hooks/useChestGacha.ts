@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { setMeta } from '../services/db';
 import confetti from 'canvas-confetti';
-import successSound from '../assets/success.mp3';
+import openChestSound from '../assets/openChest.mp3';
+import rareChestSound from '../assets/rareChest.mp3';
+import legendaryChestSound from "../assets/legendaryChest.mp3";
 
 export type ChestTier = 'bronze' | 'silver' | 'gold';
 export interface GachaResult {
@@ -35,6 +37,7 @@ export function useChestGacha(
     let totalTP = 0;
     const results: GachaResult[] = [];
     let hitLegendary = false;
+    let hitRare = false;
 
     // The Slot Machine Loop
     for (let i = 0; i < amount; i++) {
@@ -57,7 +60,9 @@ export function useChestGacha(
         else result = { ...result, rarity: 'legendary', gems: 15, tp: 50 };
       }
 
-      if (result.rarity === 'legendary') hitLegendary = true;
+      if (result.rarity === 'rare') hitRare = true;
+      else if (result.rarity === 'legendary') hitLegendary = true;
+
       totalGems += result.gems;
       totalTP += result.tp;
       results.push(result);
@@ -70,25 +75,41 @@ export function useChestGacha(
 
     // --- THE SUSPENSE REVEAL ---
     setTimeout(() => {
-      // 1. Play Sound
-      const audio = new Audio(successSound);
       const volumeMap = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
-      audio.volume = volumeMap[volumeLevel];
-      
-      if (volumeLevel > 0) {
-        audio.play().catch(error => console.log("Audio blocked:", error));
+      const currentVol = volumeMap[volumeLevel] || 0;
+
+      if (currentVol > 0) {
+        // 1. ALWAYS play the base chest sound
+        const baseAudio = new Audio(openChestSound);
+        baseAudio.volume = currentVol;
+        baseAudio.play().catch(error => console.log("Audio blocked:", error));
+
+        // 2. Layer the Rare or Legendary sound on top
+        if (hitLegendary) {
+          const legAudio = new Audio(legendaryChestSound);
+          legAudio.volume = currentVol;
+          legAudio.play().catch(error => console.log("Audio blocked:", error));
+        } else if (hitRare) {
+          const rareAudio = new Audio(rareChestSound);
+          rareAudio.volume = currentVol;
+          rareAudio.play().catch(error => console.log("Audio blocked:", error));
+        }
       }
 
-      // 2. Visuals
+      // Visuals
       if (hitLegendary) {
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#fbbf24', '#f59e0b', '#ffffff'] });
+        confetti({ 
+            particleCount: 250, 
+            spread: 100, 
+            origin: { y: 0.5 }, 
+            colors: ['#fbbf24', '#f59e0b', '#ffffff'] 
+        });
       }
       
       setRecentResults(results);
-      setOpeningTier(null); // Stop shaking
+      setOpeningTier(null); 
       forceRefresh();
-    }, 1200); // Increased from 600ms to 1200ms to let the animation play out!
-  };
-
+    }, 1200);
+  }
   return { openChest, openingTier, recentResults, setRecentResults };
 }
