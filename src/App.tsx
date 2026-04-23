@@ -23,6 +23,7 @@ import { useQuestActions } from './hooks/useQuestActions';
 import { Header } from './components/layout/Header';
 import { useQuestManager } from './hooks/useQuestManager';
 import { ShopTab } from './components/ShopTab';
+import { useChestGacha } from './hooks/useChestGacha';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -56,7 +57,7 @@ export default function App() {
 	// Pull everything we need from our custom background engine!
 	const {
 		allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks,
-		archivedTasks, gems, timePoints, pendingRewards, forceRefresh
+		archivedTasks, gems, timePoints, keys, pendingRewards, forceRefresh
 	} = useTasks(user);
 
 	// --- DAILY SUMMARY ENGINE ---
@@ -75,6 +76,11 @@ export default function App() {
 
 	// --- TOAST NOTIFICATION SYSTEM ---
 	const { toast, triggerToast, closeToast } = useToast();
+	
+	// --- GACHA ENGINE ---
+	const { openChest, isOpening, recentResults, setRecentResults } = useChestGacha(
+		keys, gems, timePoints, forceRefresh, triggerToast
+	);
 
 	// --- ECONOMY ENGINE ---
 	const {
@@ -167,7 +173,11 @@ export default function App() {
 
 				{activeTab === 'shop' ? (
 					<ShopTab 
-						// We will pass the necessary props here in the next step!
+						keys={keys}
+						openChest={openChest}
+						isOpening={isOpening}
+						recentResults={recentResults}
+						onCloseResults={() => setRecentResults(null)}
 					/>
 				) : (
 					displayedTasks.length === 0 ? (
