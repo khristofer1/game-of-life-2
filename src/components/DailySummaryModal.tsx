@@ -11,6 +11,7 @@ interface DailySummaryModalProps {
   expiredQuests: Quest[];
   gems: number;
   gemsGained: number;
+  tp: number;
   onRevive: (taskId: number) => void;
   rewards: PendingRewards;
   onClaim: () => void;
@@ -18,7 +19,7 @@ interface DailySummaryModalProps {
 
 export function DailySummaryModal({
   isOpen, onClose, completedYesterday, expiredQuests,
-  gems, gemsGained, onRevive, rewards, onClaim
+  gems, gemsGained, tp, onRevive, rewards, onClaim
 }: DailySummaryModalProps) {
 
   // State for animations
@@ -71,9 +72,13 @@ export function DailySummaryModal({
 
           <div className="bg-dark px-8 py-6 text-center shrink-0">
             <h2 className="text-2xl font-bold text-white mb-2">Daily Summary</h2>
-            {/* ✅ UPDATED: Show their current gem balance here */}
+            {/* Show their current balances here */}
             <p className="text-gray-300 text-sm">
-              Here is how you did yesterday.<br></br><span className="font-bold text-orange-400 ml-1">Current Balance: 💎 {gems}</span>
+              Here is how you did yesterday.<br></br>
+              <span className="font-bold text-orange-400">
+                <span className='mr-3'>💎 {gems}</span>
+                <span>⏳ {tp}</span>
+              </span>
             </p>
           </div>
 
@@ -124,7 +129,7 @@ export function DailySummaryModal({
                     <div key={quest.id} className="flex flex-col gap-3 bg-red-50 px-4 py-4 rounded-2xl border border-red-100">
                       <div className="font-semibold text-red-900 text-sm">{quest.name}</div>
 
-                      {/* ✅ UPDATED: Smart disabled state for the button */}
+                      {/* Smart disabled state for the button */}
                       <button
                         onClick={() => onRevive(quest.id!)}
                         disabled={gems < 1}
