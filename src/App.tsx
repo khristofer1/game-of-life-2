@@ -53,7 +53,10 @@ export default function App() {
 	}, []);
 
 	// Pull everything we need from our custom background engine!
-	const { allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks, archivedTasks, gems, timePoints, forceRefresh } = useTasks(user);
+	const {
+		allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks,
+		archivedTasks, gems, timePoints, pendingRewards, forceRefresh
+	} = useTasks(user);
 
 	// --- DAILY SUMMARY ENGINE ---
 	const { showSummaryModal, setShowSummaryModal, summaryData, setSummaryData, handleCloseSummary } = useDailySummary(allTasks);
@@ -73,7 +76,9 @@ export default function App() {
 	const { toast, triggerToast, closeToast } = useToast();
 
 	// --- ECONOMY ENGINE ---
-	const { handleBuyShield, handleBuyGemWithTime, handleBuyTimeWithGem } = useGameEconomy(gems, timePoints, allTasks, forceRefresh, triggerToast);
+	const {
+		handleBuyShield, handleBuyGemWithTime, handleBuyTimeWithGem, handleClaimRewards
+	} = useGameEconomy(gems, timePoints, allTasks, forceRefresh, triggerToast);
 
 	// --- QUEST ACTIONS ENGINE ---
 	const { 
@@ -233,6 +238,8 @@ export default function App() {
 				gems={gems}
 				gemsGained={summaryData.gemsGained}
 				onRevive={handleReviveCard}
+				rewards={pendingRewards}
+				onClaim={() => handleClaimRewards(pendingRewards.gems, pendingRewards.tp)}
 			/>
 		</div>
 	);
