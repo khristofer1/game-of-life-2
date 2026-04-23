@@ -1,5 +1,5 @@
 // src/hooks/useGameEconomy.ts
-import { setMeta, saveTaskToDB } from '../services/db';
+import { setMeta, getMeta, saveTaskToDB } from '../services/db';
 import type { Quest } from '../types/quest';
 import type { ToastAction } from './useToast';
 
@@ -63,12 +63,24 @@ export function useGameEconomy(
 		triggerToast("Gem shattered! Gained 9 TP ⏳");
 	};
 
-	const handleClaimRewards = async (pendingGems: number, pendingTP: number) => {
+	const handleClaimRewards = async (
+		pendingGems: number,
+		pendingTP: number,
+		pendingKeys: { bronze: number; silver: number; gold: number }
+	) => {
 		const todayStr = new Date().toISOString().split('T')[0];
 		
 		// 1. Move pending to actual balance
 		await setMeta("gems", gems + pendingGems);
 		await setMeta("timePoints", timePoints + pendingTP);
+
+		// --- MOVE KEYS TO INVENTORY ---
+		const currentKeys = await getMeta("keys", { bronze: 0, silver: 0, gold: 0 });
+		await setMeta("keys", {
+			bronze: currentKeys.bronze + pendingKeys.bronze,
+			silver: currentKeys.silver + pendingKeys.silver,
+			gold: currentKeys.gold + pendingKeys.gold
+		});
 		
 		// 2. Clear the pending buckets
 		await setMeta("unclaimedGems", 0);

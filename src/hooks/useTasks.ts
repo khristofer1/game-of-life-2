@@ -15,7 +15,10 @@ export function useTasks(user: User | null) {
 	const [deletedTasks, setDeletedTasks] = useState<Quest[]>([]);
 
   const [pendingRewards, setPendingRewards] = useState<PendingRewards>({
-    gems: 0, tp: 0, hasClaimedToday: false
+    gems: 0,
+    tp: 0,
+    keys: { bronze: 0, silver: 0, gold: 0 },
+    hasClaimedToday: false
   });
   
   const archivedTasks = useMemo(() => 
@@ -27,6 +30,7 @@ export function useTasks(user: User | null) {
 	// Game Economy State
 	const [gems, setGems] = useState<number>(0);
   const [timePoints, setTimePoints] = useState<number>(0);
+  const [keys, setKeys] = useState({ bronze: 0, silver: 0, gold: 0 });
 
 	// 2. The Core Engine: Replaces your old refreshTasks() function
 	const refreshTasks = useCallback(async () => {
@@ -225,6 +229,8 @@ export function useTasks(user: User | null) {
 
       const unclaimedGems = await getMeta("unclaimedGems", 0);
       const unclaimedTP = await getMeta("unclaimedTP", 0);
+      const unclaimedKeys = await getMeta("unclaimedKeys", { bronze: 0, silver: 0, gold: 0 });
+      const currentKeys = await getMeta("keys", { bronze: 0, silver: 0, gold: 0 });
 
 			// 3. Sorting & Filtering for the UI
       const getRealDeadline = (t: Quest) => t.isOneTime ? (t.deadline || 0) : ((t.cycleStart || 0) + (t.activeDeadlineMs || 0));
@@ -290,7 +296,13 @@ export function useTasks(user: User | null) {
 			setDeletedTasks(deleted);
 			setGems(currentGems);
       setTimePoints(globalTP);
-      setPendingRewards({ gems: unclaimedGems, tp: unclaimedTP, hasClaimedToday });
+      setKeys(currentKeys);
+      setPendingRewards({
+        gems: unclaimedGems,
+        tp: unclaimedTP,
+        keys: unclaimedKeys,
+        hasClaimedToday
+      });
 
 		} catch (error) {
 			console.error("Failed to refresh tasks:", error);
@@ -323,6 +335,7 @@ export function useTasks(user: User | null) {
     archivedTasks,
 		gems,
     timePoints,
+    keys,
     pendingRewards,
 		forceRefresh: refreshTasks
 	};

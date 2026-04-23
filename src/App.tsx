@@ -249,7 +249,11 @@ export default function App() {
 				timePoints={timePoints}
 				onRevive={handleReviveCard}
 				rewards={pendingRewards}
-				onClaim={() => handleClaimRewards(pendingRewards.gems, pendingRewards.tp)}
+				onClaim={() => handleClaimRewards(
+					pendingRewards.gems,
+					pendingRewards.tp,
+					pendingRewards.keys
+				)}
 			/>
 		</div>
 	);
