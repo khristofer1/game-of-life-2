@@ -121,7 +121,6 @@ export function useTasks(user: User | null) {
 
             if (task.lastDepositMs) {
               totalTPEarned += task.lastDepositMs;
-              task.lastDepositMs = 0; // Clear it so it doesn't get swept twice
             }
             
             task.gemClaimed = true;

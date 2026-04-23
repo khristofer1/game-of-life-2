@@ -96,7 +96,17 @@ export function DailySummaryModal({
                   {completedYesterday.map(quest => (
                     <div key={quest.id} className="flex items-center justify-between bg-green-50 px-4 py-3 rounded-2xl border border-green-100">
                       <span className="font-semibold text-green-900 text-sm truncate pr-4">{quest.name}</span>
-                      <span className="shrink-0 text-sm font-bold text-green-600">+1 💎</span>
+                      
+                      {/* Display both the TP and the Gem */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {(quest.lastDepositMs ?? 0) > 0 && (
+                          <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-md">
+                            +{quest.lastDepositMs} ⏳
+                          </span>
+                        )}
+                        <span className="text-sm font-bold text-green-600">+1 💎</span>
+                      </div>
+
                     </div>
                   ))}
                 </div>
