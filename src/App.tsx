@@ -78,8 +78,8 @@ export default function App() {
 	const { toast, triggerToast, closeToast } = useToast();
 	
 	// --- GACHA ENGINE ---
-	const { openChest, isOpening, recentResults, setRecentResults } = useChestGacha(
-		keys, gems, timePoints, forceRefresh, triggerToast
+	const { openChest, openingTier, recentResults, setRecentResults } = useChestGacha(
+		keys, gems, timePoints, volumeLevel, forceRefresh, triggerToast
 	);
 
 	// --- ECONOMY ENGINE ---
@@ -175,7 +175,7 @@ export default function App() {
 					<ShopTab 
 						keys={keys}
 						openChest={openChest}
-						isOpening={isOpening}
+						openingTier={openingTier}
 						recentResults={recentResults}
 						onCloseResults={() => setRecentResults(null)}
 					/>

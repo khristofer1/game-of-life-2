@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { setMeta } from '../services/db';
 import confetti from 'canvas-confetti';
+import successSound from '../assets/success.mp3';
 
 export type ChestTier = 'bronze' | 'silver' | 'gold';
 export interface GachaResult {
@@ -15,10 +16,11 @@ export function useChestGacha(
   keys: { bronze: number; silver: number; gold: number },
   gems: number,
   timePoints: number,
+  volumeLevel: number,
   forceRefresh: () => void,
   triggerToast: (msg: string) => void
 ) {
-  const [isOpening, setIsOpening] = useState(false);
+  const [openingTier, setOpeningTier] = useState<ChestTier | null>(null);
   const [recentResults, setRecentResults] = useState<GachaResult[] | null>(null);
 
   const openChest = async (tier: ChestTier, amount: number) => {
@@ -27,7 +29,7 @@ export function useChestGacha(
       return;
     }
 
-    setIsOpening(true);
+    setOpeningTier(tier);
 
     let totalGems = 0;
     let totalTP = 0;
@@ -66,16 +68,27 @@ export function useChestGacha(
     await setMeta("gems", gems + totalGems);
     await setMeta("timePoints", timePoints + totalTP);
 
-    // Simulate anticipation delay
+    // --- THE SUSPENSE REVEAL ---
     setTimeout(() => {
+      // 1. Play Sound
+      const audio = new Audio(successSound);
+      const volumeMap = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+      audio.volume = volumeMap[volumeLevel];
+      
+      if (volumeLevel > 0) {
+        audio.play().catch(error => console.log("Audio blocked:", error));
+      }
+
+      // 2. Visuals
       if (hitLegendary) {
         confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#fbbf24', '#f59e0b', '#ffffff'] });
       }
+      
       setRecentResults(results);
-      setIsOpening(false);
+      setOpeningTier(null); // Stop shaking
       forceRefresh();
-    }, 600);
+    }, 1200); // Increased from 600ms to 1200ms to let the animation play out!
   };
 
-  return { openChest, isOpening, recentResults, setRecentResults };
+  return { openChest, openingTier, recentResults, setRecentResults };
 }
