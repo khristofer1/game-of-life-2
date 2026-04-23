@@ -61,7 +61,7 @@ export function useGameEconomy(
 		await setMeta("gems", gems - 1);
 		await setMeta("timePoints", timePoints + yieldTP);
 		forceRefresh();
-		triggerToast("Gem shattered! Gained ${yieldTP} TP ⏳");
+		triggerToast(`Gem shattered! Gained ${yieldTP} TP ⏳`);
 	};
 
 	const handleClaimRewards = async (
