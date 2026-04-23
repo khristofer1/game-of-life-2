@@ -237,7 +237,7 @@ export default function App() {
 				expiredQuests={summaryData.expired}
 				gems={gems}
 				gemsGained={summaryData.gemsGained}
-				tp={timePoints}
+				timePoints={timePoints}
 				onRevive={handleReviveCard}
 				rewards={pendingRewards}
 				onClaim={() => handleClaimRewards(pendingRewards.gems, pendingRewards.tp)}

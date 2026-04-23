@@ -11,7 +11,7 @@ interface DailySummaryModalProps {
   expiredQuests: Quest[];
   gems: number;
   gemsGained: number;
-  tp: number;
+  timePoints: number;
   onRevive: (taskId: number) => void;
   rewards: PendingRewards;
   onClaim: () => void;
@@ -19,7 +19,7 @@ interface DailySummaryModalProps {
 
 export function DailySummaryModal({
   isOpen, onClose, completedYesterday, expiredQuests,
-  gems, gemsGained, tp, onRevive, rewards, onClaim
+  gems, gemsGained, timePoints, onRevive, rewards, onClaim
 }: DailySummaryModalProps) {
 
   // State for animations
@@ -77,7 +77,7 @@ export function DailySummaryModal({
               Here is how you did yesterday.<br></br>
               <span className="font-bold text-orange-400">
                 <span className='mr-3'>💎 {gems}</span>
-                <span>⏳ {tp}</span>
+                <span>⏳ {timePoints}</span>
               </span>
             </p>
           </div>
