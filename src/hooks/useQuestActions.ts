@@ -188,12 +188,12 @@ export function useQuestActions(
 		const task = breakTasks.find(t => t.id === id);
 		if (!task) return;
 
-		const cooldownDays = (task.cooldownMs || 0) / (1000 * 60 * 60 * 24);
-		const tpCost = Math.max(1, Math.floor(cooldownDays)); // 1 TP per day, minimum cost of 1
+		const cooldownHours = (task.cooldownMs || 0) / (1000 * 60 * 60);
+		const tpCost = Math.min(10, Math.ceil(cooldownHours)); // 1 TP per hour, maximum cost of 10
 
 		// Check if they can afford it
 		if (timePoints < tpCost) {
-			triggerToast(`Not enough Focus! You need ${tpCost} TP to take this break.`);
+			triggerToast(`Not enough TPs! You need ${tpCost} TP to take this break.`);
 			return;
 		}
 
@@ -216,8 +216,8 @@ export function useQuestActions(
 		if (!taskToUpdate) return;
 
 		// Recalculate the TP cost to refund it accurately
-		const cooldownDays = (taskToUpdate.cooldownMs || 0) / (1000 * 60 * 60 * 24);
-		const tpRefund = Math.max(1, Math.floor(cooldownDays));
+		const cooldownHours = (taskToUpdate.cooldownMs || 0) / (1000 * 60 * 60);
+		const tpRefund = Math.min(10, Math.ceil(cooldownHours));
 		
 		await setMeta("timePoints", timePoints + tpRefund);
 
