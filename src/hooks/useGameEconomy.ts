@@ -6,8 +6,6 @@ import { GAME_CONFIG } from '../config/gameRules';
 
 // We pass in the state and functions this hook needs to do its job
 export function useGameEconomy(
-	gems: number,
-	timePoints: number,
 	allTasks: Quest[],
 	forceRefresh: () => void,
 	triggerToast: (message: string, action?: ToastAction, taskId?: number) => void

@@ -85,7 +85,7 @@ export default function App() {
 	// --- ECONOMY ENGINE ---
 	const {
 		handleBuyShield, handleBuyGemWithTime, handleBuyTimeWithGem, handleClaimRewards
-	} = useGameEconomy(gems, timePoints, allTasks, forceRefresh, triggerToast);
+	} = useGameEconomy(allTasks, forceRefresh, triggerToast);
 
 	// --- QUEST ACTIONS ENGINE ---
 	const { 
