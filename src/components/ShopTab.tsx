@@ -1,21 +1,21 @@
 // src/components/ShopTab.tsx
-import type { ChestTier, GachaResult } from '../hooks/useChestGacha';
+import type { PrizeTier, GachaResult } from '../hooks/usePrizeDraw';
 import { motion } from 'framer-motion';
 
 interface ShopTabProps {
-  keys: { bronze: number; silver: number; gold: number };
-  openChest: (tier: ChestTier, amount: number) => void;
-  openingTier: ChestTier | null;
+  medals: { bronze: number; silver: number; gold: number };
+  onDraw: (tier: PrizeTier, amount: number) => void;
+  openingTier: PrizeTier | null;
   recentResults: GachaResult[] | null;
   onCloseResults: () => void;
 }
 
-export function ShopTab({ keys, openChest, openingTier, recentResults, onCloseResults }: ShopTabProps) {
+export function ShopTab({ medals, onDraw, openingTier, recentResults, onCloseResults }: ShopTabProps) {
   
-  const chests: { id: ChestTier; name: string; color: string; icon: string; desc: string }[] = [
-    { id: 'bronze', name: 'Bronze Lottery', color: 'from-orange-400 to-red-500', icon: '🥉', desc: 'A modest reward for completing late tasks.' },
-    { id: 'silver', name: 'Silver Lottery', color: 'from-gray-300 to-gray-500', icon: '🥈', desc: 'Standard rewards. Has a chance for rare loot.' },
-    { id: 'gold', name: 'Gold Lottery', color: 'from-yellow-300 to-yellow-500', icon: '🥇', desc: 'High tier rewards for proactive energy!' }
+  const prizes: { id: PrizeTier; name: string; color: string; icon: string; desc: string }[] = [
+    { id: 'bronze', name: 'Bronze Prize', color: 'from-orange-400 to-red-500', icon: '🥉', desc: 'A modest reward for completing late tasks.' },
+    { id: 'silver', name: 'Silver Prize', color: 'from-gray-300 to-gray-500', icon: '🥈', desc: 'Standard rewards. Has a chance for rare prize.' },
+    { id: 'gold', name: 'Gold Prize', color: 'from-yellow-300 to-yellow-500', icon: '🥇', desc: 'High tier rewards for proactive energy!' }
   ];
 
   return (
@@ -23,14 +23,14 @@ export function ShopTab({ keys, openChest, openingTier, recentResults, onCloseRe
       
       {/* Key Inventory Header */}
       <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex justify-around items-center">
-        <div className="text-center"><div className="text-2xl">{keys.bronze}</div><div className="text-xs font-bold text-orange-700 uppercase">Bronze</div></div>
-        <div className="text-center border-l border-r border-gray-100 px-8"><div className="text-2xl">{keys.silver}</div><div className="text-xs font-bold text-gray-500 uppercase">Silver</div></div>
-        <div className="text-center"><div className="text-2xl">{keys.gold}</div><div className="text-xs font-bold text-yellow-600 uppercase">Gold</div></div>
+        <div className="text-center"><div className="text-2xl">{medals.bronze}</div><div className="text-xs font-bold text-orange-700 uppercase">Bronze</div></div>
+        <div className="text-center border-l border-r border-gray-100 px-8"><div className="text-2xl">{medals.silver}</div><div className="text-xs font-bold text-gray-500 uppercase">Silver</div></div>
+        <div className="text-center"><div className="text-2xl">{medals.gold}</div><div className="text-xs font-bold text-yellow-600 uppercase">Gold</div></div>
       </div>
 
-      {/* The Chests */}
+      {/* The prizes */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {chests.map(chest => (
+        {prizes.map(chest => (
           <div key={chest.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-md flex flex-col items-center text-center">
             {/* Framer Motion Suspense Shake */}
             <motion.div 
@@ -49,15 +49,15 @@ export function ShopTab({ keys, openChest, openingTier, recentResults, onCloseRe
             
             <div className="flex gap-2 w-full mt-auto">
               <button 
-                onClick={() => openChest(chest.id, 1)}
-                disabled={openingTier !== null || keys[chest.id] < 1}
+                onClick={() => onDraw(chest.id, 1)}
+                disabled={openingTier !== null || medals[chest.id] < 1}
                 className="flex-1 py-3 bg-gray-50 hover:bg-gray-100 disabled:opacity-50 border border-gray-200 rounded-xl font-bold text-sm transition-colors cursor-pointer"
               >
                 Open 1
               </button>
               <button 
-                onClick={() => openChest(chest.id, 10)}
-                disabled={openingTier !== null || keys[chest.id] < 10}
+                onClick={() => onDraw(chest.id, 10)}
+                disabled={openingTier !== null || medals[chest.id] < 10}
                 className={`flex-1 py-3 text-white disabled:opacity-50 rounded-xl font-bold text-sm transition-all shadow-sm cursor-pointer bg-linear-to-r ${chest.color}`}
               >
                 Open 10
@@ -72,7 +72,7 @@ export function ShopTab({ keys, openChest, openingTier, recentResults, onCloseRe
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm" onClick={onCloseResults}></div>
           <div className="relative bg-white w-full max-w-lg rounded-4xl shadow-2xl p-6 animate-fade-in flex flex-col max-h-[80vh]">
-            <h2 className="text-2xl font-black text-center mb-6">Loot Acquired!</h2>
+            <h2 className="text-2xl font-black text-center mb-6">Rewards Claimed!</h2>
             
             <div className="overflow-y-auto custom-scrollbar flex-1 grid grid-cols-2 gap-3 pb-4">
               {recentResults.map((res, i) => (

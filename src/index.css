@@ -15,20 +15,6 @@
     --shadow-premium: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
 }
 
-body {
-    background-color: var(--color-surface); /* Updated to use your theme variable! */
-    color: var(--color-dark);
-    -webkit-font-smoothing: antialiased;
-}
-
-.glass-card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: var(--shadow-glass);
-}
-
 /* custom animations and transitions*/
 body {
     background-color: #F8F9FA;

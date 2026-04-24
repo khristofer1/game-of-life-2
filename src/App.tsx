@@ -23,7 +23,7 @@ import { useQuestActions } from './hooks/useQuestActions';
 import { Header } from './components/layout/Header';
 import { useQuestManager } from './hooks/useQuestManager';
 import { ShopTab } from './components/ShopTab';
-import { useChestGacha } from './hooks/useChestGacha';
+import { useChestGacha } from './hooks/usePrizeDraw';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---

@@ -1,4 +1,4 @@
-// src/hooks/useChestGacha.ts
+// src/hooks/usePrizeDraw.ts
 import { useState } from 'react';
 import { setMeta } from '../services/db';
 import confetti from 'canvas-confetti';
@@ -7,28 +7,28 @@ import rareChestSound from '../assets/rareChest.mp3';
 import legendaryChestSound from "../assets/legendaryChest.mp3";
 import { GAME_CONFIG } from '../config/gameRules';
 
-export type ChestTier = 'bronze' | 'silver' | 'gold';
+export type PrizeTier = 'bronze' | 'silver' | 'gold';
 export interface GachaResult {
   gems: number;
   tp: number;
   rarity: 'common' | 'rare' | 'legendary';
-  tier: ChestTier;
+  tier: PrizeTier;
 }
 
 export function useChestGacha(
-  keys: { bronze: number; silver: number; gold: number },
+  medals: { bronze: number; silver: number; gold: number },
   gems: number,
   timePoints: number,
   volumeLevel: number,
   forceRefresh: () => void,
   triggerToast: (msg: string) => void
 ) {
-  const [openingTier, setOpeningTier] = useState<ChestTier | null>(null);
+  const [openingTier, setOpeningTier] = useState<PrizeTier | null>(null);
   const [recentResults, setRecentResults] = useState<GachaResult[] | null>(null);
 
-  const openChest = async (tier: ChestTier, amount: number) => {
-    if (keys[tier] < amount) {
-      triggerToast(`Not enough ${tier} keys!`);
+  const onDraw = async (tier: PrizeTier, amount: number) => {
+    if (medals[tier] < amount) {
+      triggerToast(`Not enough ${tier} medals!`);
       return;
     }
 
@@ -80,8 +80,8 @@ export function useChestGacha(
       results.push(result);
     }
 
-    // Deduct Keys and Add Rewards
-    await setMeta("keys", { ...keys, [tier]: keys[tier] - amount });
+    // Deduct medals and Add Rewards
+    await setMeta("medals", { ...medals, [tier]: medals[tier] - amount });
     await setMeta("gems", gems + totalGems);
     await setMeta("timePoints", timePoints + totalTP);
 
@@ -116,5 +116,5 @@ export function useChestGacha(
     }, 1200); 
   };
   
-  return { openChest, openingTier, recentResults, setRecentResults };
+  return { onDraw, openingTier, recentResults, setRecentResults };
 }

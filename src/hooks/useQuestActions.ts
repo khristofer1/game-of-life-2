@@ -45,11 +45,11 @@ export function useQuestActions(
 
 				// --- THE KEY REWARD SYSTEM ---
         if (updatedTask.energyPercent >= GAME_CONFIG.energy.greenThreshold) {
-            updatedTask.pendingKey = 'gold';
+            updatedTask.pendingMedal = 'gold';
         } else if (updatedTask.energyPercent >= GAME_CONFIG.energy.yellowThreshold) {
-            updatedTask.pendingKey = 'silver';
+            updatedTask.pendingMedal = 'silver';
         } else {
-            updatedTask.pendingKey = 'bronze';
+            updatedTask.pendingMedal = 'bronze';
         }
 
 				// 2. TP ECONOMY
@@ -170,8 +170,8 @@ export function useQuestActions(
 			}
 
 			// --- ERASE THE PENDING KEY ---
-      if (updatedTask.pendingKey) {
-        delete updatedTask.pendingKey;
+      if (updatedTask.pendingMedal) {
+        delete updatedTask.pendingMedal;
       }
 
 			if (updatedTask.completionDates && updatedTask.completionDates.length > 0) {
