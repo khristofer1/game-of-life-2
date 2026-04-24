@@ -67,7 +67,7 @@ export function useGameEconomy(
 	const handleClaimRewards = async (
 		pendingGems: number,
 		pendingTP: number,
-		pendingKeys: { bronze: number; silver: number; gold: number }
+		pendingMedal: { bronze: number; silver: number; gold: number }
 	) => {
 		const todayStr = new Date().toISOString().split('T')[0];
 		
@@ -75,18 +75,18 @@ export function useGameEconomy(
 		await setMeta("gems", gems + pendingGems);
 		await setMeta("timePoints", timePoints + pendingTP);
 
-		// --- MOVE KEYS TO INVENTORY ---
-		const currentKeys = await getMeta("keys", { bronze: 0, silver: 0, gold: 0 });
-		await setMeta("keys", {
-			bronze: currentKeys.bronze + pendingKeys.bronze,
-			silver: currentKeys.silver + pendingKeys.silver,
-			gold: currentKeys.gold + pendingKeys.gold
+		// --- MOVE MEDALS TO INVENTORY ---
+		const currentMedals = await getMeta("medals", { bronze: 0, silver: 0, gold: 0 });
+		await setMeta("medals", {
+			bronze: currentMedals.bronze + pendingMedal.bronze,
+			silver: currentMedals.silver + pendingMedal.silver,
+			gold: currentMedals.gold + pendingMedal.gold
 		});
 		
 		// 2. Clear the pending buckets
 		await setMeta("unclaimedGems", 0);
 		await setMeta("unclaimedTP", 0);
-		await setMeta("unclaimedKeys", { bronze: 0, silver: 0, gold: 0 });
+		await setMeta("unclaimedMedals", { bronze: 0, silver: 0, gold: 0 });
 		
 		// 3. Mark today as claimed
 		await setMeta("lastClaimDate", todayStr);

@@ -2,7 +2,7 @@
 export interface PendingRewards {
   gems: number;
   tp: number;
-  keys: {
+  medals: {
     bronze: number;
     silver: number;
     gold: number;

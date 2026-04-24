@@ -57,7 +57,7 @@ export default function App() {
 	// Pull everything we need from our custom background engine!
 	const {
 		allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks,
-		archivedTasks, gems, timePoints, keys, pendingRewards, forceRefresh
+		archivedTasks, gems, timePoints, medals, pendingRewards, forceRefresh
 	} = useTasks(user);
 
 	// --- DAILY SUMMARY ENGINE ---
@@ -78,8 +78,8 @@ export default function App() {
 	const { toast, triggerToast, closeToast } = useToast();
 	
 	// --- GACHA ENGINE ---
-	const { openChest, openingTier, recentResults, setRecentResults } = useChestGacha(
-		keys, gems, timePoints, volumeLevel, forceRefresh, triggerToast
+	const { onDraw, openingTier, recentResults, setRecentResults } = useChestGacha(
+		medals, gems, timePoints, volumeLevel, forceRefresh, triggerToast
 	);
 
 	// --- ECONOMY ENGINE ---
@@ -173,8 +173,8 @@ export default function App() {
 
 				{activeTab === 'shop' ? (
 					<ShopTab 
-						keys={keys}
-						openChest={openChest}
+						medals={medals}
+						onDraw={onDraw}
 						openingTier={openingTier}
 						recentResults={recentResults}
 						onCloseResults={() => setRecentResults(null)}
@@ -262,7 +262,7 @@ export default function App() {
 				onClaim={() => handleClaimRewards(
 					pendingRewards.gems,
 					pendingRewards.tp,
-					pendingRewards.keys
+					pendingRewards.medals
 				)}
 			/>
 		</div>

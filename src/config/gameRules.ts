@@ -16,7 +16,7 @@ export const GAME_CONFIG = {
     maxTPRewardPerTask: 10,  // The cap on TP earned from a single task
   },
 
-  // CD2: Development & Accomplishment (Energy & Keys)
+  // CD2: Development & Accomplishment (Energy & Medals)
   energy: {
     greenThreshold: 50,    // Energy > 50% gives Gold
     yellowThreshold: 25,  // Energy > 25% gives Silver

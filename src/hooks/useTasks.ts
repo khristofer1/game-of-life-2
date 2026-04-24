@@ -17,7 +17,7 @@ export function useTasks(user: User | null) {
   const [pendingRewards, setPendingRewards] = useState<PendingRewards>({
     gems: 0,
     tp: 0,
-    keys: { bronze: 0, silver: 0, gold: 0 },
+    medals: { bronze: 0, silver: 0, gold: 0 },
     hasClaimedToday: false
   });
   
@@ -30,7 +30,7 @@ export function useTasks(user: User | null) {
 	// Game Economy State
 	const [gems, setGems] = useState<number>(0);
   const [timePoints, setTimePoints] = useState<number>(0);
-  const [keys, setKeys] = useState({ bronze: 0, silver: 0, gold: 0 });
+  const [medals, setmedals] = useState({ bronze: 0, silver: 0, gold: 0 });
 
 	// 2. The Core Engine: Replaces your old refreshTasks() function
 	const refreshTasks = useCallback(async () => {
@@ -44,9 +44,9 @@ export function useTasks(user: User | null) {
 			let tasksUpdated = false;
 			let totalGemsEarned = 0;
       let totalTPEarned = 0;
-      let newBronzeKeys = 0;
-      let newSilverKeys = 0;
-      let newGoldKeys = 0;
+      let newBronzemedals = 0;
+      let newSilvermedals = 0;
+      let newGoldmedals = 0;
 
 			// Engine Sweep: Process logic for every task
       const processedTasks: Quest[] = [];
@@ -130,10 +130,10 @@ export function useTasks(user: User | null) {
               totalTPEarned += task.lastDepositMs;
             }
 
-            if (task.pendingKey) {
-              if (task.pendingKey === 'gold') newGoldKeys++;
-              else if (task.pendingKey === 'silver') newSilverKeys++;
-              else if (task.pendingKey === 'bronze') newBronzeKeys++;
+            if (task.pendingMedal) {
+              if (task.pendingMedal === 'gold') newGoldmedals++;
+              else if (task.pendingMedal === 'silver') newSilvermedals++;
+              else if (task.pendingMedal === 'bronze') newBronzemedals++;
             }
             
             task.gemClaimed = true;
@@ -212,13 +212,13 @@ export function useTasks(user: User | null) {
         await setMeta("unclaimedTP", existingUnclaimedTP + totalTPEarned);
       }
 
-      // --- SAVE UNCLAIMED KEYS ---
-      if (newBronzeKeys > 0 || newSilverKeys > 0 || newGoldKeys > 0) {
-        const existingKeys = await getMeta("unclaimedKeys", { bronze: 0, silver: 0, gold: 0 });
-        await setMeta("unclaimedKeys", {
-            bronze: existingKeys.bronze + newBronzeKeys,
-            silver: existingKeys.silver + newSilverKeys,
-            gold: existingKeys.gold + newGoldKeys
+      // --- SAVE UNCLAIMED medals ---
+      if (newBronzemedals > 0 || newSilvermedals > 0 || newGoldmedals > 0) {
+        const existingmedals = await getMeta("unclaimedmedals", { bronze: 0, silver: 0, gold: 0 });
+        await setMeta("unclaimedmedals", {
+            bronze: existingmedals.bronze + newBronzemedals,
+            silver: existingmedals.silver + newSilvermedals,
+            gold: existingmedals.gold + newGoldmedals
         });
       }
 
@@ -229,8 +229,8 @@ export function useTasks(user: User | null) {
 
       const unclaimedGems = await getMeta("unclaimedGems", 0);
       const unclaimedTP = await getMeta("unclaimedTP", 0);
-      const unclaimedKeys = await getMeta("unclaimedKeys", { bronze: 0, silver: 0, gold: 0 });
-      const currentKeys = await getMeta("keys", { bronze: 0, silver: 0, gold: 0 });
+      const unclaimedmedals = await getMeta("unclaimedmedals", { bronze: 0, silver: 0, gold: 0 });
+      const currentmedals = await getMeta("medals", { bronze: 0, silver: 0, gold: 0 });
 
 			// 3. Sorting & Filtering for the UI
       const getRealDeadline = (t: Quest) => t.isOneTime ? (t.deadline || 0) : ((t.cycleStart || 0) + (t.activeDeadlineMs || 0));
@@ -296,11 +296,11 @@ export function useTasks(user: User | null) {
 			setDeletedTasks(deleted);
 			setGems(currentGems);
       setTimePoints(globalTP);
-      setKeys(currentKeys);
+      setmedals(currentmedals);
       setPendingRewards({
         gems: unclaimedGems,
         tp: unclaimedTP,
-        keys: unclaimedKeys,
+        medals: unclaimedmedals,
         hasClaimedToday
       });
 
@@ -335,7 +335,7 @@ export function useTasks(user: User | null) {
     archivedTasks,
 		gems,
     timePoints,
-    keys,
+    medals,
     pendingRewards,
 		forceRefresh: refreshTasks
 	};
