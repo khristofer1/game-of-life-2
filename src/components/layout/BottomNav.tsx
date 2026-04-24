@@ -72,7 +72,7 @@ export function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
 							onClick={() => { setActiveTab('shop'); setIsMoreMenuOpen(false); }}
 							className={`px-4 py-3 text-sm font-bold text-left hover:bg-purple-50 transition-colors flex items-center gap-2 ${activeTab === 'shop' ? 'text-purple-500 bg-purple-50/50' : 'text-dark'}`}
 						>
-							<span className="text-lg">🏪</span> Loot Shop
+							<span className="text-lg">🏪</span> Shop
 						</button>
 						
 						<button
