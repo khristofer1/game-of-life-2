@@ -61,7 +61,9 @@ export default function App() {
 	} = useTasks(user);
 
 	// --- DAILY SUMMARY ENGINE ---
-	const { showSummaryModal, setShowSummaryModal, summaryData, setSummaryData, handleCloseSummary } = useDailySummary(allTasks);
+	const { showSummaryModal, setShowSummaryModal, summaryData, setSummaryData,
+		handleCloseSummary
+	} = useDailySummary(allTasks, pendingRewards);
 
 	// --- QUEST MANAGER ENGINE ---
 	const { handleSaveQuest, handleReviveCard } = useQuestManager(

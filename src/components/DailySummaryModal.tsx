@@ -76,8 +76,8 @@ export function DailySummaryModal({
             <p className="text-gray-300 text-sm">
               Here is how you did yesterday.<br></br>
               <span className="font-bold text-orange-400">
-                <span className='mr-3'>💎 {gems}</span>
-                <span>⏳ {timePoints}</span>
+                <span className='mr-3'>⏳ {timePoints}</span>
+                <span>💎 {gems}</span>
               </span>
             </p>
           </div>
