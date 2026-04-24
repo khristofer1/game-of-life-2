@@ -23,7 +23,7 @@ import { useQuestActions } from './hooks/useQuestActions';
 import { Header } from './components/layout/Header';
 import { useQuestManager } from './hooks/useQuestManager';
 import { ShopTab } from './components/ShopTab';
-import { useChestGacha } from './hooks/usePrizeDraw';
+import { usePrizeDraw } from './hooks/usePrizeDraw';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -78,7 +78,7 @@ export default function App() {
 	const { toast, triggerToast, closeToast } = useToast();
 	
 	// --- GACHA ENGINE ---
-	const { onDraw, openingTier, recentResults, setRecentResults } = useChestGacha(
+	const { onDraw, openingTier, recentResults, setRecentResults } = usePrizeDraw(
 		medals, gems, timePoints, volumeLevel, forceRefresh, triggerToast
 	);
 

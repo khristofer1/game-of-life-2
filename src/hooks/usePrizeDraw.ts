@@ -15,7 +15,7 @@ export interface GachaResult {
   tier: PrizeTier;
 }
 
-export function useChestGacha(
+export function usePrizeDraw(
   medals: { bronze: number; silver: number; gold: number },
   gems: number,
   timePoints: number,
