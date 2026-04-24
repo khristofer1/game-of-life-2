@@ -53,14 +53,14 @@ export function ShopTab({ medals, onDraw, openingTier, recentResults, onCloseRes
                 disabled={openingTier !== null || medals[chest.id] < 1}
                 className="flex-1 py-3 bg-gray-50 hover:bg-gray-100 disabled:opacity-50 border border-gray-200 rounded-xl font-bold text-sm transition-colors cursor-pointer"
               >
-                Open 1
+                Draw 1
               </button>
               <button 
                 onClick={() => onDraw(chest.id, 10)}
                 disabled={openingTier !== null || medals[chest.id] < 10}
                 className={`flex-1 py-3 text-white disabled:opacity-50 rounded-xl font-bold text-sm transition-all shadow-sm cursor-pointer bg-linear-to-r ${chest.color}`}
               >
-                Open 10
+                Draw 10
               </button>
             </div>
           </div>
