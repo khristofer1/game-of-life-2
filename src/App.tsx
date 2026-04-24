@@ -166,7 +166,7 @@ export default function App() {
 				<div className="flex items-center justify-between mb-6 border-b border-gray-200 pb-2">
 					<h2 className="text-2xl font-bold text-dark capitalize">
 						{activeTab === 'break' ? 'Break Activities' : 
-						 activeTab === 'shop' ? 'Loot Shop' : 
+						 activeTab === 'shop' ? 'Shop' : 
 						 `${activeTab} Quests`}
 					</h2>
 				</div>

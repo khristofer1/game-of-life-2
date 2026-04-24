@@ -13,9 +13,9 @@ interface ShopTabProps {
 export function ShopTab({ medals, onDraw, openingTier, recentResults, onCloseResults }: ShopTabProps) {
   
   const prizes: { id: PrizeTier; name: string; color: string; icon: string; desc: string }[] = [
-    { id: 'bronze', name: 'Bronze Prize', color: 'from-orange-400 to-red-500', icon: '🥉', desc: 'A modest reward for completing late tasks.' },
-    { id: 'silver', name: 'Silver Prize', color: 'from-gray-300 to-gray-500', icon: '🥈', desc: 'Standard rewards. Has a chance for rare prize.' },
-    { id: 'gold', name: 'Gold Prize', color: 'from-yellow-300 to-yellow-500', icon: '🥇', desc: 'High tier rewards for proactive energy!' }
+    { id: 'bronze', name: 'Bronze Prize Draw', color: 'from-orange-400 to-red-500', icon: '🥉', desc: 'A modest reward for completing late tasks.' },
+    { id: 'silver', name: 'Silver Prize Draw', color: 'from-gray-300 to-gray-500', icon: '🥈', desc: 'Standard rewards. Has a chance for rare prize.' },
+    { id: 'gold', name: 'Gold Prize Draw', color: 'from-yellow-300 to-yellow-500', icon: '🥇', desc: 'High tier rewards for proactive energy!' }
   ];
 
   return (
