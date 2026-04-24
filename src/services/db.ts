@@ -1,5 +1,5 @@
 import { db, auth } from './firebase';
-import { collection, doc, getDocs, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, increment } from 'firebase/firestore';
 import type { Quest } from '../types/quest';
 
 // --- SECURITY HELPER ---
@@ -70,4 +70,14 @@ export async function setMeta<T>(key: string, value: T): Promise<void> {
   // { merge: true } is crucial! It tells Firebase to only update the exact key 
   // we passed (e.g., gems) without accidentally deleting our streak data!
   await setDoc(metaRef, { [key]: value }, { merge: true });
+}
+
+// 6. Atomically increment or decrement a number in the database
+export async function incrementMeta(key: string, amount: number): Promise<void> {
+  const uid = getUserId();
+  const metaRef = doc(db, `users/${uid}/meta`, 'data');
+  
+  // By passing increment(amount), Firebase handles the math on the server side.
+  // It guarantees accuracy even if multiple devices update the value at the exact same millisecond.
+  await setDoc(metaRef, { [key]: increment(amount) }, { merge: true });
 }

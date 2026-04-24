@@ -1,5 +1,5 @@
 // src/hooks/useGameEconomy.ts
-import { setMeta, getMeta, saveTaskToDB } from '../services/db';
+import { setMeta, getMeta, saveTaskToDB, incrementMeta } from '../services/db';
 import type { Quest } from '../types/quest';
 import type { ToastAction } from './useToast';
 import { GAME_CONFIG } from '../config/gameRules';
@@ -12,24 +12,27 @@ export function useGameEconomy(
 	forceRefresh: () => void,
 	triggerToast: (message: string, action?: ToastAction, taskId?: number) => void
 ) {
-	
+
 	const handleBuyShield = async (taskId: number, cost: number) => {
 		const taskToUpdate = allTasks.find(t => t.id === taskId);
 		if (!taskToUpdate) return;
 
-		if (gems < cost) {
+		// Fetch the absolute latest gem count right before purchase
+		const freshGems = await getMeta("gems", 0);
+
+		if (freshGems < cost) {
 			alert(`Not enough gems! You need ${cost} 💎 to buy this shield.`);
 			return;
 		}
 
 		const isConfirmed = window.confirm(
-			`Equip a shield to "${taskToUpdate.name}"?\n\nCost: ${cost} 💎\nCurrent Balance: ${gems} 💎`
+			`Equip a shield to "${taskToUpdate.name}"?\n\nCost: ${cost} 💎\nCurrent Balance: ${freshGems} 💎`
 		);
-		
-		if (!isConfirmed) return; 
 
-		const newGems = gems - cost;
-		await setMeta("gems", newGems);
+		if (!isConfirmed) return;
+
+		// Use atomic decrement
+		await incrementMeta("gems", -cost);
 
 		taskToUpdate.shields = (taskToUpdate.shields || 0) + 1;
 		await saveTaskToDB(taskToUpdate);
@@ -39,27 +42,32 @@ export function useGameEconomy(
 	};
 
 	const handleBuyGemWithTime = async () => {
-		const cost = GAME_CONFIG.economy.mintGemCostTP
-		if (timePoints < cost) {
-			triggerToast("Not enough Time Points! You need ${cost} TP to mint a Gem.");
+		const cost = GAME_CONFIG.economy.mintGemCostTP;
+		const freshTP = await getMeta("timePoints", 0);
+
+		if (freshTP < cost) {
+			triggerToast(`Not enough Time Points! You need ${cost} TP to mint a Gem.`);
 			return;
 		}
 
-		await setMeta("timePoints", timePoints - cost);
-		await setMeta("gems", gems + 1);
+		// Use atomic math
+		await incrementMeta("timePoints", -cost);
+		await incrementMeta("gems", 1);
 		forceRefresh();
 		triggerToast("Gem minted successfully! 💎");
 	};
 
 	const handleBuyTimeWithGem = async () => {
-		if (gems < 1) {
+		const freshGems = await getMeta("gems", 0);
+		if (freshGems < 1) {
 			triggerToast("You don't have any Gems to shatter!");
 			return;
 		}
 
 		const yieldTP = GAME_CONFIG.economy.shatterGemYieldTP;
-		await setMeta("gems", gems - 1);
-		await setMeta("timePoints", timePoints + yieldTP);
+		// Use atomic math
+		await incrementMeta("gems", -1);
+		await incrementMeta("timePoints", yieldTP);
 		forceRefresh();
 		triggerToast(`Gem shattered! Gained ${yieldTP} TP ⏳`);
 	};
@@ -70,10 +78,11 @@ export function useGameEconomy(
 		pendingMedal: { bronze: number; silver: number; gold: number }
 	) => {
 		const todayStr = new Date().toISOString().split('T')[0];
-		
-		// 1. Move pending to actual balance
-		await setMeta("gems", gems + pendingGems);
-		await setMeta("timePoints", timePoints + pendingTP);
+
+		// 1. Move pending to actual balance using ATOMIC INCREMENTS
+		// This solves the stale state bug!
+		if (pendingGems > 0) await incrementMeta("gems", pendingGems);
+		if (pendingTP > 0) await incrementMeta("timePoints", pendingTP);
 
 		// --- MOVE MEDALS TO INVENTORY ---
 		const currentMedals = await getMeta("medals", { bronze: 0, silver: 0, gold: 0 });
@@ -82,19 +91,18 @@ export function useGameEconomy(
 			silver: currentMedals.silver + pendingMedal.silver,
 			gold: currentMedals.gold + pendingMedal.gold
 		});
-		
+
 		// 2. Clear the pending buckets
 		await setMeta("unclaimedGems", 0);
 		await setMeta("unclaimedTP", 0);
 		await setMeta("unclaimedMedals", { bronze: 0, silver: 0, gold: 0 });
-		
+
 		// 3. Mark today as claimed
 		await setMeta("lastClaimDate", todayStr);
-		
+
 		forceRefresh();
 	};
 
-	// Expose these functions to whoever uses the hook!
 	return {
 		handleBuyShield,
 		handleBuyGemWithTime,
