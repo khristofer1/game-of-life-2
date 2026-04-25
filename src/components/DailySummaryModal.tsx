@@ -133,15 +133,21 @@ export function DailySummaryModal({
             </div>
 
             {/* LOOT DROP DISPLAY */}
-            {(gemsGained > 0 || displayRewards.tp > 0) && (
-              <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 flex items-center justify-between shadow-inner">
+            {(gemsGained > 0 || displayRewards.tp > 0 || hasClaimableRewards) && (
+              <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 flex flex-col gap-3 shadow-inner">
                 <div>
-                  <h3 className="text-orange-800 font-bold text-sm uppercase tracking-wider">Rewards Earned</h3>
-                  <p className="text-orange-600 text-xs mt-1">From yesterday's efforts</p>
+                  <h3 className="text-orange-800 font-bold text-sm uppercase tracking-wider text-center">Rewards Earned</h3>
+                  <p className="text-orange-600 text-xs mt-1 text-center">From yesterday's efforts</p>
                 </div>
-                <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100">
-                  {gemsGained > 0 && <span className="font-black text-orange-500">💎 +{gemsGained}</span>}
-                  {displayRewards.tp > 0 && <span className="font-black text-blue-600">⏳ +{displayRewards.tp}</span>}
+                
+                <div className="flex flex-wrap justify-center gap-3 bg-white px-4 py-3 rounded-lg shadow-sm border border-orange-100">
+                  {gemsGained > 0 && <span className="font-black text-orange-500">💎+{gemsGained}</span>}
+                  {displayRewards.tp > 0 && <span className="font-black text-blue-600">⏳+{displayRewards.tp}</span>}
+                  
+                  {/* MEDAL BREAKDOWN */}
+                  <span className="font-black text-amber-700">🥉+{displayRewards.medals.bronze}</span>
+                  <span className="font-black text-slate-400">🥈+{displayRewards.medals.silver}</span>
+                  <span className="font-black text-yellow-500">🥇+{displayRewards.medals.gold}</span>
                 </div>
               </div>
             )}
