@@ -132,26 +132,6 @@ export function DailySummaryModal({
               )}
             </div>
 
-            {/* LOOT DROP DISPLAY */}
-            {(gemsGained > 0 || displayRewards.tp > 0 || hasClaimableRewards) && (
-              <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 flex flex-col gap-3 shadow-inner">
-                <div>
-                  <h3 className="text-orange-800 font-bold text-sm uppercase tracking-wider text-center">Rewards Earned</h3>
-                  <p className="text-orange-600 text-xs mt-1 text-center">From yesterday's efforts</p>
-                </div>
-                
-                <div className="flex flex-wrap justify-center gap-3 bg-white px-4 py-3 rounded-lg shadow-sm border border-orange-100">
-                  {gemsGained > 0 && <span className="font-black text-orange-500">💎 +{gemsGained}</span>}
-                  {displayRewards.tp > 0 && <span className="font-black text-blue-600">⏳ +{displayRewards.tp}</span>}
-                  
-                  {/* MEDAL BREAKDOWN */}
-                  {displayRewards.medals?.bronze > 0 && <span className="font-black text-amber-700">🥉 +{displayRewards.medals.bronze}</span>}
-                  {displayRewards.medals?.silver > 0 && <span className="font-black text-slate-400">🥈 +{displayRewards.medals.silver}</span>}
-                  {displayRewards.medals?.gold > 0 && <span className="font-black text-yellow-500">🥇 +{displayRewards.medals.gold}</span>}
-                </div>
-              </div>
-            )}
-
             {/* EXPIRED CARDS */}
             {expiredQuests.length > 0 && (
               <div>
@@ -188,6 +168,24 @@ export function DailySummaryModal({
 
           {/* FOOTER */}
           <div className="bg-gray-50 px-8 py-4 shrink-0 border-t border-gray-100">
+            {(gemsGained > 0 || displayRewards.tp > 0 || hasClaimableRewards) && (
+              <div className="flex flex-col gap-3 mb-4">
+                <div>
+                  <h3 className="text-orange-700 font-bold text-sm tracking-wider text-center">Rewards earned from yesterday's efforts:</h3>
+                </div>
+                
+                <div className="flex flex-wrap justify-center gap-3 bg-white px-4 py-3 rounded-lg shadow-sm border border-orange-100">
+                  {gemsGained > 0 && <span className="font-black text-orange-500">💎 +{gemsGained}</span>}
+                  {displayRewards.tp > 0 && <span className="font-black text-blue-600">⏳ +{displayRewards.tp}</span>}
+                  
+                  {/* MEDAL BREAKDOWN */}
+                  {displayRewards.medals?.bronze > 0 && <span className="font-black text-amber-700">🥉 +{displayRewards.medals.bronze}</span>}
+                  {displayRewards.medals?.silver > 0 && <span className="font-black text-slate-400">🥈 +{displayRewards.medals.silver}</span>}
+                  {displayRewards.medals?.gold > 0 && <span className="font-black text-yellow-500">🥇 +{displayRewards.medals.gold}</span>}
+                </div>
+              </div>
+            )}
+            
             {/* Show "Continue" if they already claimed OR if there are 0 rewards across the board */}
             {rewards.hasClaimedToday || !hasClaimableRewards ? (
               <button 
