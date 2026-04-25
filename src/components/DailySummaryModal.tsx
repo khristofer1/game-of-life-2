@@ -141,13 +141,13 @@ export function DailySummaryModal({
                 </div>
                 
                 <div className="flex flex-wrap justify-center gap-3 bg-white px-4 py-3 rounded-lg shadow-sm border border-orange-100">
-                  {gemsGained > 0 && <span className="font-black text-orange-500">💎+{gemsGained}</span>}
-                  {displayRewards.tp > 0 && <span className="font-black text-blue-600">⏳+{displayRewards.tp}</span>}
+                  {gemsGained > 0 && <span className="font-black text-orange-500">💎 +{gemsGained}</span>}
+                  {displayRewards.tp > 0 && <span className="font-black text-blue-600">⏳ +{displayRewards.tp}</span>}
                   
                   {/* MEDAL BREAKDOWN */}
-                  <span className="font-black text-amber-700">🥉+{displayRewards.medals.bronze}</span>
-                  <span className="font-black text-slate-400">🥈+{displayRewards.medals.silver}</span>
-                  <span className="font-black text-yellow-500">🥇+{displayRewards.medals.gold}</span>
+                  {displayRewards.medals?.bronze > 0 && <span className="font-black text-amber-700">🥉 +{displayRewards.medals.bronze}</span>}
+                  {displayRewards.medals?.silver > 0 && <span className="font-black text-slate-400">🥈 +{displayRewards.medals.silver}</span>}
+                  {displayRewards.medals?.gold > 0 && <span className="font-black text-yellow-500">🥇 +{displayRewards.medals.gold}</span>}
                 </div>
               </div>
             )}
@@ -204,7 +204,7 @@ export function DailySummaryModal({
                   isAnimating ? 'bg-gray-400 scale-95' : 'bg-blue-600 hover:bg-blue-700 active:scale-95 animate-pulse'
                 }`}
               >
-                {isAnimating ? 'Banking Rewards...' : `Claim Rewards (+${displayRewards.gems} 💎, +${displayRewards.tp} ⏳)`}
+                {isAnimating ? 'Banking Rewards...' : "Claim Rewards"}
               </button>
             )}
           </div>
