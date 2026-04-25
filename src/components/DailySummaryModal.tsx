@@ -1,5 +1,5 @@
 // src/components/DailySummaryModal.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Quest } from '../types/quest';
 import type { PendingRewards } from '../types/pendingRewards';
 import { RewardFlyer } from './RewardFlyer';
@@ -26,6 +26,19 @@ export function DailySummaryModal({
   const [activeFlyers, setActiveFlyers] = useState<{id: number, type: 'tp'|'gem', x: number, y: number}[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  // This state holds onto the reward numbers so they don't vanish mid-animation
+  const [frozenRewards, setFrozenRewards] = useState({ tp: 0, gems: 0 });
+
+  useEffect(() => {
+    // Whenever valid rewards come in, freeze them into local state.
+    // If the real rewards drop to 0 later (because of claiming), this 'if' 
+    // prevents the zeros from overwriting our display.
+    if (rewards.tp > 0 || rewards.gems > 0) {
+      setFrozenRewards({ tp: rewards.tp, gems: rewards.gems });
+    }
+  }, [rewards.tp, rewards.gems]);
+  // ------------------------
+
   const handleInternalClaim = () => {
     if (isAnimating) return;
     setIsAnimating(true);
@@ -46,7 +59,7 @@ export function DailySummaryModal({
     
     setActiveFlyers(newFlyers);
 
-    // Wait for the flyers to finish before updating Firebase (1300ms is slightly longer than the 1.2s animation)
+    // Wait for the flyers to finish before updating Firebase
     setTimeout(() => {
       onClaim();
       setIsAnimating(false);
@@ -111,8 +124,8 @@ export function DailySummaryModal({
               )}
             </div>
 
-            {/* Loot Drop Display */}
-            {(gemsGained > 0 || rewards.tp > 0) && (
+            {/* Loot Drop Display - NOW USES frozenRewards */}
+            {(gemsGained > 0 || frozenRewards.tp > 0) && (
               <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 flex items-center justify-between shadow-inner">
                 <div>
                   <h3 className="text-orange-800 font-bold text-sm uppercase tracking-wider">Rewards Earned</h3>
@@ -120,7 +133,7 @@ export function DailySummaryModal({
                 </div>
                 <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100">
                   {gemsGained > 0 && <span className="font-black text-orange-500">💎 +{gemsGained}</span>}
-                  {rewards.tp > 0 && <span className="font-black text-blue-600">⏳ +{rewards.tp}</span>}
+                  {frozenRewards.tp > 0 && <span className="font-black text-blue-600">⏳ +{frozenRewards.tp}</span>}
                 </div>
               </div>
             )}
@@ -159,7 +172,7 @@ export function DailySummaryModal({
             )}
           </div>
 
-          {/* FOOTER */}
+          {/* FOOTER - Button NOW USES frozenRewards */}
           <div className="bg-gray-50 px-8 py-4 shrink-0 border-t border-gray-100">
             {rewards.hasClaimedToday ? (
               <button 
@@ -176,7 +189,7 @@ export function DailySummaryModal({
                   isAnimating ? 'bg-gray-400 scale-95' : 'bg-blue-600 hover:bg-blue-700 active:scale-95 animate-pulse'
                 }`}
               >
-                {isAnimating ? 'Banking Rewards...' : `Claim Rewards (+${rewards.tp} ⏳, +${rewards.gems} 💎)`}
+                {isAnimating ? 'Banking Rewards...' : `Claim Rewards (+${frozenRewards.tp} ⏳, +${frozenRewards.gems} 💎)`}
               </button>
             )}
           </div>

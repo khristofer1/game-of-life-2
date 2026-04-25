@@ -214,8 +214,8 @@ export function useTasks(user: User | null) {
 
       // --- SAVE UNCLAIMED medals ---
       if (newBronzemedals > 0 || newSilvermedals > 0 || newGoldmedals > 0) {
-        const existingmedals = await getMeta("unclaimedmedals", { bronze: 0, silver: 0, gold: 0 });
-        await setMeta("unclaimedmedals", {
+        const existingmedals = await getMeta("unclaimedMedals", { bronze: 0, silver: 0, gold: 0 });
+        await setMeta("unclaimedMedals", {
             bronze: existingmedals.bronze + newBronzemedals,
             silver: existingmedals.silver + newSilvermedals,
             gold: existingmedals.gold + newGoldmedals
@@ -229,7 +229,7 @@ export function useTasks(user: User | null) {
 
       const unclaimedGems = await getMeta("unclaimedGems", 0);
       const unclaimedTP = await getMeta("unclaimedTP", 0);
-      const unclaimedmedals = await getMeta("unclaimedmedals", { bronze: 0, silver: 0, gold: 0 });
+      const unclaimedMedals = await getMeta("unclaimedMedals", { bronze: 0, silver: 0, gold: 0 });
       const currentmedals = await getMeta("medals", { bronze: 0, silver: 0, gold: 0 });
 
 			// 3. Sorting & Filtering for the UI
@@ -300,7 +300,7 @@ export function useTasks(user: User | null) {
       setPendingRewards({
         gems: unclaimedGems,
         tp: unclaimedTP,
-        medals: unclaimedmedals,
+        medals: unclaimedMedals,
         hasClaimedToday
       });
 
