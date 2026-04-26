@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBJzy81RyLfx5uTNqYj03NWJaLlcLdpRzw",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "game-of-life-f4f49.firebaseapp.com",
   projectId: "game-of-life-f4f49",
   storageBucket: "game-of-life-f4f49.firebasestorage.app",
