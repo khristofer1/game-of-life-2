@@ -169,6 +169,7 @@ export default function App() {
 						onEdit={handleEdit} onDelete={handleDelete}
 						onRestore={handleRestore} onHardDelete={handleHardDelete}
 						onTakeBreak={handleTakeBreak} onBuyShield={handleBuyShield}
+						isCompletedTab={activeTab === 'completed'}
 					/>
 				)}
 			</main>
