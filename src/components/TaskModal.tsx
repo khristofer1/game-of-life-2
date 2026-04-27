@@ -70,7 +70,7 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-0 flex items-center justify-center">
       <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" onClick={handleClose}></div>
-      <div className="relative w-full max-w-xl bg-white rounded-4xl shadow-2xl modal-enter overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-md bg-white rounded-4xl shadow-2xl modal-enter overflow-hidden flex flex-col max-h-[90vh]">
 
         <div className="px-8 pt-8 pb-6 overflow-y-auto custom-scrollbar">
           <h2 className="text-xl font-bold text-dark mb-6">
