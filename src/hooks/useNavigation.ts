@@ -21,6 +21,11 @@ export function useNavigation(user: User | null) {
 
 	const handleSaveNavLayout = async (newLayout: TabType[]) => {
 		setNavLayout(newLayout);
+
+		if (!newLayout.includes(activeTab)) {
+        setActiveTab(newLayout[0] || 'active');
+    }
+		
 		await setMeta('navLayout', newLayout);
 	};
 

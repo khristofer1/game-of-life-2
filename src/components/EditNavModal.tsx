@@ -1,5 +1,5 @@
 // src/components/EditNavModal.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { TabType } from './layout/BottomNav';
 
 interface EditNavModalProps {
@@ -21,6 +21,12 @@ const AVAILABLE_TABS: { id: TabType, label: string, emoji: string }[] = [
 export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNavModalProps) {
   const [slots, setSlots] = useState<TabType[]>(currentLayout);
 
+  useEffect(() => {
+    if (isOpen) {
+      setSlots(currentLayout);
+    }
+  }, [isOpen, currentLayout]);
+  
   if (!isOpen) return null;
 
   const handleSave = () => {
