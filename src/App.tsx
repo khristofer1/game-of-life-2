@@ -7,7 +7,7 @@ import { Login } from './components/Login';
 import { useTasks } from './hooks/useTasks';
 import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
-import { getMeta } from './services/db';
+import { getMeta, setMeta } from './services/db';
 import type { Quest } from './types/quest';
 import { DailySummaryModal } from './components/DailySummaryModal';
 import { TimeVaultModal } from './components/TimeVaultModal';
@@ -24,6 +24,7 @@ import { Header } from './components/layout/Header';
 import { useQuestManager } from './hooks/useQuestManager';
 import { ShopTab } from './components/ShopTab';
 import { usePrizeDraw } from './hooks/usePrizeDraw';
+import { EditNavModal } from './components/EditNavModal';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -32,6 +33,23 @@ export default function App() {
 
 	// --- UI & SETTINGS STATE ---
 	const [volumeLevel, setVolumeLevel] = useState(3);
+
+	// NEW STATES FOR NAV BAR
+	const [navLayout, setNavLayout] = useState<TabType[]>(['active', 'coming', 'completed']);
+	const [isEditNavOpen, setIsEditNavOpen] = useState(false);
+
+	// Load saved preferences on mount
+	useEffect(() => {
+		if (user) {
+			getMeta("volumeLevel", 3).then((savedVolume) => {
+				setVolumeLevel(Number(savedVolume));
+			});
+			// Fetch the saved nav layout
+			getMeta("navLayout", ['active', 'coming', 'completed']).then((savedLayout) => {
+				setNavLayout(savedLayout as TabType[]);
+			});
+		}
+	}, [user]);
 
 	// Load saved volume on mount
 	useEffect(() => {
@@ -161,6 +179,7 @@ export default function App() {
 				onOpenSummary={() => setShowSummaryModal(true)}
 				onOpenGemShop={() => setIsGemShopOpen(true)}
 				onOpenTimeVault={() => setIsBankModalOpen(true)}
+				onOpenEditNav={() => setIsEditNavOpen(true)}
 			/>
 
 			{/* MAIN CONTENT AREA */}
@@ -208,7 +227,11 @@ export default function App() {
 			</main>
 
 			{/* BOTTOM NAVIGATION */}
-			<BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+			<BottomNav 
+				activeTab={activeTab} 
+				setActiveTab={setActiveTab} 
+				navLayout={navLayout}
+			/>
 
 			{/* FLOATING ACTION BUTTON (Add Quest) */}
 			<button
@@ -266,6 +289,16 @@ export default function App() {
 					pendingRewards.tp,
 					pendingRewards.medals
 				)}
+			/>
+
+			<EditNavModal
+				isOpen={isEditNavOpen}
+				onClose={() => setIsEditNavOpen(false)}
+				currentLayout={navLayout}
+				onSave={async (newLayout) => {
+					setNavLayout(newLayout);
+					await setMeta('navLayout', newLayout);
+				}}
 			/>
 		</div>
 	);

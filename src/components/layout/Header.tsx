@@ -13,16 +13,16 @@ interface HeaderProps {
 	onOpenSummary: () => void;
 	onOpenGemShop: () => void;
 	onOpenTimeVault: () => void;
+	onOpenEditNav: () => void;
 }
 
 export function Header({
 	gems, timePoints, volumeLevel, setVolumeLevel,
-	onOpenSummary, onOpenGemShop, onOpenTimeVault
+	onOpenSummary, onOpenGemShop, onOpenTimeVault, onOpenEditNav
 }: HeaderProps) {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const settingsRef = useRef<HTMLDivElement>(null);
 
-	// Isolating the dropdown logic here keeps App.tsx clean!
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
@@ -37,7 +37,6 @@ export function Header({
 		<header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 py-3 sm:py-4 mb-8">
 			<div className="max-w-7xl mx-auto flex justify-between items-center">
 				
-				{/* LOGO AREA */}
 				<button
 					onClick={onOpenSummary}
 					className="flex items-center gap-2 sm:gap-3 focus:outline-none group transition-transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
@@ -49,9 +48,7 @@ export function Header({
 					</h1>
 				</button>
 
-				{/* REWARDS AREA */}
 				<div className="flex items-center gap-1.5 sm:gap-4">
-					
 					<button
 						onClick={onOpenGemShop}
 						className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 bg-orange-50 text-orange-600 rounded-full font-bold shadow-sm border border-orange-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
@@ -66,11 +63,9 @@ export function Header({
 						title="View Time Vault"
 					>
 						<span className="text-xs sm:text-sm">⏳</span>
-						{/* THE NEW TP DISPLAY */}
 						<span className="text-sm sm:text-base">{timePoints}</span>
 					</button>
 
-					{/* SETTINGS GEAR */}
 					<div className="relative ml-1 sm:ml-0" ref={settingsRef}>
 						<button
 							onClick={() => setIsSettingsOpen(!isSettingsOpen)}
@@ -109,6 +104,16 @@ export function Header({
 										))}
 									</div>
 								</div>
+
+								<button
+									onClick={() => {
+										onOpenEditNav();
+										setIsSettingsOpen(false);
+									}}
+									className="px-4 py-3 text-sm font-bold text-left text-dark hover:bg-gray-50 transition-colors border-b border-gray-100 flex items-center gap-3"
+								>
+									<span className="text-lg">📱</span> Edit Navigation
+								</button>
 
 								<button
 									onClick={logoutFromGoogle}
