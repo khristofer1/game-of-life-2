@@ -3,10 +3,11 @@ import { saveTaskToDB, setMeta } from '../services/db';
 import type { Quest } from '../types/quest';
 
 export function useQuestManager(
+	allTasks: Quest[],
 	activeTasks: Quest[],
 	comingTasks: Quest[],
 	deletedTasks: Quest[],
-	gems: number,
+	timePoints: number,
 	forceRefresh: () => void,
 	setSummaryData: React.Dispatch<React.SetStateAction<any>>
 ) {
@@ -37,7 +38,15 @@ export function useQuestManager(
 				}
 			}
 		} else {
-			// BRAND NEW QUEST
+			// BRAND NEW QUEST - Deduct 10 TP unless it's their very first card
+			if (allTasks.length > 0 && timePoints < 10) {
+				alert("Not enough Time Points to create a new card!");
+				return;
+			}
+			if (allTasks.length > 0) {
+				await setMeta("timePoints", timePoints - 10);
+			}
+
 			finalQuest = {
 				...newQuestData,
 				isArchived: false,
@@ -58,7 +67,7 @@ export function useQuestManager(
 	};
 
 	const handleReviveCard = async (taskId: number) => {
-		if (gems < 1) return alert("Not enough gems to revive this card!");
+		if (timePoints < 10) return alert("Not enough Time Points to revive this card!");
 
 		const taskToRevive = [...activeTasks, ...comingTasks, ...deletedTasks].find(t => t.id === taskId);
 		if (!taskToRevive) return;
@@ -66,9 +75,9 @@ export function useQuestManager(
 		// Removes it from the "Trash" state
 		delete taskToRevive.deletedAt;
 
-		// Deduct 1 gem
-		const newGems = gems - 1;
-		await setMeta("gems", newGems);
+		// Deduct 10 TP
+		const newTp = timePoints - 10;
+		await setMeta("timePoints", newTp);
 
 		// Reset the card times to NOW, keeping the original duration
 		const now = Date.now();

@@ -14,9 +14,11 @@ interface TaskModalProps {
   initialData: Quest | null;
   onSave: (questData: Partial<Quest>) => void;
   defaultIsBreak?: boolean;
+  timePoints: number;
+  totalTasks: number;
 }
 
-export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak }: TaskModalProps) {
+export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak, timePoints, totalTasks }: TaskModalProps) {
   const nameInputRef = useRef<HTMLInputElement>(null);
   
   // 1. Pull all state and logic from our custom hook
@@ -160,7 +162,27 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
         {/* FOOTER BUTTONS */}
         <div className="bg-gray-50 px-8 py-4 flex gap-3 shrink-0 border-t border-gray-100 text-sm">
           <button onClick={handleClose} className="flex-1 px-6 py-3 rounded-2xl font-semibold text-muted hover:bg-gray-200 transition-colors">Cancel</button>
-          <button onClick={handleSave} className="flex-1 bg-dark text-white px-6 py-3 rounded-2xl font-semibold hover:bg-blue-500 transition-colors shadow-lg">Save Card</button>
+          
+          {(() => {
+            const isNewCard = !initialData;
+            const needsTp = isNewCard && totalTasks > 0;
+            const canAfford = !needsTp || timePoints >= 10;
+
+            return (
+              <button 
+                onClick={handleSave} 
+                disabled={!canAfford}
+                className={`flex-1 px-6 py-3 rounded-2xl font-semibold transition-colors shadow-lg flex justify-center items-center gap-2 ${canAfford ? 'bg-dark text-white hover:bg-blue-500' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+              >
+                <span>Save Card</span>
+                {needsTp && (
+                  <span className={`px-2 py-0.5 rounded-lg text-xs ${canAfford ? 'bg-white/20 text-white' : 'bg-gray-300 text-gray-500'}`}>
+                    ⏳ 10
+                  </span>
+                )}
+              </button>
+            );
+          })()}
         </div>
       </div>
     </div>

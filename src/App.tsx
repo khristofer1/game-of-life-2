@@ -81,7 +81,7 @@ export default function App() {
 
 	// --- QUEST MANAGER ENGINE ---
 	const { handleSaveQuest, handleReviveCard } = useQuestManager(
-		activeTasks, comingTasks, deletedTasks, gems, forceRefresh, setSummaryData
+		allTasks, activeTasks, comingTasks, deletedTasks, timePoints, forceRefresh, setSummaryData
 	);
 
 	// For debugging: shows all the cards object
@@ -197,7 +197,10 @@ export default function App() {
 			<TaskModal
 				isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
 				initialData={editingQuest}
-				onSave={(newQuestData) => handleSaveQuest(newQuestData, editingQuest, () => setIsModalOpen(false))} defaultIsBreak={modalDefaultIsBreak}
+				onSave={(newQuestData) => handleSaveQuest(newQuestData, editingQuest, () => setIsModalOpen(false))} 
+				defaultIsBreak={modalDefaultIsBreak}
+				timePoints={timePoints}
+				totalTasks={allTasks.length}
 			/>
 
 			<TimeVaultModal

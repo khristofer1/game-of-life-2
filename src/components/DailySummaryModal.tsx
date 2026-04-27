@@ -138,7 +138,7 @@ export function DailySummaryModal({
                 <h3 className="text-lg font-bold text-dark mb-4 flex items-center gap-2">
                   <span>⚠️</span> Fallen Cards
                 </h3>
-                <p className="text-xs text-muted mb-4">These one-time cards expired. You can revive them for 1 Gem each to try again today.</p>
+                <p className="text-xs text-muted mb-4">These one-time cards expired. You can revive them for 10 TP each to try again today.</p>
 
                 <div className="space-y-3">
                   {expiredQuests.map(quest => (
@@ -148,15 +148,15 @@ export function DailySummaryModal({
                       {/* Smart disabled state for the button */}
                       <button
                         onClick={() => onRevive(quest.id!)}
-                        disabled={gems < 1}
-                        className={`w-full py-2 border rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-sm transition-all ${gems >= 1
+                        disabled={timePoints < 10}
+                        className={`w-full py-2 border rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-sm transition-all ${timePoints >= 10
                           ? 'bg-white border-red-200 text-red-600 hover:bg-red-600 hover:text-white cursor-pointer'
                           : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'
                           }`}
                       >
-                        <span>{gems >= 1 ? 'Revive Card' : 'Not Enough Gems'}</span>
-                        <span className={`px-2 py-0.5 rounded-lg text-xs ${gems >= 1 ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-500'}`}>
-                          💎 1
+                        <span>{timePoints >= 10 ? 'Revive Card' : 'Not Enough TP'}</span>
+                        <span className={`px-2 py-0.5 rounded-lg text-xs ${timePoints >= 10 ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-500'}`}>
+                          ⏳ 10
                         </span>
                       </button>
                     </div>
