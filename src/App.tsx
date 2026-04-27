@@ -8,7 +8,6 @@ import { useTasks } from './hooks/useTasks';
 import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
 import { getMeta } from './services/db';
-import type { Quest } from './types/quest';
 import { DailySummaryModal } from './components/DailySummaryModal';
 import { TimeVaultModal } from './components/TimeVaultModal';
 import type { ToastAction } from './hooks/useToast';
@@ -25,11 +24,18 @@ import { ShopTab } from './components/ShopTab';
 import { usePrizeDraw } from './hooks/usePrizeDraw';
 import { EditNavModal } from './components/EditNavModal';
 import { useNavigation } from './hooks/useNavigation';
+import { useAppState } from './hooks/useAppState';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
 	const [user, setUser] = useState<User | null>(null);
 	const [isAuthLoading, setIsAuthLoading] = useState(true);
+		
+	// Pull everything we need from our custom background engine!
+	const {
+		allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks,
+		archivedTasks, gems, timePoints, medals, pendingRewards, forceRefresh
+	} = useTasks(user);
 
 	// --- UI & SETTINGS STATE ---
 	const [volumeLevel, setVolumeLevel] = useState(3);
@@ -39,6 +45,14 @@ export default function App() {
 		activeTab, setActiveTab, navLayout, 
 		handleSaveNavLayout, isEditNavOpen, setIsEditNavOpen 
 	} = useNavigation(user);
+
+
+	// --- APP UI STATE ENGINE ---
+	const {
+		isModalOpen, setIsModalOpen, editingQuest, modalDefaultIsBreak,
+		isBankModalOpen, setIsBankModalOpen, isGemShopOpen, setIsGemShopOpen,
+		handleFabClick, handleEdit
+	} = useAppState(allTasks, activeTab);
 
 	// Load saved volume on mount
 	useEffect(() => {
@@ -60,12 +74,6 @@ export default function App() {
 		});
 		return unsubscribe;
 	}, []);
-
-	// Pull everything we need from our custom background engine!
-	const {
-		allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks,
-		archivedTasks, gems, timePoints, medals, pendingRewards, forceRefresh
-	} = useTasks(user);
 
 	// --- DAILY SUMMARY ENGINE ---
 	const { showSummaryModal, setShowSummaryModal, summaryData, setSummaryData,
@@ -112,13 +120,6 @@ export default function App() {
 		if (action === 'break') handleUndoBreak(taskId);
 	};
 
-	// React State to manage the bottom navigation
-	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
-	const [modalDefaultIsBreak, setModalDefaultIsBreak] = useState(false);
-	const [isBankModalOpen, setIsBankModalOpen] = useState(false);
-	const [isGemShopOpen, setIsGemShopOpen] = useState(false);
-
 	if (isAuthLoading) {
 		return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-muted animate-pulse">Loading Game of Life...</div>;
 	}
@@ -126,26 +127,6 @@ export default function App() {
 	if (!user) {
 		return <Login />;
 	}
-
-	// --- Action Handlers (Stubs) ---
-
-	const handleFabClick = () => {
-		if (activeTab === 'break') {
-			setModalDefaultIsBreak(true);
-		} else {
-			setModalDefaultIsBreak(false);
-		}
-		setEditingQuest(null);
-		setIsModalOpen(true);
-	}
-
-	const handleEdit = (id: number) => {
-		const quest = allTasks.find(t => t.id === id);
-		if (quest) {
-			setEditingQuest(quest);
-			setIsModalOpen(true);
-		}
-	};
 
 	// --- Render Logic ---
 	// Determine which array to loop through based on the clicked tab
