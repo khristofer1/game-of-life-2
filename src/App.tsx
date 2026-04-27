@@ -5,7 +5,6 @@ import type { User } from 'firebase/auth';
 import { auth } from './services/firebase';
 import { Login } from './components/Login';
 import { useTasks } from './hooks/useTasks';
-import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
 import { getMeta } from './services/db';
 import { DailySummaryModal } from './components/DailySummaryModal';
@@ -25,6 +24,7 @@ import { usePrizeDraw } from './hooks/usePrizeDraw';
 import { EditNavModal } from './components/EditNavModal';
 import { useNavigation } from './hooks/useNavigation';
 import { useAppState } from './hooks/useAppState';
+import { QuestGrid } from './components/QuestGrid';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -170,28 +170,16 @@ export default function App() {
 						onCloseResults={() => setRecentResults(null)}
 					/>
 				) : (
-					displayedTasks.length === 0 ? (
-						<div className="text-center py-10">
-							<p className="text-muted text-sm italic">No cards found in this tab.</p>
-						</div>
-					) : (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-sm md:max-w-3xl lg:max-w-none">
-							{/* THE MAGIC LOOP */}
-							{displayedTasks.map(quest => (
-								<QuestCard
-									key={quest.id}
-									quest={quest}
-									onToggleComplete={handleToggleComplete}
-									onEdit={handleEdit}
-									onDelete={handleDelete}
-									onRestore={handleRestore}
-									onHardDelete={handleHardDelete}
-									onTakeBreak={handleTakeBreak}
-									onBuyShield={handleBuyShield}
-								/>
-							))}
-						</div>
-					)
+					<QuestGrid 
+						tasks={displayedTasks}
+						onToggleComplete={handleToggleComplete}
+						onEdit={handleEdit}
+						onDelete={handleDelete}
+						onRestore={handleRestore}
+						onHardDelete={handleHardDelete}
+						onTakeBreak={handleTakeBreak}
+						onBuyShield={handleBuyShield}
+					/>
 				)}
 			</main>
 
