@@ -110,7 +110,7 @@ export function Header({
 										onOpenEditNav();
 										setIsSettingsOpen(false);
 									}}
-									className="px-4 py-3 text-sm font-bold text-left text-dark hover:bg-gray-50 transition-colors border-b border-gray-100 flex items-center gap-3"
+									className="px-4 py-3 text-sm font-bold text-left text-dark hover:bg-blue-100 transition-colors border-b border-gray-100 flex items-center gap-3"
 								>
 									<span className="text-lg">📱</span> Edit Navigation
 								</button>

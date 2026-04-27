@@ -30,6 +30,21 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
     onClose();
   };
 
+  // --- THE SMART SWAP LOGIC ---
+  const handleSlot2Change = (newValue: TabType) => {
+    if (newValue === slot3) {
+      setSlot3(slot2); // Push the old Slot 2 value over to Slot 3
+    }
+    setSlot2(newValue);
+  };
+
+  const handleSlot3Change = (newValue: TabType) => {
+    if (newValue === slot2) {
+      setSlot2(slot3); // Push the old Slot 3 value over to Slot 2
+    }
+    setSlot3(newValue);
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-0 flex items-center justify-center">
       <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
@@ -54,12 +69,12 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Slot 2</label>
             <select
               value={slot2}
-              onChange={(e) => setSlot2(e.target.value as TabType)}
+              onChange={(e) => handleSlot2Change(e.target.value as TabType)}
               className="w-full bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 font-semibold text-dark focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer appearance-none"
             >
               {AVAILABLE_TABS.map(tab => (
-                <option key={`s2-${tab.id}`} value={tab.id} disabled={tab.id === slot3}>
-                  {tab.emoji} {tab.label} {tab.id === slot3 ? '(Used)' : ''}
+                <option key={`s2-${tab.id}`} value={tab.id}>
+                  {tab.emoji} {tab.label}
                 </option>
               ))}
             </select>
@@ -70,12 +85,12 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Slot 3</label>
             <select
               value={slot3}
-              onChange={(e) => setSlot3(e.target.value as TabType)}
+              onChange={(e) => handleSlot3Change(e.target.value as TabType)}
               className="w-full bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 font-semibold text-dark focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer appearance-none"
             >
               {AVAILABLE_TABS.map(tab => (
-                <option key={`s3-${tab.id}`} value={tab.id} disabled={tab.id === slot2}>
-                  {tab.emoji} {tab.label} {tab.id === slot2 ? '(Used)' : ''}
+                <option key={`s3-${tab.id}`} value={tab.id}>
+                  {tab.emoji} {tab.label}
                 </option>
               ))}
             </select>
@@ -90,7 +105,7 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
           <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors">
             Cancel
           </button>
-          <button onClick={handleSave} className="px-5 py-2.5 bg-dark text-white rounded-xl font-bold shadow-lg hover:bg-gray-800 transition-transform active:scale-95">
+          <button onClick={handleSave} className="px-5 py-2.5 bg-dark text-white rounded-xl font-bold shadow-lg hover:bg-gray-800 transition-transform active:scale-95 cursor-pointer">
             Save Layout
           </button>
         </div>
