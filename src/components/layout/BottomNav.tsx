@@ -21,8 +21,9 @@ const TAB_CONFIG: Record<TabType, { label: string, emoji: string, icon: ReactNod
 };
 
 const TAB_COLORS: Partial<Record<TabType, string>> = {
+	active: 'text-orange-500 hover:bg-orange-50',
 	shop: 'text-purple-500 hover:bg-purple-50',
-	break: 'text-orange-500 hover:bg-orange-50',
+	break: 'text-yellow-600 hover:bg-yellow-50',
 	deleted: 'text-red-500 hover:bg-red-50',
 	coming: 'text-teal-500 hover:bg-teal-50',
 	completed: 'text-green-500 hover:bg-green-50'
@@ -40,7 +41,8 @@ export function BottomNav({ activeTab, setActiveTab, navLayout }: BottomNavProps
 	}, []);
 
 	const effectiveLayout = isMobile ? navLayout.slice(0, 4) : navLayout;
-	const allTabs: TabType[] = ['coming', 'completed', 'shop', 'break', 'deleted'];
+
+	const allTabs: TabType[] = ['active', 'coming', 'completed', 'shop', 'break', 'deleted'];
 	const overflowTabs = allTabs.filter(tab => !effectiveLayout.includes(tab));
 
 	useEffect(() => {
@@ -83,8 +85,14 @@ export function BottomNav({ activeTab, setActiveTab, navLayout }: BottomNavProps
 						{isMoreMenuOpen && (
 							<div className="absolute bottom-full mb-4 right-2 sm:right-4 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in flex flex-col">
 								{menuTabs.map(tab => (
-									<button key={tab} onClick={() => { setActiveTab(tab); setIsMoreMenuOpen(false); }} className={`px-4 py-3 text-sm font-bold text-left transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0 ${activeTab === tab ? 'bg-gray-100 text-dark' : 'text-gray-600'} ${TAB_COLORS[tab]}`}>
-										<span className="text-lg">{TAB_CONFIG[tab].emoji}</span> <span className="capitalize">{TAB_CONFIG[tab].label}</span>
+									<button
+										key={tab}
+										onClick={() => { setActiveTab(tab); setIsMoreMenuOpen(false); }}
+										className={`px-4 py-3 text-sm font-bold text-left transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0 ${activeTab === tab ? 'bg-gray-100 text-dark' : 'text-gray-600'
+											} ${TAB_COLORS[tab] || ''}`}
+									>
+										<span className="text-lg">{TAB_CONFIG[tab].emoji}</span>
+										<span className="capitalize">{TAB_CONFIG[tab].label}</span>
 									</button>
 								))}
 							</div>
