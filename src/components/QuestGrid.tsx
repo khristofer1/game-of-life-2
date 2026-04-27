@@ -45,7 +45,7 @@ export function QuestGrid({
 	return (
 		<div className="flex flex-col relative">
 			
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-sm md:max-w-3xl lg:max-w-none">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
 				{tasks.map(quest => (
 					<QuestCard
 						key={quest.id}
