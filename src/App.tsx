@@ -141,12 +141,15 @@ export default function App() {
 			{/* TOP HEADER */}
 			<Header 
 				gems={gems}
-				timePoints={timePoints} volumeLevel={volumeLevel} setVolumeLevel={setVolumeLevel}
+				timePoints={timePoints} 
+				medals={medals} // <-- PASS THIS PROP
+				volumeLevel={volumeLevel} 
+				setVolumeLevel={setVolumeLevel}
 				onOpenSummary={() => setShowSummaryModal(true)}
 				onOpenGemShop={() => setIsGemShopOpen(true)}
 				onOpenTimeVault={() => setIsBankModalOpen(true)}
 				onOpenEditNav={() => setIsEditNavOpen(true)}
-			/>
+		/>
 
 			{/* MAIN CONTENT AREA */}
 			<main className="max-w-7xl mx-auto px-6 pb-24">

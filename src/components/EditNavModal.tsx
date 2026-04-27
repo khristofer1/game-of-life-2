@@ -134,11 +134,18 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
           </p>
         </div>
 
-        <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
-          <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer">
+        {/* FOOTER BUTTONS */}
+        <div className="bg-gray-50 px-6 py-4 flex w-full gap-3 border-t border-gray-100">
+          <button 
+            onClick={onClose} 
+            className="flex-1 px-5 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
+          >
             Cancel
           </button>
-          <button onClick={handleSave} className="px-5 py-2.5 bg-dark text-white rounded-xl font-bold shadow-lg hover:bg-gray-800 transition-transform active:scale-95 cursor-pointer">
+          <button 
+            onClick={handleSave} 
+            className="flex-1 px-5 py-2.5 bg-dark text-white rounded-xl font-bold shadow-lg hover:bg-gray-800 transition-transform active:scale-95 cursor-pointer"
+          >
             Save Layout
           </button>
         </div>
