@@ -32,10 +32,23 @@ const TAB_COLORS: Partial<Record<TabType, string>> = {
 
 export function BottomNav({ activeTab, setActiveTab, navLayout }: BottomNavProps) {
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+	const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 	const moreMenuRef = useRef<HTMLDivElement>(null);
 
+	// --- RESPONSIVE RESIZE LISTENER ---
+	useEffect(() => {
+		const handleResize = () => setIsMobile(window.innerWidth < 640);
+		window.addEventListener('resize', handleResize);
+		return () => window.removeEventListener('resize', handleResize);
+	}, []);
+
+	// --- DYNAMIC ARRAY SLICING ---
+	// If mobile, strictly limit the main bar to 4 items so we have room for the "More" menu.
+	// Any tabs past index 3 will be magically caught by the overflowTabs filter below!
+	const effectiveLayout = isMobile ? navLayout.slice(0, 4) : navLayout;
+
 	const allTabs: TabType[] = ['coming', 'completed', 'shop', 'break', 'archived', 'deleted'];
-	const overflowTabs = allTabs.filter(tab => !navLayout.includes(tab));
+	const overflowTabs = allTabs.filter(tab => !effectiveLayout.includes(tab));
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -48,9 +61,7 @@ export function BottomNav({ activeTab, setActiveTab, navLayout }: BottomNavProps
 	}, []);
 
 	// --- SMART OVERFLOW LOGIC ---
-	// If the user has configured enough slots that only ONE tab is left in the "More" menu,
-	// we automatically promote that last tab to the main bar and delete the menu!
-	const displayTabs = [...navLayout];
+	const displayTabs = [...effectiveLayout];
 	let menuTabs = [...overflowTabs];
 
 	if (menuTabs.length === 1) {
@@ -106,8 +117,6 @@ export function BottomNav({ activeTab, setActiveTab, navLayout }: BottomNavProps
 					</div>
 				)}
 			</div>
-			
-			
 		</nav>
 	);
 }

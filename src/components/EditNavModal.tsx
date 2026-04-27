@@ -82,7 +82,7 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
           <p className="text-gray-300 text-xs mt-1">Design your workspace layout</p>
         </div>
 
-        <div className="px-6 py-6 space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
+        <div className="px-6 py-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
           {/* SLOT 1 - LOCKED */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Slot 1 (Locked)</label>
