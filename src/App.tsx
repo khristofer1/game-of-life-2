@@ -7,7 +7,7 @@ import { Login } from './components/Login';
 import { useTasks } from './hooks/useTasks';
 import { QuestCard } from './components/QuestCard';
 import { TaskModal } from './components/TaskModal';
-import { getMeta, setMeta } from './services/db';
+import { getMeta } from './services/db';
 import type { Quest } from './types/quest';
 import { DailySummaryModal } from './components/DailySummaryModal';
 import { TimeVaultModal } from './components/TimeVaultModal';
@@ -16,7 +16,6 @@ import { useToast } from './hooks/useToast';
 import { ToastContainer } from './components/ToastContainer';
 import { useDailySummary } from './hooks/useDailySummary';
 import { BottomNav } from './components/layout/BottomNav';
-import type { TabType } from './components/layout/BottomNav';
 import { GemShopModal } from './components/GemShopModal';
 import { useGameEconomy } from './hooks/useGameEconomy';
 import { useQuestActions } from './hooks/useQuestActions';
@@ -25,6 +24,7 @@ import { useQuestManager } from './hooks/useQuestManager';
 import { ShopTab } from './components/ShopTab';
 import { usePrizeDraw } from './hooks/usePrizeDraw';
 import { EditNavModal } from './components/EditNavModal';
+import { useNavigation } from './hooks/useNavigation';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -34,22 +34,11 @@ export default function App() {
 	// --- UI & SETTINGS STATE ---
 	const [volumeLevel, setVolumeLevel] = useState(3);
 
-	// NEW STATES FOR NAV BAR
-	const [navLayout, setNavLayout] = useState<TabType[]>(['active', 'coming', 'completed']);
-	const [isEditNavOpen, setIsEditNavOpen] = useState(false);
-
-	// Load saved preferences on mount
-	useEffect(() => {
-		if (user) {
-			getMeta("volumeLevel", 3).then((savedVolume) => {
-				setVolumeLevel(Number(savedVolume));
-			});
-			// Fetch the saved nav layout
-			getMeta("navLayout", ['active', 'coming', 'completed']).then((savedLayout) => {
-				setNavLayout(savedLayout as TabType[]);
-			});
-		}
-	}, [user]);
+	// --- NAVIGATION ENGINE ---
+	const { 
+		activeTab, setActiveTab, navLayout, 
+		handleSaveNavLayout, isEditNavOpen, setIsEditNavOpen 
+	} = useNavigation(user);
 
 	// Load saved volume on mount
 	useEffect(() => {
@@ -124,7 +113,6 @@ export default function App() {
 	};
 
 	// React State to manage the bottom navigation
-	const [activeTab, setActiveTab] = useState<TabType>('active');
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [modalDefaultIsBreak, setModalDefaultIsBreak] = useState(false);
@@ -295,10 +283,7 @@ export default function App() {
 				isOpen={isEditNavOpen}
 				onClose={() => setIsEditNavOpen(false)}
 				currentLayout={navLayout}
-				onSave={async (newLayout) => {
-					setNavLayout(newLayout);
-					await setMeta('navLayout', newLayout);
-				}}
+				onSave={handleSaveNavLayout}
 			/>
 		</div>
 	);
