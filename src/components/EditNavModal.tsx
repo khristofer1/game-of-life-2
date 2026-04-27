@@ -9,19 +9,16 @@ interface EditNavModalProps {
   onSave: (newLayout: TabType[]) => void;
 }
 
-// Active is now fully unlocked and added to the roster
 const AVAILABLE_TABS: { id: TabType, label: string, emoji: string }[] = [
   { id: 'active', label: 'Active', emoji: '📝' },
   { id: 'coming', label: 'Coming', emoji: '⏳' },
   { id: 'completed', label: 'Completed', emoji: '✅' },
   { id: 'shop', label: 'Shop', emoji: '🏪' },
   { id: 'break', label: 'Break', emoji: '☕' },
-  { id: 'archived', label: 'Archived', emoji: '🏛️' },
   { id: 'deleted', label: 'Deleted', emoji: '🗑️' }
 ];
 
 export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNavModalProps) {
-  // Use a dynamic array to hold the layout
   const [slots, setSlots] = useState<TabType[]>(currentLayout);
 
   if (!isOpen) return null;
@@ -31,29 +28,18 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
     onClose();
   };
 
-  // --- DYNAMIC SWAP LOGIC ---
   const handleSlotChange = (indexToChange: number, newValue: TabType) => {
     const newSlots = [...slots];
     const existingIndex = newSlots.indexOf(newValue);
-    
-    // If the tab they selected is already in another slot, swap them!
-    if (existingIndex !== -1) {
-        newSlots[existingIndex] = newSlots[indexToChange];
-    }
-    
+    if (existingIndex !== -1) newSlots[existingIndex] = newSlots[indexToChange];
     newSlots[indexToChange] = newValue;
     setSlots(newSlots);
   };
 
-  // --- THE "JUMP TO 7" LOGIC ---
   const handleAddSlot = () => {
-    // Find all available tabs that aren't currently assigned to a slot
     const unassignedTabs = AVAILABLE_TABS.map(t => t.id).filter(id => !slots.includes(id));
-    
-    if (unassignedTabs.length > 0 && slots.length < 7) {
-      // If we are at 5 slots and trying to add a 6th, we jump straight to 7
-      // by injecting both of the remaining unassigned tabs at once!
-      if (slots.length === 5 && unassignedTabs.length >= 2) {
+    if (unassignedTabs.length > 0 && slots.length < 6) {
+      if (slots.length === 4 && unassignedTabs.length >= 2) {
         setSlots([...slots, unassignedTabs[0], unassignedTabs[1]]);
       } else {
         setSlots([...slots, unassignedTabs[0]]);
@@ -61,16 +47,9 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
     }
   };
 
-  // --- THE "DROP TO 5" LOGIC ---
   const handleRemoveSlot = (indexToRemove: number) => {
     let newSlots = slots.filter((_, i) => i !== indexToRemove);
-    
-    // If removing a slot drops us from 7 down to 6, we must instantly drop to 5.
-    // We achieve this by slicing off the very last item in the array.
-    if (newSlots.length === 6) {
-      newSlots = newSlots.slice(0, 5); // Keeps index 0 through 4 (5 items total)
-    }
-    
+    if (newSlots.length === 5) newSlots = newSlots.slice(0, 4); 
     setSlots(newSlots);
   };
 
@@ -85,69 +64,33 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
         </div>
 
         <div className="px-6 py-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
-          
-          {/* ALL SLOTS DYNAMICALLY MAPPED */}
           {slots.map((currentTab, index) => {
             return (
               <div key={index} className="relative group">
                 <div className="flex justify-between items-end mb-2">
                   <label className="block text-xs font-bold text-orange-600 uppercase tracking-wider">Slot {index + 1}</label>
-                  {/* Remove Button */}
-                  <button 
-                    onClick={() => handleRemoveSlot(index)}
-                    className="text-xs text-red-400 hover:text-red-600 font-bold transition-colors"
-                  >
-                    Remove
-                  </button>
+                  <button onClick={() => handleRemoveSlot(index)} className="text-xs text-red-400 hover:text-red-600 font-bold transition-colors">Remove</button>
                 </div>
-                
-                <select
-                  value={currentTab}
-                  onChange={(e) => handleSlotChange(index, e.target.value as TabType)}
-                  className="w-full bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 font-semibold text-dark focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer appearance-none"
-                >
-                  {AVAILABLE_TABS.map(tab => (
-                    <option key={`s${index}-${tab.id}`} value={tab.id}>
-                      {tab.emoji} {tab.label}
-                    </option>
-                  ))}
+                <select value={currentTab} onChange={(e) => handleSlotChange(index, e.target.value as TabType)} className="w-full bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 font-semibold text-dark focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer appearance-none">
+                  {AVAILABLE_TABS.map(tab => <option key={`s${index}-${tab.id}`} value={tab.id}>{tab.emoji} {tab.label}</option>)}
                 </select>
               </div>
             );
           })}
           
-          {/* ADD SLOT BUTTON */}
-          {slots.length < 7 && (
-            <button 
-              onClick={handleAddSlot}
-              className="w-full py-3 mt-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:border-orange-400 hover:text-orange-500 hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
-            >
+          {slots.length < 6 && (
+            <button onClick={handleAddSlot} className="w-full py-3 mt-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:border-orange-400 hover:text-orange-500 hover:bg-orange-50 transition-all flex items-center justify-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
-              Add New Slot
+              </svg> Add New Slot
             </button>
           )}
-
-          <p className="text-xs text-muted text-center italic mt-4 pt-2 border-t border-gray-100">
-            Any unassigned tabs will be pushed into the "More" menu.
-          </p>
+          <p className="text-xs text-muted text-center italic mt-4 pt-2 border-t border-gray-100">Any unassigned tabs will be pushed into the "More" menu.</p>
         </div>
 
-        {/* FOOTER BUTTONS */}
         <div className="bg-gray-50 px-6 py-4 flex w-full gap-3 border-t border-gray-100">
-          <button 
-            onClick={onClose} 
-            className="flex-1 px-5 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={handleSave} 
-            className="flex-1 px-5 py-2.5 bg-dark text-white rounded-xl font-bold shadow-lg hover:bg-gray-800 transition-transform active:scale-95 cursor-pointer"
-          >
-            Save Layout
-          </button>
+          <button onClick={onClose} className="flex-1 px-5 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer">Cancel</button>
+          <button onClick={handleSave} className="flex-1 px-5 py-2.5 bg-dark text-white rounded-xl font-bold shadow-lg hover:bg-gray-800 transition-transform active:scale-95 cursor-pointer">Save Layout</button>
         </div>
       </div>
     </div>

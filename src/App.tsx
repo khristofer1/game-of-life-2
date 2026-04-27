@@ -134,7 +134,6 @@ export default function App() {
 	if (activeTab === 'completed') displayedTasks = completedTasks;
 	if (activeTab === 'break') displayedTasks = breakTasks;
 	if (activeTab === 'deleted') displayedTasks = deletedTasks;
-	if (activeTab === 'archived') displayedTasks = archivedTasks;
 
 	return (
 		<div className="min-h-screen pb-20 bg-gray-50/50 animate-fade-in">
@@ -168,7 +167,9 @@ export default function App() {
 					/>
 				) : (
 					<QuestGrid 
-						tasks={displayedTasks} onToggleComplete={handleToggleComplete}
+						tasks={displayedTasks}
+						archivedTasks={archivedTasks}
+						onToggleComplete={handleToggleComplete}
 						onEdit={handleEdit} onDelete={handleDelete}
 						onRestore={handleRestore} onHardDelete={handleHardDelete}
 						onTakeBreak={handleTakeBreak} onBuyShield={handleBuyShield}
