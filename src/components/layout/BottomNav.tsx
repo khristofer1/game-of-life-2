@@ -21,7 +21,6 @@ const TAB_CONFIG: Record<TabType, { label: string, emoji: string, icon: ReactNod
 	deleted: { label: 'Deleted', emoji: '🗑️', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /> },
 };
 
-// Colors for the "More" menu
 const TAB_COLORS: Partial<Record<TabType, string>> = {
 	shop: 'text-purple-500 hover:bg-purple-50',
 	break: 'text-orange-500 hover:bg-orange-50',
@@ -35,7 +34,6 @@ export function BottomNav({ activeTab, setActiveTab, navLayout }: BottomNavProps
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 	const moreMenuRef = useRef<HTMLDivElement>(null);
 
-	// All available tabs minus the ones already on the bar
 	const allTabs: TabType[] = ['coming', 'completed', 'shop', 'break', 'archived', 'deleted'];
 	const overflowTabs = allTabs.filter(tab => !navLayout.includes(tab));
 
@@ -49,50 +47,67 @@ export function BottomNav({ activeTab, setActiveTab, navLayout }: BottomNavProps
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, []);
 
+	// --- SMART OVERFLOW LOGIC ---
+	// If the user has configured enough slots that only ONE tab is left in the "More" menu,
+	// we automatically promote that last tab to the main bar and delete the menu!
+	const displayTabs = [...navLayout];
+	let menuTabs = [...overflowTabs];
+
+	if (menuTabs.length === 1) {
+		displayTabs.push(menuTabs[0]);
+		menuTabs = [];
+	}
+
 	return (
-		<nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 px-6 py-2 flex justify-between items-center text-xs font-semibold pb-safe">
-			
-			{/* DYNAMIC TABS LOOP */}
-			{navLayout.map(tab => (
-				<button
-					key={tab}
-					onClick={() => setActiveTab(tab)}
-					className={`flex-1 flex flex-col items-center gap-1 transition-all ${activeTab === tab ? 'text-orange-500 scale-105' : 'text-gray-400 hover:text-dark'}`}
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-						{TAB_CONFIG[tab].icon}
-					</svg>
-					<span className="uppercase tracking-wider text-[10px] sm:text-xs">{TAB_CONFIG[tab].label}</span>
-				</button>
-			))}
+		<nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 px-2 sm:px-6 py-2 flex justify-between items-center text-xs font-semibold pb-safe">
+			<div className="max-w-7xl mx-auto w-full flex justify-center sm:justify-between">
 
-			{/* MORE MENU (Fixed as 4th slot) */}
-			<div className="flex-1 flex justify-center relative" ref={moreMenuRef}>
-				<button
-					onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-					className={`flex flex-col items-center gap-1 transition-all ${overflowTabs.includes(activeTab) ? 'text-orange-500 scale-105' : 'text-gray-400 hover:text-dark'}`}
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-						<path strokeLinecap="round" strokeLinejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-					</svg>
-					<span className="uppercase tracking-wider text-[10px] sm:text-xs">More</span>
-				</button>
+				{/* DYNAMIC TABS LOOP */}
+				{displayTabs.map(tab => (
+					<button
+						key={tab}
+						onClick={() => setActiveTab(tab)}
+						className={`flex-1 min-w-15 flex flex-col items-center gap-1 transition-all ${activeTab === tab ? 'text-orange-500 scale-105' : 'text-gray-400 hover:text-dark'}`}
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+							{TAB_CONFIG[tab].icon}
+						</svg>
+						<span className="uppercase tracking-wider text-[10px] sm:text-xs truncate w-full text-center">{TAB_CONFIG[tab].label}</span>
+					</button>
+				))}
 
-				{isMoreMenuOpen && (
-					<div className="absolute bottom-full mb-4 right-4 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in flex flex-col">
-						{overflowTabs.map(tab => (
-							<button
-								key={tab}
-								onClick={() => { setActiveTab(tab); setIsMoreMenuOpen(false); }}
-								className={`px-4 py-3 text-sm font-bold text-left transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0 ${activeTab === tab ? 'bg-gray-100 text-dark' : 'text-gray-600'} ${TAB_COLORS[tab]}`}
-							>
-								<span className="text-lg">{TAB_CONFIG[tab].emoji}</span> 
-								<span className="capitalize">{TAB_CONFIG[tab].label}</span>
-							</button>
-						))}
+				{/* MORE MENU (Only renders if there are 2 or more overflow tabs left) */}
+				{menuTabs.length > 0 && (
+					<div className="flex-1 min-w-15 flex justify-center relative" ref={moreMenuRef}>
+						<button
+							onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+							className={`flex flex-col items-center gap-1 transition-all ${menuTabs.includes(activeTab) ? 'text-orange-500 scale-105' : 'text-gray-400 hover:text-dark'}`}
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+							</svg>
+							<span className="uppercase tracking-wider text-[10px] sm:text-xs">More</span>
+						</button>
+
+						{isMoreMenuOpen && (
+							<div className="absolute bottom-full mb-4 right-2 sm:right-4 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in flex flex-col">
+								{menuTabs.map(tab => (
+									<button
+										key={tab}
+										onClick={() => { setActiveTab(tab); setIsMoreMenuOpen(false); }}
+										className={`px-4 py-3 text-sm font-bold text-left transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0 ${activeTab === tab ? 'bg-gray-100 text-dark' : 'text-gray-600'} ${TAB_COLORS[tab]}`}
+									>
+										<span className="text-lg">{TAB_CONFIG[tab].emoji}</span> 
+										<span className="capitalize">{TAB_CONFIG[tab].label}</span>
+									</button>
+								))}
+							</div>
+						)}
 					</div>
 				)}
 			</div>
+			
+			
 		</nav>
 	);
 }

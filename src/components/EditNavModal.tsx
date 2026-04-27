@@ -19,30 +19,57 @@ const AVAILABLE_TABS: { id: TabType, label: string, emoji: string }[] = [
 ];
 
 export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNavModalProps) {
-  // Local state for the dropdowns
-  const [slot2, setSlot2] = useState<TabType>(currentLayout[1]);
-  const [slot3, setSlot3] = useState<TabType>(currentLayout[2]);
+  // Use a dynamic array to hold the layout
+  const [slots, setSlots] = useState<TabType[]>(currentLayout);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
-    onSave(['active', slot2, slot3]);
+    onSave(slots);
     onClose();
   };
 
-  // --- THE SMART SWAP LOGIC ---
-  const handleSlot2Change = (newValue: TabType) => {
-    if (newValue === slot3) {
-      setSlot3(slot2); // Push the old Slot 2 value over to Slot 3
+  // --- DYNAMIC SWAP LOGIC ---
+  const handleSlotChange = (indexToChange: number, newValue: TabType) => {
+    const newSlots = [...slots];
+    const existingIndex = newSlots.indexOf(newValue);
+    
+    // If the tab they selected is already in another slot, swap them!
+    if (existingIndex !== -1) {
+        newSlots[existingIndex] = newSlots[indexToChange];
     }
-    setSlot2(newValue);
+    
+    newSlots[indexToChange] = newValue;
+    setSlots(newSlots);
   };
 
-  const handleSlot3Change = (newValue: TabType) => {
-    if (newValue === slot2) {
-      setSlot2(slot3); // Push the old Slot 3 value over to Slot 2
+  // --- THE "JUMP TO 7" LOGIC ---
+  const handleAddSlot = () => {
+    // Find all available tabs that aren't currently assigned to a slot
+    const unassignedTabs = AVAILABLE_TABS.map(t => t.id).filter(id => !slots.includes(id));
+    
+    if (unassignedTabs.length > 0 && slots.length < 7) {
+      // If we are at 5 slots and trying to add a 6th, we jump straight to 7
+      // by injecting both of the remaining unassigned tabs at once!
+      if (slots.length === 5 && unassignedTabs.length >= 2) {
+        setSlots([...slots, unassignedTabs[0], unassignedTabs[1]]);
+      } else {
+        setSlots([...slots, unassignedTabs[0]]);
+      }
     }
-    setSlot3(newValue);
+  };
+
+  // --- THE "DROP TO 5" LOGIC ---
+  const handleRemoveSlot = (indexToRemove: number) => {
+    let newSlots = slots.filter((_, i) => i !== indexToRemove);
+    
+    // If removing a slot drops us from 7 down to 6, we must instantly drop to 5.
+    // We achieve this by slicing off the very last item in the array.
+    if (newSlots.length === 6) {
+      newSlots = newSlots.slice(0, 5); // Keeps index 0 through 4 (5 items total)
+    }
+    
+    setSlots(newSlots);
   };
 
   return (
@@ -55,7 +82,7 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
           <p className="text-gray-300 text-xs mt-1">Design your workspace layout</p>
         </div>
 
-        <div className="px-6 py-6 space-y-6">
+        <div className="px-6 py-6 space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
           {/* SLOT 1 - LOCKED */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Slot 1 (Locked)</label>
@@ -64,45 +91,58 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
             </div>
           </div>
 
-          {/* SLOT 2 */}
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Slot 2</label>
-            <select
-              value={slot2}
-              onChange={(e) => handleSlot2Change(e.target.value as TabType)}
-              className="w-full bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 font-semibold text-dark focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer appearance-none"
-            >
-              {AVAILABLE_TABS.map(tab => (
-                <option key={`s2-${tab.id}`} value={tab.id}>
-                  {tab.emoji} {tab.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* SLOT 3 */}
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Slot 3</label>
-            <select
-              value={slot3}
-              onChange={(e) => handleSlot3Change(e.target.value as TabType)}
-              className="w-full bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 font-semibold text-dark focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer appearance-none"
-            >
-              {AVAILABLE_TABS.map(tab => (
-                <option key={`s3-${tab.id}`} value={tab.id}>
-                  {tab.emoji} {tab.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* DYNAMIC SLOTS */}
+          {slots.slice(1).map((currentTab, index) => {
+            const actualSlotIndex = index + 1; // because we sliced off index 0
+            
+            return (
+              <div key={actualSlotIndex} className="relative group">
+                <div className="flex justify-between items-end mb-2">
+                  <label className="block text-xs font-bold text-orange-600 uppercase tracking-wider">Slot {actualSlotIndex + 1}</label>
+                  {/* Remove Button */}
+                  <button 
+                    onClick={() => handleRemoveSlot(actualSlotIndex)}
+                    className="text-xs text-red-400 hover:text-red-600 font-bold transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+                
+                <select
+                  value={currentTab}
+                  onChange={(e) => handleSlotChange(actualSlotIndex, e.target.value as TabType)}
+                  className="w-full bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 font-semibold text-dark focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer appearance-none"
+                >
+                  {AVAILABLE_TABS.map(tab => (
+                    <option key={`s${actualSlotIndex}-${tab.id}`} value={tab.id}>
+                      {tab.emoji} {tab.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          })}
           
-          <p className="text-xs text-muted text-center italic mt-2">
-            Remaining tabs will be moved to the "More" menu.
+          {/* ADD SLOT BUTTON */}
+          {slots.length < 7 && (
+            <button 
+              onClick={handleAddSlot}
+              className="w-full py-3 mt-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:border-orange-400 hover:text-orange-500 hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+              Add New Slot
+            </button>
+          )}
+
+          <p className="text-xs text-muted text-center italic mt-4 pt-2 border-t border-gray-100">
+            Any unassigned tabs will be pushed into the "More" menu.
           </p>
         </div>
 
         <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
-          <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors">
+          <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer">
             Cancel
           </button>
           <button onClick={handleSave} className="px-5 py-2.5 bg-dark text-white rounded-xl font-bold shadow-lg hover:bg-gray-800 transition-transform active:scale-95 cursor-pointer">
