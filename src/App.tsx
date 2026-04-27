@@ -46,7 +46,6 @@ export default function App() {
 		handleSaveNavLayout, isEditNavOpen, setIsEditNavOpen 
 	} = useNavigation(user);
 
-
 	// --- APP UI STATE ENGINE ---
 	const {
 		isModalOpen, setIsModalOpen, editingQuest, modalDefaultIsBreak,
@@ -142,9 +141,7 @@ export default function App() {
 			{/* TOP HEADER */}
 			<Header 
 				gems={gems}
-				timePoints={timePoints}
-				volumeLevel={volumeLevel}
-				setVolumeLevel={setVolumeLevel}
+				timePoints={timePoints} volumeLevel={volumeLevel} setVolumeLevel={setVolumeLevel}
 				onOpenSummary={() => setShowSummaryModal(true)}
 				onOpenGemShop={() => setIsGemShopOpen(true)}
 				onOpenTimeVault={() => setIsBankModalOpen(true)}
@@ -163,31 +160,22 @@ export default function App() {
 
 				{activeTab === 'shop' ? (
 					<ShopTab 
-						medals={medals}
-						onDraw={onDraw}
-						openingTier={openingTier}
-						recentResults={recentResults}
-						onCloseResults={() => setRecentResults(null)}
+						medals={medals} onDraw={onDraw} openingTier={openingTier}
+						recentResults={recentResults} onCloseResults={() => setRecentResults(null)}
 					/>
 				) : (
 					<QuestGrid 
-						tasks={displayedTasks}
-						onToggleComplete={handleToggleComplete}
-						onEdit={handleEdit}
-						onDelete={handleDelete}
-						onRestore={handleRestore}
-						onHardDelete={handleHardDelete}
-						onTakeBreak={handleTakeBreak}
-						onBuyShield={handleBuyShield}
+						tasks={displayedTasks} onToggleComplete={handleToggleComplete}
+						onEdit={handleEdit} onDelete={handleDelete}
+						onRestore={handleRestore} onHardDelete={handleHardDelete}
+						onTakeBreak={handleTakeBreak} onBuyShield={handleBuyShield}
 					/>
 				)}
 			</main>
 
 			{/* BOTTOM NAVIGATION */}
 			<BottomNav 
-				activeTab={activeTab} 
-				setActiveTab={setActiveTab} 
-				navLayout={navLayout}
+				activeTab={activeTab} setActiveTab={setActiveTab} navLayout={navLayout}
 			/>
 
 			{/* FLOATING ACTION BUTTON (Add Quest) */}
@@ -202,44 +190,34 @@ export default function App() {
 
 			{/* TOAST NOTIFICATION */}
 			<ToastContainer
-				toast={toast}
-				onClose={closeToast}
-				onUndo={handleUndoAction}
+				toast={toast} onClose={closeToast} onUndo={handleUndoAction}
 			/>
 
 			{/* MODALS */}
 			<TaskModal
-				isOpen={isModalOpen}
-				onClose={() => setIsModalOpen(false)}
+				isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
 				initialData={editingQuest}
-				onSave={(newQuestData) => handleSaveQuest(newQuestData, editingQuest, () => setIsModalOpen(false))}
-				defaultIsBreak={modalDefaultIsBreak}
+				onSave={(newQuestData) => handleSaveQuest(newQuestData, editingQuest, () => setIsModalOpen(false))} defaultIsBreak={modalDefaultIsBreak}
 			/>
 
 			<TimeVaultModal
-				isOpen={isBankModalOpen}
-				onClose={() => setIsBankModalOpen(false)}
+				isOpen={isBankModalOpen} onClose={() => setIsBankModalOpen(false)}
 				timePoints={timePoints}
 			/>
 
 			<GemShopModal
-				isOpen={isGemShopOpen}
-				onClose={() => setIsGemShopOpen(false)}
-				gems={gems}
-				timePoints={timePoints}
+				isOpen={isGemShopOpen} onClose={() => setIsGemShopOpen(false)}
+				gems={gems} timePoints={timePoints}
 				onBuyGemWithTime={handleBuyGemWithTime}
 				onBuyTimeWithGem={handleBuyTimeWithGem}
 			/>
 
 			<DailySummaryModal
-				isOpen={showSummaryModal}
-				onClose={handleCloseSummary}
+				isOpen={showSummaryModal} onClose={handleCloseSummary}
 				completedYesterday={summaryData.completed}
 				expiredQuests={summaryData.expired}
-				gems={gems}
-				gemsGained={summaryData.gemsGained}
-				timePoints={timePoints}
-				onRevive={handleReviveCard}
+				gems={gems} gemsGained={summaryData.gemsGained}
+				timePoints={timePoints} onRevive={handleReviveCard}
 				rewards={pendingRewards}
 				onClaim={() => handleClaimRewards(
 					pendingRewards.gems,
@@ -249,10 +227,8 @@ export default function App() {
 			/>
 
 			<EditNavModal
-				isOpen={isEditNavOpen}
-				onClose={() => setIsEditNavOpen(false)}
-				currentLayout={navLayout}
-				onSave={handleSaveNavLayout}
+				isOpen={isEditNavOpen} onClose={() => setIsEditNavOpen(false)}
+				currentLayout={navLayout} onSave={handleSaveNavLayout}
 			/>
 		</div>
 	);
