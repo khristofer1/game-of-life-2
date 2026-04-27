@@ -9,7 +9,9 @@ interface EditNavModalProps {
   onSave: (newLayout: TabType[]) => void;
 }
 
+// Active is now fully unlocked and added to the roster
 const AVAILABLE_TABS: { id: TabType, label: string, emoji: string }[] = [
+  { id: 'active', label: 'Active', emoji: '📝' },
   { id: 'coming', label: 'Coming', emoji: '⏳' },
   { id: 'completed', label: 'Completed', emoji: '✅' },
   { id: 'shop', label: 'Shop', emoji: '🏪' },
@@ -83,25 +85,16 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
         </div>
 
         <div className="px-6 py-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
-          {/* SLOT 1 - LOCKED */}
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Slot 1 (Locked)</label>
-            <div className="w-full bg-gray-100 text-gray-500 border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 opacity-70 cursor-not-allowed font-semibold">
-               <span>📝</span> Active Quests
-            </div>
-          </div>
-
-          {/* DYNAMIC SLOTS */}
-          {slots.slice(1).map((currentTab, index) => {
-            const actualSlotIndex = index + 1; // because we sliced off index 0
-            
+          
+          {/* ALL SLOTS DYNAMICALLY MAPPED */}
+          {slots.map((currentTab, index) => {
             return (
-              <div key={actualSlotIndex} className="relative group">
+              <div key={index} className="relative group">
                 <div className="flex justify-between items-end mb-2">
-                  <label className="block text-xs font-bold text-orange-600 uppercase tracking-wider">Slot {actualSlotIndex + 1}</label>
+                  <label className="block text-xs font-bold text-orange-600 uppercase tracking-wider">Slot {index + 1}</label>
                   {/* Remove Button */}
                   <button 
-                    onClick={() => handleRemoveSlot(actualSlotIndex)}
+                    onClick={() => handleRemoveSlot(index)}
                     className="text-xs text-red-400 hover:text-red-600 font-bold transition-colors"
                   >
                     Remove
@@ -110,11 +103,11 @@ export function EditNavModal({ isOpen, onClose, currentLayout, onSave }: EditNav
                 
                 <select
                   value={currentTab}
-                  onChange={(e) => handleSlotChange(actualSlotIndex, e.target.value as TabType)}
+                  onChange={(e) => handleSlotChange(index, e.target.value as TabType)}
                   className="w-full bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 font-semibold text-dark focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer appearance-none"
                 >
                   {AVAILABLE_TABS.map(tab => (
-                    <option key={`s${actualSlotIndex}-${tab.id}`} value={tab.id}>
+                    <option key={`s${index}-${tab.id}`} value={tab.id}>
                       {tab.emoji} {tab.label}
                     </option>
                   ))}
