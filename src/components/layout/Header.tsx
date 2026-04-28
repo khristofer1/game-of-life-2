@@ -52,20 +52,20 @@ export function Header({
 				<div className="flex items-center gap-1.5 sm:gap-4">
 					
 					{/* CURRENCY BUTTONS */}
-          <button 
+					<button 
             onClick={onOpenGemShop}
-            className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 px-3 sm:px-4 py-2 rounded-2xl border border-blue-100 transition-all active:scale-95 group"
+            className="flex items-center gap-2 bg-orange-50 hover:bg-orange-100 px-3 sm:px-4 py-2 rounded-2xl border border-orange-100 transition-all active:scale-95 group"
           >
             <span className="text-sm group-hover:scale-120 transition-transform">💎</span>
-            <span className="text-sm font-bold text-blue-600">{gems}</span>
+            <span className="text-sm font-bold text-orange-600">{gems}</span>
           </button>
 
           <button 
             onClick={onOpenTimeVault}
-            className="flex items-center gap-2 bg-orange-50 hover:bg-orange-100 px-3 sm:px-4 py-2 rounded-2xl border border-orange-100 transition-all active:scale-95 group"
+            className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 px-3 sm:px-4 py-2 rounded-2xl border border-blue-100 transition-all active:scale-95 group"
           >
             <span className="text-sm group-hover:rotate-12 transition-transform">⏳</span>
-            <span className="text-sm font-bold text-orange-600">{timePoints}</span>
+            <span className="text-sm font-bold text-blue-600">{timePoints}</span>
           </button>
 
 					{/* MEDALS HUD - Integrated into the main bar */}
