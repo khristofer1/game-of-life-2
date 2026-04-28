@@ -74,40 +74,28 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
 
   // --- TIER CALCULATIONS ---
   const isRecurring = !quest.isOneTime && !quest.isBreak;
-  let tierColors = 'ring-1 ring-gray-400 bg-white/70';
 
-  switch (quest.tier) {
-    case 'bronze':
-      tierColors = 'ring-1 ring-[#cd7f32] bg-gradient-to-br from-white/80 to-[#cd7f32]/25';
-      break;
-    case 'silver':
-      tierColors = 'ring-1 ring-gray-400 bg-gradient-to-br from-white/80 to-gray-400/25';
-      break;
-    case 'gold':
-      tierColors = 'ring-1 ring-yellow-400 bg-gradient-to-br from-white/80 to-yellow-400/35';
-      break;
-    case 'diamond':
-      tierColors = 'ring-1 ring-cyan-400 bg-gradient-to-br from-white/80 to-cyan-400/35 shadow-[0_0_15px_rgba(34,211,238,0.3)]';
-      break;
-  }
-  // --- END TIER CALCULATIONS ---
-
-  // 1. Reversed Gradient Base: From Tier Color to Lighter Frosted White
+  let tierColors = 'ring-1 ring-gray-300';
   let barBorder = 'border-gray-200 bg-gray-100';
   switch (quest.tier) {
     case 'bronze':
+      tierColors = 'ring-1 ring-[#cd7f32] bg-gradient-to-br from-white/80 to-[#cd7f32]/25';
       barBorder = 'border-[#cd7f32]/40 bg-gradient-to-br from-[#cd7f32]/30 to-white/60';
       break;
     case 'silver':
+      tierColors = 'ring-1 ring-gray-400 bg-gradient-to-br from-white/80 to-gray-400/25';
       barBorder = 'border-gray-400/40 bg-gradient-to-br from-gray-400/30 to-white/60';
       break;
     case 'gold':
+      tierColors = 'ring-1 ring-yellow-400 bg-gradient-to-br from-white/80 to-yellow-400/35';
       barBorder = 'border-yellow-400/50 bg-gradient-to-br from-yellow-400/40 to-white/70';
       break;
     case 'diamond':
+      tierColors = 'ring-1 ring-cyan-400 bg-gradient-to-br from-white/80 to-cyan-400/35 shadow-[0_0_15px_rgba(34,211,238,0.3)]';
       barBorder = 'border-cyan-400/50 bg-gradient-to-br from-cyan-400/40 to-white/70';
       break;
   }
+  // --- END TIER CALCULATIONS ---
 
   let barColor;
   if (quest.completed || isPending) barColor = 'bg-gray-300';
@@ -135,7 +123,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
   return (
     <div
       className={`glass-card flex flex-col h-full rounded-4xl p-6 transition-all shadow-premium
-        ${quest.completed ? 'ring-2 ring-orange-400 bg-white/40 ring-inset' : tierColors} 
+        ${tierColors} 
         ${isPending ? 'opacity-75 grayscale-[0.2]' : ''}
       `}
     >
@@ -185,18 +173,18 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
         ) : (
           <>
             {quest.isBreak ? (
-              <button onClick={() => quest.id && onTakeBreak?.(quest.id)} disabled={quest.energyPercent! < 100} className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${quest.energyPercent! >= 100 ? 'bg-orange-100 text-orange-600 hover:bg-orange-500 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'}`}>
+              <button onClick={() => quest.id && onTakeBreak?.(quest.id)} disabled={quest.energyPercent! < 100} className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${quest.energyPercent! >= 100 ? 'bg-orange-100 text-orange-600 hover:bg-orange-500 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'} ${barBorder}`}>
                 {quest.energyPercent! >= 100 ? '☕ Take Break' : '⏳ Cooling Down'}
               </button>
             ) : (
-              <button onClick={() => !isPending && quest.id && onToggleComplete(quest.id)} disabled={isPending} className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${btnClass}`}>
+              <button onClick={() => !isPending && quest.id && onToggleComplete(quest.id)} disabled={isPending} className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${btnClass} ${tierColors} hover:scale-102 active:scale-95`}>
                 {btnText}
               </button>
             )}
 
             <div className="flex gap-1 shrink-0 ml-2">
-              <button onClick={() => quest.id && onEdit(quest.id)} className="p-3 rounded-xl bg-gray-50 text-muted hover:text-orange-500 hover:bg-orange-50 transition-all active:scale-90">✏️</button>
-              <button onClick={() => quest.id && onDelete(quest.id)} className="p-3 rounded-xl bg-gray-50 text-muted hover:text-red-500 hover:bg-red-50 transition-all active:scale-90">🗑️</button>
+              <button onClick={() => quest.id && onEdit(quest.id)} className={`p-3 rounded-xl bg-gray-50 text-muted hover:text-orange-500 hover:bg-orange-50 transition-all hover:scale-105 active:scale-95 ${tierColors}`}>✏️</button>
+              <button onClick={() => quest.id && onDelete(quest.id)} className={`p-3 rounded-xl bg-gray-50 text-muted hover:text-red-500 hover:bg-red-50 transition-all hover:scale-105 active:scale-95 ${tierColors}`}>🗑️</button>
             </div>
           </>
         )}
