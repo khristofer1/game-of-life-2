@@ -99,9 +99,9 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
 
   let barColor;
   if (quest.completed || isPending) barColor = 'bg-gray-300';
-  else if (percent > 50) barColor = 'bg-green-500';
-  else if (percent > 25) barColor = 'bg-yellow-500';
-  else barColor = 'bg-red-500';
+  else if (percent > 50) barColor = 'bg-linear-to-b from-green-400 to-green-500';
+  else if (percent > 25) barColor = 'bg-linear-to-b from-yellow-400 to-yellow-500';
+  else barColor = 'bg-linear-to-b from-red-400 to-red-500';
 
   let btnClass = '';
   let btnText = '';
