@@ -70,7 +70,6 @@ export function TierModal({ isOpen, onClose, quest, onBuyShield }: TierModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-slide-up" onClick={e => e.stopPropagation()}>
-        {/* ... [Keep Header, Streak Display, and Progression Bar exactly the same as before] ... */}
 
         {/* Header */}
         <div className="p-6 pb-4 border-b border-gray-100 flex justify-between items-start">

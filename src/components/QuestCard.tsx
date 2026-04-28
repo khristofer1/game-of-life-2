@@ -76,23 +76,23 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
   const isRecurring = !quest.isOneTime && !quest.isBreak;
 
   let tierColors = 'ring-1 ring-gray-300';
-  let barBorder = 'border-gray-200 bg-gray-100';
+  let barBorder = 'border-gray-200 bg-linear-to-b from-gray-200 to-white';
   switch (quest.tier) {
     case 'bronze':
       tierColors = 'ring-1 ring-[#cd7f32] bg-gradient-to-br from-white/80 to-[#cd7f32]/25';
-      barBorder = 'border-[#cd7f32]/40 bg-gradient-to-br from-[#cd7f32]/30 to-white/60';
+      barBorder = 'border-[#cd7f32]/40 bg-gradient-to-b from-[#cd7f32]/30 to-white/60';
       break;
     case 'silver':
       tierColors = 'ring-1 ring-gray-400 bg-gradient-to-br from-white/80 to-gray-400/25';
-      barBorder = 'border-gray-400/40 bg-gradient-to-br from-gray-400/30 to-white/60';
+      barBorder = 'border-gray-400/40 bg-gradient-to-b from-gray-400/30 to-white/60';
       break;
     case 'gold':
       tierColors = 'ring-1 ring-yellow-400 bg-gradient-to-br from-white/80 to-yellow-400/35';
-      barBorder = 'border-yellow-400/50 bg-gradient-to-br from-yellow-400/40 to-white/70';
+      barBorder = 'border-yellow-400/50 bg-gradient-to-b from-yellow-400/40 to-white/70';
       break;
     case 'diamond':
       tierColors = 'ring-1 ring-cyan-400 bg-gradient-to-br from-white/80 to-cyan-400/35 shadow-[0_0_15px_rgba(34,211,238,0.3)]';
-      barBorder = 'border-cyan-400/50 bg-gradient-to-br from-cyan-400/40 to-white/70';
+      barBorder = 'border-cyan-400/50 bg-gradient-to-b from-cyan-400/40 to-white/70';
       break;
   }
   // --- END TIER CALCULATIONS ---
