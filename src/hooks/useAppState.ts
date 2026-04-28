@@ -9,6 +9,8 @@ export function useAppState(allTasks: Quest[], activeTab: TabType) {
 	const [modalDefaultIsBreak, setModalDefaultIsBreak] = useState(false);
 	const [isBankModalOpen, setIsBankModalOpen] = useState(false);
 	const [isGemShopOpen, setIsGemShopOpen] = useState(false);
+	const [isTierModalOpen, setIsTierModalOpen] = useState(false);
+	const [selectedQuestForTier, setSelectedQuestForTier] = useState<Quest | null>(null);
 
 	const handleFabClick = () => {
 		if (activeTab === 'break') {
@@ -28,17 +30,21 @@ export function useAppState(allTasks: Quest[], activeTab: TabType) {
 		}
 	};
 
+	const handleOpenTierModal = (quest: Quest) => {
+		setSelectedQuestForTier(quest);
+		setIsTierModalOpen(true);
+	};
+
 	return {
-		isModalOpen,
-		setIsModalOpen,
-		editingQuest,
-		setEditingQuest,
+		isModalOpen, setIsModalOpen,
+		editingQuest, setEditingQuest,
 		modalDefaultIsBreak,
-		isBankModalOpen,
-		setIsBankModalOpen,
-		isGemShopOpen,
-		setIsGemShopOpen,
+		isBankModalOpen, setIsBankModalOpen,
+		isGemShopOpen, setIsGemShopOpen,
+		isTierModalOpen, setIsTierModalOpen,
+		selectedQuestForTier,
 		handleFabClick,
-		handleEdit
+		handleEdit,
+		handleOpenTierModal
 	};
 }

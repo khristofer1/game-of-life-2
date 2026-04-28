@@ -5,7 +5,7 @@ import { QuestCard } from './QuestCard';
 
 interface QuestGridProps {
 	tasks: Quest[];
-	archivedTasks?: Quest[]; // <-- NEW
+	archivedTasks?: Quest[];
 	onToggleComplete: (id: number, isUndo?: boolean) => void;
 	onEdit: (id: number) => void;
 	onDelete: (id: number, isUndo?: boolean) => void;
@@ -13,18 +13,18 @@ interface QuestGridProps {
 	onHardDelete: (id: number) => void;
 	onTakeBreak: (id: number) => void;
 	onBuyShield: (id: number, cost: number) => void;
+	onOpenTierModal: (quest: Quest) => void;
 	isCompletedTab?: boolean; 
 }
 
 export function QuestGrid({
 	tasks, archivedTasks, onToggleComplete, onEdit, onDelete,
-	onRestore, onHardDelete, onTakeBreak, onBuyShield, isCompletedTab
+	onRestore, onHardDelete, onTakeBreak, onBuyShield, onOpenTierModal, isCompletedTab
 }: QuestGridProps) {
 	
 	const [isCompletedOpen, setIsCompletedOpen] = useState(true);
 	const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
-	// Empty state check
 	if (!isCompletedTab && tasks.length === 0) {
 		return <div className="text-center py-10"><p className="text-muted text-sm italic">No cards found in this tab.</p></div>;
 	}
@@ -32,19 +32,27 @@ export function QuestGrid({
 		return <div className="text-center py-10"><p className="text-muted text-sm italic">No records found.</p></div>;
 	}
 
-	// --- LOOT CALCULATION (Only applies to today's unrewarded tasks) ---
 	const totalGems = tasks.length; 
 	const totalTP = tasks.reduce((sum, t) => sum + (t.lastDepositMs || 0), 0);
 	const totalBronze = tasks.filter(t => t.pendingMedal === 'bronze').length;
 	const totalSilver = tasks.filter(t => t.pendingMedal === 'silver').length;
 	const totalGold = tasks.filter(t => t.pendingMedal === 'gold').length;
 
+	const renderCard = (quest: Quest) => (
+		<QuestCard 
+			key={quest.id} quest={quest} 
+			onToggleComplete={onToggleComplete} onEdit={onEdit} 
+			onDelete={onDelete} onRestore={onRestore} 
+			onHardDelete={onHardDelete} onTakeBreak={onTakeBreak} 
+			onBuyShield={onBuyShield}
+			onOpenTierModal={onOpenTierModal}
+		/>
+	);
+
 	return (
 		<div className="flex flex-col relative w-full">
-			
 			{isCompletedTab ? (
 				<div className="space-y-8 w-full">
-					
 					{/* 1. COMPLETED TODAY DRAWER */}
 					<div className="space-y-4">
 						<button onClick={() => setIsCompletedOpen(!isCompletedOpen)} className="w-full flex items-center justify-between bg-white px-5 py-4 rounded-2xl shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer">
@@ -59,7 +67,7 @@ export function QuestGrid({
 						{isCompletedOpen && (
 							tasks.length > 0 ? (
 								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-									{tasks.map(quest => <QuestCard key={quest.id} quest={quest} onToggleComplete={onToggleComplete} onEdit={onEdit} onDelete={onDelete} onRestore={onRestore} onHardDelete={onHardDelete} onTakeBreak={onTakeBreak} onBuyShield={onBuyShield} />)}
+									{tasks.map(renderCard)}
 								</div>
 							) : (
 								<p className="text-muted text-sm italic text-center py-4">No completed tasks yet today.</p>
@@ -67,7 +75,7 @@ export function QuestGrid({
 						)}
 					</div>
 
-					{/* 2. PENDING LOOT SUMMARY (Normal Flow, No longer fixed) */}
+					{/* 2. PENDING LOOT SUMMARY */}
 					{tasks.length > 0 && (
 						<div className="bg-linear-to-r from-orange-50 to-blue-50 border border-orange-200 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
 							<div className="text-sm font-bold text-dark flex items-center gap-2">
@@ -99,7 +107,7 @@ export function QuestGrid({
 							{isArchiveOpen && (
 								archivedTasks.length > 0 ? (
 									<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-										{archivedTasks.map(quest => <QuestCard key={quest.id} quest={quest} onToggleComplete={onToggleComplete} onEdit={onEdit} onDelete={onDelete} onRestore={onRestore} onHardDelete={onHardDelete} onTakeBreak={onTakeBreak} onBuyShield={onBuyShield} />)}
+										{archivedTasks.map(renderCard)}
 									</div>
 								) : (
 									<p className="text-muted text-sm italic text-center py-4">Your archive is empty.</p>
@@ -107,17 +115,13 @@ export function QuestGrid({
 							)}
 						</div>
 					)}
-
 				</div>
 			) : (
-				// STANDARD GRID VIEW (For all other tabs)
+				// STANDARD GRID VIEW
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-					{tasks.map(quest => (
-						<QuestCard key={quest.id} quest={quest} onToggleComplete={onToggleComplete} onEdit={onEdit} onDelete={onDelete} onRestore={onRestore} onHardDelete={onHardDelete} onTakeBreak={onTakeBreak} onBuyShield={onBuyShield} />
-					))}
+					{tasks.map(renderCard)}
 				</div>
 			)}
-
 		</div>
 	);
 }

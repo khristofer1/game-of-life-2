@@ -25,6 +25,7 @@ import { EditNavModal } from './components/EditNavModal';
 import { useNavigation } from './hooks/useNavigation';
 import { useAppState } from './hooks/useAppState';
 import { QuestGrid } from './components/QuestGrid';
+import { TierModal } from './components/TierModal';
 
 export default function App() {
 	// --- AUTHENTICATION STATE ---
@@ -50,9 +51,11 @@ export default function App() {
 	const {
 		isModalOpen, setIsModalOpen, editingQuest, modalDefaultIsBreak,
 		isBankModalOpen, setIsBankModalOpen, isGemShopOpen, setIsGemShopOpen,
-		handleFabClick, handleEdit
+		handleFabClick, handleEdit,
+		isTierModalOpen, setIsTierModalOpen,
+		selectedQuestForTier, handleOpenTierModal
 	} = useAppState(allTasks, activeTab);
-
+	
 	// Load saved volume on mount
 	useEffect(() => {
 		// Only fetch the volume AFTER Firebase confirms who is logged in!
@@ -173,6 +176,7 @@ export default function App() {
 						onEdit={handleEdit} onDelete={handleDelete}
 						onRestore={handleRestore} onHardDelete={handleHardDelete}
 						onTakeBreak={handleTakeBreak} onBuyShield={handleBuyShield}
+						onOpenTierModal={handleOpenTierModal} // <-- NEW PROP PASSED DOWN
 						isCompletedTab={activeTab === 'completed'}
 					/>
 				)}
@@ -237,6 +241,13 @@ export default function App() {
 			<EditNavModal
 				isOpen={isEditNavOpen} onClose={() => setIsEditNavOpen(false)}
 				currentLayout={navLayout} onSave={handleSaveNavLayout}
+			/>
+
+			<TierModal
+				isOpen={isTierModalOpen}
+				onClose={() => setIsTierModalOpen(false)}
+				quest={selectedQuestForTier}
+				onBuyShield={handleBuyShield}
 			/>
 		</div>
 	);

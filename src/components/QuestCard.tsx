@@ -11,6 +11,7 @@ interface QuestCardProps {
   onHardDelete: (id: number) => void;
   onTakeBreak?: (id: number) => void;
   onBuyShield?: (id: number, cost: number) => void; 
+  onOpenTierModal: (quest: Quest) => void;
 }
 
 const formatDescriptionWithLinks = (text: string) => {
@@ -36,7 +37,7 @@ const formatDescriptionWithLinks = (text: string) => {
   });
 };
 
-export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete, onTakeBreak, onBuyShield }: QuestCardProps) {
+export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete, onTakeBreak, onOpenTierModal }: QuestCardProps) {
   const [now, setNow] = useState(Date.now());
 
   const activeDeadline = quest.isOneTime 
@@ -78,7 +79,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
   
   let maxShields = 1;
   let tierDivisor = 1;
-  let tierColors = 'ring-1 ring-gray-100'; // Standard style
+  let tierColors = 'ring-1 ring-gray-100';
   
   switch (quest.tier) {
     case 'bronze': maxShields = 2; tierDivisor = 2; tierColors = 'ring-2 ring-[#cd7f32] bg-[#cd7f32]/5'; break;
@@ -87,10 +88,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
     case 'diamond': maxShields = 5; tierDivisor = 5; tierColors = 'ring-2 ring-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(34,211,238,0.3)]'; break;
   }
   
-  if (isLongCycle) maxShields = 1; // Long cycles are always capped at 1 slot
-  
-  const currentShields = quest.shields || 0;
-  const shieldCost = isLongCycle ? Math.ceil((5 * daysInCycle) / tierDivisor) : 5;
+  if (isLongCycle) maxShields = 1;
   // --- END SHIELD CALCULATIONS ---
 
   let barColor;
@@ -129,43 +127,22 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
           {quest.desc && <p className="text-xs text-muted mt-1 line-clamp-2 whitespace-pre-wrap">{formatDescriptionWithLinks(quest.desc)}</p>}
         </div>
 
-        {/* --- THE SHIELD SOCKETS UI --- */}
         {isRecurring && (
-          <div className="flex gap-1 shrink-0">
-            {[...Array(maxShields)].map((_, i) => {
-              const isFilled = i < currentShields;
-              return (
-                <button
-                  key={i}
-                  disabled={isFilled || isPending}
-                  onClick={() => !isFilled && quest.id && onBuyShield && onBuyShield(quest.id, shieldCost)}
-                  title={isFilled ? "Shield Active" : `Buy Shield (${shieldCost} Gems)`}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all text-xs border ${
-                    isFilled 
-                      ? 'bg-blue-50 text-blue-500 border-blue-200 shadow-sm' 
-                      : 'bg-gray-50 text-gray-300 border-gray-200 hover:bg-blue-50 hover:text-blue-500 hover:border-blue-200 cursor-pointer'
-                  } ${(isPending || quest.completed) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {isFilled ? '🛡️' : '+'}
-                </button>
-              );
-            })}
-          </div>
+          <button
+            onClick={() => onOpenTierModal(quest)}
+            disabled={isPending}
+            title="View Tier & Shields"
+            className={`flex shrink-0 items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-xl font-black text-sm shadow-sm transition-transform hover:scale-105 active:scale-95 bg-white cursor-pointer ${tierColors} ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            🔥{quest.streak || 0}
+          </button>
         )}
-        {/* --- END SHIELD SOCKETS UI --- */}
-
       </div>
 
       <div className="mt-auto pt-2 mb-5">
         <div className="flex justify-between items-end mb-1">
           <span className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-2">
             {quest.displayFreq}
-            {/* Show the actual Streak count with a flame! */}
-            {isRecurring && (
-              <span className="text-xs text-orange-500 font-bold normal-case bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
-                🔥 {quest.streak || 0}
-              </span>
-            )}
           </span>
           <div className="text-right">
             <span className={`text-sm font-bold ${isPending ? 'text-gray-400' : (quest.completed ? 'text-green-500' : 'text-orange-500')}`}>
