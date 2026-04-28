@@ -10,7 +10,7 @@ interface QuestCardProps {
   onRestore: (id: number) => void;
   onHardDelete: (id: number) => void;
   onTakeBreak?: (id: number) => void;
-  onBuyShield?: (id: number, cost: number) => void; 
+  onBuyShield?: (id: number, cost: number) => void;
   onOpenTierModal: (quest: Quest) => void;
 }
 
@@ -21,13 +21,13 @@ const formatDescriptionWithLinks = (text: string) => {
   return parts.map((part, index) => {
     if (part.match(urlRegex)) {
       return (
-        <a 
-          key={index} 
-          href={part} 
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
           className="text-orange-500 hover:text-orange-600 hover:underline transition-colors"
-          onClick={(e) => e.stopPropagation()} 
+          onClick={(e) => e.stopPropagation()}
         >
           {part}
         </a>
@@ -40,12 +40,12 @@ const formatDescriptionWithLinks = (text: string) => {
 export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete, onTakeBreak, onOpenTierModal }: QuestCardProps) {
   const [now, setNow] = useState(Date.now());
 
-  const activeDeadline = quest.isOneTime 
-    ? (quest.deadline || 0) 
+  const activeDeadline = quest.isOneTime
+    ? (quest.deadline || 0)
     : ((quest.cycleStart || 0) + (quest.activeDeadlineMs || 0));
-      
-  const activeDuration = quest.isOneTime 
-    ? quest.durationMs 
+
+  const activeDuration = quest.isOneTime
+    ? quest.durationMs
     : (quest.activeDeadlineMs || 1);
 
   const isFutureStart = !!(quest.startDate && now < quest.startDate && !quest.isBreak);
@@ -56,7 +56,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
   useEffect(() => {
     if (!isDynamic) return;
     const intervalId = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(intervalId); 
+    return () => clearInterval(intervalId);
   }, [isDynamic]);
 
   let percent = 100;
@@ -74,15 +74,40 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
 
   // --- TIER CALCULATIONS ---
   const isRecurring = !quest.isOneTime && !quest.isBreak;
-  let tierColors = 'ring-1 ring-gray-100';
-  
+  let tierColors = 'ring-1 ring-gray-400 bg-white/70';
+
   switch (quest.tier) {
-    case 'bronze': tierColors = 'ring-2 ring-[#cd7f32] bg-[#cd7f32]/5'; break;
-    case 'silver': tierColors = 'ring-2 ring-gray-400 bg-gray-400/5'; break;
-    case 'gold': tierColors = 'ring-2 ring-yellow-400 bg-yellow-400/10'; break;
-    case 'diamond': tierColors = 'ring-2 ring-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(34,211,238,0.3)]'; break;
+    case 'bronze':
+      tierColors = 'ring-1 ring-[#cd7f32] bg-gradient-to-br from-white/80 to-[#cd7f32]/25';
+      break;
+    case 'silver':
+      tierColors = 'ring-1 ring-gray-400 bg-gradient-to-br from-white/80 to-gray-400/25';
+      break;
+    case 'gold':
+      tierColors = 'ring-1 ring-yellow-400 bg-gradient-to-br from-white/80 to-yellow-400/35';
+      break;
+    case 'diamond':
+      tierColors = 'ring-1 ring-cyan-400 bg-gradient-to-br from-white/80 to-cyan-400/35 shadow-[0_0_15px_rgba(34,211,238,0.3)]';
+      break;
   }
   // --- END TIER CALCULATIONS ---
+
+  // 1. Reversed Gradient Base: From Tier Color to Lighter Frosted White
+  let barBorder = 'border-gray-200 bg-gray-100';
+  switch (quest.tier) {
+    case 'bronze':
+      barBorder = 'border-[#cd7f32]/40 bg-gradient-to-br from-[#cd7f32]/30 to-white/60';
+      break;
+    case 'silver':
+      barBorder = 'border-gray-400/40 bg-gradient-to-br from-gray-400/30 to-white/60';
+      break;
+    case 'gold':
+      barBorder = 'border-yellow-400/50 bg-gradient-to-br from-yellow-400/40 to-white/70';
+      break;
+    case 'diamond':
+      barBorder = 'border-cyan-400/50 bg-gradient-to-br from-cyan-400/40 to-white/70';
+      break;
+  }
 
   let barColor;
   if (quest.completed || isPending) barColor = 'bg-gray-300';
@@ -97,7 +122,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
     const startD = new Date(nextStartMs);
     const dateStr = startD.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     const timeStr = startD.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-    
+
     btnClass = 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200';
     btnText = `⏳ Starts ${dateStr}, ${timeStr}`;
   } else {
@@ -108,7 +133,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
   }
 
   return (
-    <div 
+    <div
       className={`glass-card flex flex-col h-full rounded-4xl p-6 transition-all shadow-premium
         ${quest.completed ? 'ring-2 ring-orange-400 bg-white/40 ring-inset' : tierColors} 
         ${isPending ? 'opacity-75 grayscale-[0.2]' : ''}
@@ -143,9 +168,9 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
             </span>
           </div>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+        <div className={`w-full rounded-full h-2.5 overflow-hidden border ${barBorder} transition-all duration-500`}>
           <div
-            className={`${barColor} h-2 rounded-full transition-all duration-1000 ease-out`}
+            className={`${barColor} h-full rounded-full transition-all duration-1000 ease-out shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]`}
             style={{ width: `${percent}%` }}
           ></div>
         </div>
