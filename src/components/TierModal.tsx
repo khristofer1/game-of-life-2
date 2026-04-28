@@ -19,12 +19,10 @@ export function TierModal({ isOpen, onClose, quest, onBuyShield }: TierModalProp
     if (currentStreak < 30) return { next: 30, targetTier: 'Silver 🥈', min: 7 };
     if (currentStreak < 120) return { next: 120, targetTier: 'Gold 🥇', min: 30 };
     if (currentStreak < 365) return { next: 365, targetTier: 'Diamond 💎', min: 120 };
-    return { next: currentStreak, targetTier: 'Max Level 🌟', min: 365 }; 
+    return { next: currentStreak, targetTier: 'Max Level 🌟', min: 365 };
   };
 
   const { next, targetTier, min } = getTierProgress(streak);
-  
-  // Calculate percentage strictly between the current milestone and the next
   let progressPercent = 100;
   if (next !== streak) {
     const range = next - min;
@@ -35,21 +33,33 @@ export function TierModal({ isOpen, onClose, quest, onBuyShield }: TierModalProp
   // --- SHIELD LOGIC ---
   const isRecurring = !quest.isOneTime && !quest.isBreak;
   const daysInCycle = Math.max(1, Math.round((quest.activeDeadlineMs || 86400000) / 86400000));
-  const isLongCycle = daysInCycle >= 6;
-  
+  const isDaily = daysInCycle === 1; // Exactly 24 hours
+
+  // RULE: Non-daily quests are strictly capped at 1 shield.
+  // Daily quests grow capacity based on their tier.
   let maxShields = 1;
-  let tierDivisor = 1;
-  
+  let discountMultiplier = 1.0;
+
   switch (quest.tier) {
-    case 'bronze': maxShields = 2; tierDivisor = 2; break;
-    case 'silver': maxShields = 3; tierDivisor = 3; break;
-    case 'gold': maxShields = 4; tierDivisor = 4; break;
-    case 'diamond': maxShields = 5; tierDivisor = 5; break;
+    case 'bronze':
+      if (isDaily) maxShields = 2; else discountMultiplier = 0.8;
+      break;
+    case 'silver':
+      if (isDaily) maxShields = 3; else discountMultiplier = 0.6;
+      break;
+    case 'gold':
+      if (isDaily) maxShields = 4; else discountMultiplier = 0.4;
+      break;
+    case 'diamond':
+      if (isDaily) maxShields = 5; else discountMultiplier = 0.2;
+      break;
   }
-  if (isLongCycle) maxShields = 1; 
-  
+
   const currentShields = quest.shields || 0;
-  const shieldCost = isLongCycle ? Math.ceil((5 * daysInCycle) / tierDivisor) : 5;
+
+  // Formula: (Base Cost * Frequency) * Tier Discount
+  const baseCost = 5 * daysInCycle;
+  const shieldCost = Math.ceil(baseCost * discountMultiplier);
 
   const handleBuyShieldClick = () => {
     if (quest.id && window.confirm(`Are you sure you want to buy a shield for ${shieldCost} 💎?`)) {
@@ -60,19 +70,20 @@ export function TierModal({ isOpen, onClose, quest, onBuyShield }: TierModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-slide-up" onClick={e => e.stopPropagation()}>
-        
+        {/* ... [Keep Header, Streak Display, and Progression Bar exactly the same as before] ... */}
+
         {/* Header */}
         <div className="p-6 pb-4 border-b border-gray-100 flex justify-between items-start">
           <div>
             <h2 className="text-2xl font-black text-dark">{quest.name}</h2>
             <p className="text-sm font-bold text-muted uppercase tracking-wide mt-1">
-               Current Tier: {quest.tier || 'Standard'}
+              Current Tier: {quest.tier || 'Standard'}
             </p>
           </div>
         </div>
 
         <div className="p-6 space-y-8">
-          
+
           {/* Main Streak Display */}
           <div className="flex flex-col items-center justify-center text-center">
             <span className="text-6xl mb-2 drop-shadow-md">🔥</span>
@@ -100,11 +111,11 @@ export function TierModal({ isOpen, onClose, quest, onBuyShield }: TierModalProp
           {isRecurring && (
             <div className="border-t border-gray-100 pt-6">
               <h3 className="text-sm font-bold text-dark mb-4 text-center">Shield Protection</h3>
-              
+
               <div className="flex justify-center gap-3 mb-6">
                 {[...Array(maxShields)].map((_, i) => {
                   const isFilled = i < currentShields;
-                  
+
                   if (isFilled) {
                     return (
                       <div key={i} className="w-12 h-12 rounded-full flex items-center justify-center text-xl border-2 bg-blue-50 border-blue-200 shadow-sm" title="Shield Active">
@@ -117,7 +128,7 @@ export function TierModal({ isOpen, onClose, quest, onBuyShield }: TierModalProp
                         key={i}
                         onClick={handleBuyShieldClick}
                         className="w-12 h-12 rounded-full flex items-center justify-center text-2xl border-2 bg-gray-50 border-gray-200 border-dashed text-gray-400 hover:text-blue-500 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all active:scale-95"
-                        title={`Buy Shield (-${shieldCost} 💎)`}
+                        title={!isDaily && discountMultiplier < 1 ? `Buy Shield (-${shieldCost} 💎) [Tier Discount Applied!]` : `Buy Shield (-${shieldCost} 💎)`}
                       >
                         +
                       </button>

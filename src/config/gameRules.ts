@@ -2,7 +2,6 @@
 
 export const GAME_CONFIG = {
   // CD7: Unpredictability (Chest Drop Rates)
-  // Values represent the threshold out of 1.0 (e.g., 0.80 = 80% common, up to 0.95 = 15% rare, above = 5% legendary)
   gacha: {
     bronze: { rareThreshold: 0.80, legendaryThreshold: 0.95 },
     silver: { rareThreshold: 0.80, legendaryThreshold: 0.95 },
@@ -11,14 +10,23 @@ export const GAME_CONFIG = {
 
   // CD4: Ownership & Possession (Economy Pricing)
   economy: {
-    mintGemCostTP: 10,       // How much TP it costs to buy 1 Gem
-    shatterGemYieldTP: 9,    // How much TP you get for destroying 1 Gem
-    maxTPRewardPerTask: 10,  // The cap on TP earned from a single task
+    mintGemCostTP: 10,       
+    shatterGemYieldTP: 9,    
+    maxTPRewardPerTask: 10,  
+  },
+
+  // CD2 / Progression - Tier Thresholds (in Days)
+  tiers: {
+    standard: 0,
+    bronze: 7,
+    silver: 30,
+    gold: 120,
+    diamond: 365,
   },
 
   // CD2: Development & Accomplishment (Energy & Medals)
   energy: {
-    greenThreshold: 50,    // Energy > 50% gives Gold
-    yellowThreshold: 25,  // Energy > 25% gives Silver
+    greenThreshold: 50,    
+    yellowThreshold: 25,  
   }
 };

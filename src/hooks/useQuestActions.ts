@@ -5,6 +5,7 @@ import type { ToastAction } from './useToast';
 import confetti from 'canvas-confetti';
 import successSound from '../assets/success.mp3';
 import { GAME_CONFIG } from '../config/gameRules';
+import { calculateEffectiveStreak, determineNextTier } from '../utils/questCalculations';
 
 export function useQuestActions(
 	allTasks: Quest[],
@@ -35,6 +36,44 @@ export function useQuestActions(
 			const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
 			updatedTask.completionDates = updatedTask.completionDates.filter(date => date >= sevenDaysAgo);
 
+			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
+				const durationMs = updatedTask.activeDeadlineMs || 86400000;
+				const activeDeadline = (updatedTask.cycleStart || 0) + durationMs;
+				const daysInCycle = Math.max(1, Math.round(durationMs / 86400000));
+
+				if (now >= activeDeadline) {
+					// --- LATE COMPLETION: SHIELD CHECK ---
+					const msPastDeadline = now - activeDeadline;
+					const cyclesMissed = Math.ceil(msPastDeadline / durationMs);
+					const currentShields = updatedTask.shields || 0;
+
+					if (currentShields >= cyclesMissed) {
+						// 🛡️ SHIELD SAVES THE STREAK!
+						updatedTask.shields = currentShields - cyclesMissed;
+						updatedTask.streak = (updatedTask.streak || 0) + 1;
+
+						const effectiveStreak = calculateEffectiveStreak(updatedTask.streak, daysInCycle);
+						updatedTask.tier = determineNextTier(updatedTask.tier, effectiveStreak);
+
+						// Give the user some satisfying feedback!
+						triggerToast(`Shield activated! Saved your streak (-${cyclesMissed} 🛡️)`);
+					} else {
+						// 💔 STREAK BROKEN (Not enough shields)
+						updatedTask.streak = 1;         // Start fresh with this completion
+						updatedTask.tier = 'standard';  // Drop back to baseline
+						updatedTask.shields = 0;        // Shatter any remaining shields
+
+						triggerToast("Streak broken! Not enough shields to protect it.");
+					}
+				} else {
+					// --- ON-TIME COMPLETION ---
+					updatedTask.streak = (updatedTask.streak || 0) + 1;
+
+					const effectiveStreak = calculateEffectiveStreak(updatedTask.streak, daysInCycle);
+					updatedTask.tier = determineNextTier(updatedTask.tier, effectiveStreak);
+				}
+			}
+
 			let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
 			let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
 			let timeLeft = activeDeadline - now;
@@ -44,13 +83,13 @@ export function useQuestActions(
 				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
 
 				// --- THE KEY REWARD SYSTEM ---
-        if (updatedTask.energyPercent >= GAME_CONFIG.energy.greenThreshold) {
-            updatedTask.pendingMedal = 'gold';
-        } else if (updatedTask.energyPercent >= GAME_CONFIG.energy.yellowThreshold) {
-            updatedTask.pendingMedal = 'silver';
-        } else {
-            updatedTask.pendingMedal = 'bronze';
-        }
+				if (updatedTask.energyPercent >= GAME_CONFIG.energy.greenThreshold) {
+					updatedTask.pendingMedal = 'gold';
+				} else if (updatedTask.energyPercent >= GAME_CONFIG.energy.yellowThreshold) {
+					updatedTask.pendingMedal = 'silver';
+				} else {
+					updatedTask.pendingMedal = 'bronze';
+				}
 
 				// 2. TP ECONOMY
 				const hoursSaved = timeLeft / (1000 * 60 * 60); // Convert raw ms to hours
@@ -170,9 +209,9 @@ export function useQuestActions(
 			}
 
 			// --- ERASE THE PENDING KEY ---
-      if (updatedTask.pendingMedal) {
-        delete updatedTask.pendingMedal;
-      }
+			if (updatedTask.pendingMedal) {
+				delete updatedTask.pendingMedal;
+			}
 
 			if (updatedTask.completionDates && updatedTask.completionDates.length > 0) {
 				updatedTask.completionDates.pop();
@@ -218,7 +257,7 @@ export function useQuestActions(
 		// Recalculate the TP cost to refund it accurately
 		const cooldownHours = (taskToUpdate.cooldownMs || 0) / (1000 * 60 * 60);
 		const tpRefund = Math.min(10, Math.ceil(cooldownHours));
-		
+
 		await setMeta("timePoints", timePoints + tpRefund);
 
 		taskToUpdate.lastDoneAt = taskToUpdate.previousLastDoneAt || 0;

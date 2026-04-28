@@ -72,24 +72,17 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
     percent = quest.energyPercent;
   }
 
-  // --- SHIELD & TIER CALCULATIONS ---
+  // --- TIER CALCULATIONS ---
   const isRecurring = !quest.isOneTime && !quest.isBreak;
-  const daysInCycle = Math.max(1, Math.round((quest.activeDeadlineMs || 86400000) / 86400000));
-  const isLongCycle = daysInCycle >= 6;
-  
-  let maxShields = 1;
-  let tierDivisor = 1;
   let tierColors = 'ring-1 ring-gray-100';
   
   switch (quest.tier) {
-    case 'bronze': maxShields = 2; tierDivisor = 2; tierColors = 'ring-2 ring-[#cd7f32] bg-[#cd7f32]/5'; break;
-    case 'silver': maxShields = 3; tierDivisor = 3; tierColors = 'ring-2 ring-gray-400 bg-gray-400/5'; break;
-    case 'gold': maxShields = 4; tierDivisor = 4; tierColors = 'ring-2 ring-yellow-400 bg-yellow-400/10'; break;
-    case 'diamond': maxShields = 5; tierDivisor = 5; tierColors = 'ring-2 ring-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(34,211,238,0.3)]'; break;
+    case 'bronze': tierColors = 'ring-2 ring-[#cd7f32] bg-[#cd7f32]/5'; break;
+    case 'silver': tierColors = 'ring-2 ring-gray-400 bg-gray-400/5'; break;
+    case 'gold': tierColors = 'ring-2 ring-yellow-400 bg-yellow-400/10'; break;
+    case 'diamond': tierColors = 'ring-2 ring-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(34,211,238,0.3)]'; break;
   }
-  
-  if (isLongCycle) maxShields = 1;
-  // --- END SHIELD CALCULATIONS ---
+  // --- END TIER CALCULATIONS ---
 
   let barColor;
   if (quest.completed || isPending) barColor = 'bg-gray-300';
