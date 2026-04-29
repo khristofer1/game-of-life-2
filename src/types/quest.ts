@@ -56,9 +56,9 @@ export interface Quest {
 	gemClaimed?: boolean;
 	energyPercent: number;
 	streak: number;
+	streakPoints: number;
 	completionDates?: number[];
 	lastDepositMs?: number;
-	accumulatedDays?: number;
   shields?: number;
   tier?: 'standard' | 'bronze' | 'silver' | 'gold' | 'diamond';
 	pendingMedal?: 'bronze' | 'silver' | 'gold' | null;

@@ -5,7 +5,12 @@ import type { ToastAction } from './useToast';
 import confetti from 'canvas-confetti';
 import successSound from '../assets/success.mp3';
 import { GAME_CONFIG } from '../config/gameRules';
-import { calculateEffectiveStreak, determineNextTier } from '../utils/questCalculations';
+import {
+	calculateStreakPoints,
+	determineNextTier,
+	getQualifiedTier,
+	calculateShieldCapacity
+} from '../utils/questCalculations';
 
 export function useQuestActions(
 	allTasks: Quest[],
@@ -36,10 +41,14 @@ export function useQuestActions(
 			const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
 			updatedTask.completionDates = updatedTask.completionDates.filter(date => date >= sevenDaysAgo);
 
+			// 🌟 STREAK POINTS & TIER LOGIC 🌟
 			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
 				const durationMs = updatedTask.activeDeadlineMs || 86400000;
 				const activeDeadline = (updatedTask.cycleStart || 0) + durationMs;
 				const daysInCycle = Math.max(1, Math.round(durationMs / 86400000));
+
+				const currentSP = updatedTask.streakPoints || 0;
+				const currentTier = updatedTask.tier || 'standard';
 
 				if (now >= activeDeadline) {
 					// --- LATE COMPLETION: SHIELD CHECK ---
@@ -50,16 +59,13 @@ export function useQuestActions(
 					if (currentShields >= cyclesMissed) {
 						// 🛡️ SHIELD SAVES THE STREAK!
 						updatedTask.shields = currentShields - cyclesMissed;
-						updatedTask.streak = (updatedTask.streak || 0) + 1;
+						updatedTask.streakPoints = calculateStreakPoints(currentSP, daysInCycle);
+						updatedTask.tier = determineNextTier(currentTier, updatedTask.streakPoints);
 
-						const effectiveStreak = calculateEffectiveStreak(updatedTask.streak, daysInCycle);
-						updatedTask.tier = determineNextTier(updatedTask.tier, effectiveStreak);
-
-						// Give the user some satisfying feedback!
 						triggerToast(`Shield activated! Saved your streak (-${cyclesMissed} 🛡️)`);
 					} else {
-						// 💔 STREAK BROKEN (Not enough shields)
-						updatedTask.streak = 1;         // Start fresh with this completion
+						// 💔 STREAK BROKEN
+						updatedTask.streakPoints = 1;   // Start fresh with 1 SP for this completion
 						updatedTask.tier = 'standard';  // Drop back to baseline
 						updatedTask.shields = 0;        // Shatter any remaining shields
 
@@ -67,10 +73,15 @@ export function useQuestActions(
 					}
 				} else {
 					// --- ON-TIME COMPLETION ---
-					updatedTask.streak = (updatedTask.streak || 0) + 1;
+					updatedTask.streakPoints = calculateStreakPoints(currentSP, daysInCycle);
+					updatedTask.tier = determineNextTier(currentTier, updatedTask.streakPoints);
+				}
 
-					const effectiveStreak = calculateEffectiveStreak(updatedTask.streak, daysInCycle);
-					updatedTask.tier = determineNextTier(updatedTask.tier, effectiveStreak);
+				// --- LEVEL UP LOGIC ---
+				// If the tier changed during this completion, we refill shields!
+				if (updatedTask.tier !== currentTier) {
+					updatedTask.shields = calculateShieldCapacity(updatedTask.tier, daysInCycle);
+					triggerToast(`Level Up! ${updatedTask.name} is now ${updatedTask.tier!.toUpperCase()}! Shields refilled.`, 'complete', id);
 				}
 			}
 
@@ -79,10 +90,7 @@ export function useQuestActions(
 			let timeLeft = activeDeadline - now;
 
 			if (timeLeft > 0) {
-				// 1. Visual Progress Bar
 				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
-
-				// --- THE KEY REWARD SYSTEM ---
 				if (updatedTask.energyPercent >= GAME_CONFIG.energy.greenThreshold) {
 					updatedTask.pendingMedal = 'gold';
 				} else if (updatedTask.energyPercent >= GAME_CONFIG.energy.yellowThreshold) {
@@ -91,75 +99,18 @@ export function useQuestActions(
 					updatedTask.pendingMedal = 'bronze';
 				}
 
-				// 2. TP ECONOMY
-				const hoursSaved = timeLeft / (1000 * 60 * 60); // Convert raw ms to hours
-				const earnedTP = Math.floor(hoursSaved);        // 1 Hour = 1 TP (Integers only)
-
-				// Cap the reward at exactly 10 TP maximum per quest
-				const depositAmount = Math.min(earnedTP, 10);
-
-				updatedTask.lastDepositMs = depositAmount;
+				const hoursSaved = timeLeft / (1000 * 60 * 60);
+				const earnedTP = Math.floor(hoursSaved);
+				updatedTask.lastDepositMs = Math.min(earnedTP, 10);
 			} else {
 				updatedTask.energyPercent = 0;
 				updatedTask.lastDepositMs = 0;
 			}
 
-			// --- THE HIDDEN XP & LEVEL UP ENGINE ---
-			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
-				const activeDurationMs = updatedTask.activeDeadlineMs || 86400000;
-				const daysInCycle = Math.max(1, Math.round(activeDurationMs / 86400000));
-
-				updatedTask.accumulatedDays = (updatedTask.accumulatedDays || 0) + daysInCycle;
-				updatedTask.streak = (updatedTask.streak || 0) + 1;
-
-				const totalDays = updatedTask.accumulatedDays;
-				let currentTier = updatedTask.tier || 'standard';
-				let leveledUp = false;
-				let newMaxCapacity = 1;
-
-				if (currentTier === 'standard' && totalDays >= 7) {
-					updatedTask.tier = 'bronze';
-					newMaxCapacity = 2;
-					leveledUp = true;
-				} else if (currentTier === 'bronze' && totalDays >= 30) {
-					updatedTask.tier = 'silver';
-					newMaxCapacity = 3;
-					leveledUp = true;
-				} else if (currentTier === 'silver' && totalDays >= 120) {
-					updatedTask.tier = 'gold';
-					newMaxCapacity = 4;
-					leveledUp = true;
-				} else if (currentTier === 'gold' && totalDays >= 365) {
-					updatedTask.tier = 'diamond';
-					newMaxCapacity = 5;
-					leveledUp = true;
-				} else {
-					switch (currentTier) {
-						case 'standard': newMaxCapacity = 1; break;
-						case 'bronze': newMaxCapacity = 2; break;
-						case 'silver': newMaxCapacity = 3; break;
-						case 'gold': newMaxCapacity = 4; break;
-						case 'diamond': newMaxCapacity = 5; break;
-						default: newMaxCapacity = 1;
-					}
-				}
-
-				if (daysInCycle >= 6) newMaxCapacity = 1;
-
-				if (leveledUp) {
-					updatedTask.shields = newMaxCapacity;
-					triggerToast(`Level Up! ${updatedTask.name} is now ${updatedTask.tier!.toUpperCase()}! Shields refilled.`, 'complete', id);
-				}
-			}
-
-			// 🎇 THE CELEBRATION ENGINE 🎇
 			const audio = new Audio(successSound);
 			const volumeMap = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
 			audio.volume = volumeMap[volumeLevel];
-
-			if (volumeLevel > 0) {
-				audio.play().catch(error => console.log("Audio blocked by browser:", error));
-			}
+			if (volumeLevel > 0) audio.play().catch(error => console.log("Audio blocked by browser:", error));
 
 			confetti({
 				particleCount: 150,
@@ -180,39 +131,31 @@ export function useQuestActions(
 			updatedTask.isArchived = false;
 
 			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
+				updatedTask.streak += 1;
+				
 				const activeDurationMs = updatedTask.activeDeadlineMs || 86400000;
 				const daysInCycle = Math.max(1, Math.round(activeDurationMs / 86400000));
 
-				updatedTask.accumulatedDays = Math.max(0, (updatedTask.accumulatedDays || 0) - daysInCycle);
-				updatedTask.streak = Math.max(0, (updatedTask.streak || 0) - 1);
+				const currentSP = updatedTask.streakPoints || 0;
 
-				const totalDays = updatedTask.accumulatedDays;
-				let newTier: 'standard' | 'bronze' | 'silver' | 'gold' | 'diamond' = 'standard';
-				let newMaxCapacity = 1;
+				// Rollback SP Math
+				if (currentSP > 1) {
+					updatedTask.streakPoints = Math.max(0, currentSP - daysInCycle);
+				} else {
+					updatedTask.streakPoints = 0;
+				}
 
-				if (totalDays >= 365) { newTier = 'diamond'; newMaxCapacity = 5; }
-				else if (totalDays >= 120) { newTier = 'gold'; newMaxCapacity = 4; }
-				else if (totalDays >= 30) { newTier = 'silver'; newMaxCapacity = 3; }
-				else if (totalDays >= 7) { newTier = 'bronze'; newMaxCapacity = 2; }
-
-				if (daysInCycle >= 6) newMaxCapacity = 1;
-
-				updatedTask.tier = newTier;
+				// Recalculate Tier and Shields based on raw SP to ensure clean downgrade
+				updatedTask.tier = getQualifiedTier(updatedTask.streakPoints);
+				const newMaxCapacity = calculateShieldCapacity(updatedTask.tier, daysInCycle);
 
 				if ((updatedTask.shields || 0) > newMaxCapacity) {
 					updatedTask.shields = newMaxCapacity;
 				}
 			}
 
-			if (updatedTask.lastDepositMs) {
-				updatedTask.lastDepositMs = 0;
-			}
-
-			// --- ERASE THE PENDING KEY ---
-			if (updatedTask.pendingMedal) {
-				delete updatedTask.pendingMedal;
-			}
-
+			if (updatedTask.lastDepositMs) updatedTask.lastDepositMs = 0;
+			if (updatedTask.pendingMedal) delete updatedTask.pendingMedal;
 			if (updatedTask.completionDates && updatedTask.completionDates.length > 0) {
 				updatedTask.completionDates.pop();
 			}

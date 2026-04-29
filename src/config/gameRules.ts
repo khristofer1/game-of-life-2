@@ -12,10 +12,11 @@ export const GAME_CONFIG = {
   economy: {
     mintGemCostTP: 10,       
     shatterGemYieldTP: 9,    
-    maxTPRewardPerTask: 10,  
+    maxTPRewardPerTask: 10, 
+    shieldBaseCost: 5,
   },
 
-  // CD2 / Progression - Tier Thresholds (in Days)
+  // CD2 / Progression - Tier Thresholds (in SP)
   tiers: {
     standard: 0,
     bronze: 7,

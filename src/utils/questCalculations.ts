@@ -184,29 +184,67 @@ export function calculateEffectiveStreak(completionCount: number, frequencyDays:
 export type TierLevel = 'standard' | 'bronze' | 'silver' | 'gold' | 'diamond';
 const TIER_ORDER: TierLevel[] = ['standard', 'bronze', 'silver', 'gold', 'diamond'];
 
-/**
- * Determines the resulting tier after a completion or a failure.
- * Enforces the rule: "A quest can only upgrade one tier per completion."
- */
-export function determineNextTier(currentTier: TierLevel | undefined, effectiveStreak: number): TierLevel {
+// --- STREAK POINTS (SP) MATH ---
+export function calculateStreakPoints(currentSP: number, frequencyInDays: number): number {
+  if (currentSP === 0) return 1; // 1st completion is always 1 SP
+  return currentSP + frequencyInDays; // Subsequent completions add the frequency
+}
+
+// --- TIER MATH ---
+export function determineNextTier(currentTier: TierLevel | undefined, streakPoints: number): TierLevel {
   const safeCurrentTier = currentTier || 'standard';
   const currentIndex = TIER_ORDER.indexOf(safeCurrentTier);
 
-  // 1. Find the absolute highest tier this streak mathematically qualifies for
+  // 1. Find absolute max tier qualified by raw math
   let qualifiedIndex = 0;
-  if (effectiveStreak >= GAME_CONFIG.tiers.diamond) qualifiedIndex = 4;
-  else if (effectiveStreak >= GAME_CONFIG.tiers.gold) qualifiedIndex = 3;
-  else if (effectiveStreak >= GAME_CONFIG.tiers.silver) qualifiedIndex = 2;
-  else if (effectiveStreak >= GAME_CONFIG.tiers.bronze) qualifiedIndex = 1;
+  if (streakPoints >= GAME_CONFIG.tiers.diamond) qualifiedIndex = 4;
+  else if (streakPoints >= GAME_CONFIG.tiers.gold) qualifiedIndex = 3;
+  else if (streakPoints >= GAME_CONFIG.tiers.silver) qualifiedIndex = 2;
+  else if (streakPoints >= GAME_CONFIG.tiers.bronze) qualifiedIndex = 1;
 
-  // 2. Apply the "One Tier At A Time" limit for upgrades
-  // If we are upgrading, we can only go up by max 1 index from where we currently are.
+  // 2. Enforce the "One Tier At A Time" rule
   const maxAllowedUpgradeIndex = currentIndex + 1;
+  const finalIndex = Math.min(qualifiedIndex, maxAllowedUpgradeIndex);
 
-  // 3. Resolve the actual next tier
-  // If qualifiedIndex is 0 (streak broken), Math.min(0, currentIndex + 1) === 0. It resets beautifully!
-  // If qualifiedIndex is 4 but we are at index 1, Math.min(4, 2) === 2. It gates the jump!
-  const nextIndex = Math.min(qualifiedIndex, maxAllowedUpgradeIndex);
+  return TIER_ORDER[Math.max(0, finalIndex)];
+}
 
-  return TIER_ORDER[nextIndex];
+// Helper for "Undo" actions, bypassing the sequential limit to instantly demote if needed
+export function getQualifiedTier(streakPoints: number): TierLevel {
+  if (streakPoints >= GAME_CONFIG.tiers.diamond) return 'diamond';
+  if (streakPoints >= GAME_CONFIG.tiers.gold) return 'gold';
+  if (streakPoints >= GAME_CONFIG.tiers.silver) return 'silver';
+  if (streakPoints >= GAME_CONFIG.tiers.bronze) return 'bronze';
+  return 'standard';
+}
+
+// --- SHIELD ECONOMY MATH ---
+export function calculateShieldCapacity(tier: TierLevel | undefined, frequencyInDays: number): number {
+  if (frequencyInDays > 1) return 1;
+
+  switch (tier) {
+    case 'diamond': return 5;
+    case 'gold': return 4;
+    case 'silver': return 3;
+    case 'bronze': return 2;
+    case 'standard':
+    default: return 1;
+  }
+}
+
+export function calculateShieldCost(frequencyInDays: number, tier: TierLevel | undefined): number {
+  const baseCost = GAME_CONFIG.economy.shieldBaseCost * frequencyInDays;
+  if (frequencyInDays === 1) return baseCost; // Dailies get no discount
+
+  let discount = 0;
+  switch (tier) {
+    case 'diamond': discount = 0.80; break;
+    case 'gold': discount = 0.60; break;
+    case 'silver': discount = 0.40; break;
+    case 'bronze': discount = 0.20; break;
+    default: discount = 0; break;
+  }
+
+  // Return the discounted price (rounded in case of decimals)
+  return Math.round(baseCost * (1 - discount));
 }
