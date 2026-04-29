@@ -69,10 +69,9 @@ export const useDailySummary = (allTasks: Quest[], pendingRewards: { gems: numbe
 								updatedTask.shields = currentShields - shieldsNeeded;
 								recurringToUpdate.push(updatedTask);
 							} else {
-								if (task.tier !== 'standard' || currentShields > 0 || (task.accumulatedDays && task.accumulatedDays > 0)) {
+								if (task.tier !== 'standard' || currentShields > 0) {
 									updatedTask.tier = 'standard';
 									updatedTask.shields = 0;
-									updatedTask.accumulatedDays = 0;
 									updatedTask.streak = 0; 
 									recurringToUpdate.push(updatedTask);
 								}
