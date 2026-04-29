@@ -5,6 +5,7 @@ import { QuestCard } from './QuestCard';
 
 interface QuestGridProps {
 	tasks: Quest[];
+	volumeLevel: number;
 	archivedTasks?: Quest[];
 	onToggleComplete: (id: number, isUndo?: boolean) => void;
 	onEdit: (id: number) => void;
@@ -19,7 +20,8 @@ interface QuestGridProps {
 
 export function QuestGrid({
 	tasks, archivedTasks, onToggleComplete, onEdit, onDelete,
-	onRestore, onHardDelete, onTakeBreak, onBuyShield, onOpenTierModal, isCompletedTab
+	onRestore, onHardDelete, onTakeBreak, onBuyShield, onOpenTierModal, isCompletedTab,
+	volumeLevel
 }: QuestGridProps) {
 	
 	const [isCompletedOpen, setIsCompletedOpen] = useState(true);
@@ -41,6 +43,7 @@ export function QuestGrid({
 	const renderCard = (quest: Quest) => (
 		<QuestCard 
 			key={quest.id} quest={quest} 
+			volumeLevel={volumeLevel}
 			onToggleComplete={onToggleComplete} onEdit={onEdit} 
 			onDelete={onDelete} onRestore={onRestore} 
 			onHardDelete={onHardDelete} onTakeBreak={onTakeBreak} 

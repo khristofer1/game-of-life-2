@@ -112,7 +112,7 @@ export default function App() {
 		handleDelete, handleRestore, handleHardDelete 
 	} = useQuestActions(
 		allTasks, breakTasks, deletedTasks, timePoints, 
-		volumeLevel, forceRefresh, triggerToast
+		forceRefresh, triggerToast
 	);
 
 	const handleUndoAction = (action: ToastAction, taskId: number) => {
@@ -171,12 +171,13 @@ export default function App() {
 				) : (
 					<QuestGrid 
 						tasks={displayedTasks}
+						volumeLevel={volumeLevel}
 						archivedTasks={archivedTasks}
 						onToggleComplete={handleToggleComplete}
 						onEdit={handleEdit} onDelete={handleDelete}
 						onRestore={handleRestore} onHardDelete={handleHardDelete}
 						onTakeBreak={handleTakeBreak} onBuyShield={handleBuyShield}
-						onOpenTierModal={handleOpenTierModal} // <-- NEW PROP PASSED DOWN
+						onOpenTierModal={handleOpenTierModal}
 						isCompletedTab={activeTab === 'completed'}
 					/>
 				)}

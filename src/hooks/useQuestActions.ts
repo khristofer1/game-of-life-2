@@ -2,8 +2,6 @@
 import { saveTaskToDB, deleteTaskFromDB, setMeta } from '../services/db';
 import type { Quest } from '../types/quest';
 import type { ToastAction } from './useToast';
-import confetti from 'canvas-confetti';
-import successSound from '../assets/success.mp3';
 import { GAME_CONFIG } from '../config/gameRules';
 import {
 	calculateStreakPoints,
@@ -17,7 +15,6 @@ export function useQuestActions(
 	breakTasks: Quest[],
 	deletedTasks: Quest[],
 	timePoints: number,
-	volumeLevel: number,
 	forceRefresh: () => void,
 	triggerToast: (message: string, action?: ToastAction, taskId?: number) => void
 ) {
@@ -59,26 +56,28 @@ export function useQuestActions(
 					if (currentShields >= cyclesMissed) {
 						// 🛡️ SHIELD SAVES THE STREAK!
 						updatedTask.shields = currentShields - cyclesMissed;
+						updatedTask.streak = (updatedTask.streak || 0) + 1;
 						updatedTask.streakPoints = calculateStreakPoints(currentSP, daysInCycle);
 						updatedTask.tier = determineNextTier(currentTier, updatedTask.streakPoints);
 
 						triggerToast(`Shield activated! Saved your streak (-${cyclesMissed} 🛡️)`);
 					} else {
 						// 💔 STREAK BROKEN
-						updatedTask.streakPoints = 1;   // Start fresh with 1 SP for this completion
-						updatedTask.tier = 'standard';  // Drop back to baseline
-						updatedTask.shields = 0;        // Shatter any remaining shields
+						updatedTask.streak = 1;
+						updatedTask.streakPoints = 1;
+						updatedTask.tier = 'standard';
+						updatedTask.shields = 0;
 
 						triggerToast("Streak broken! Not enough shields to protect it.");
 					}
 				} else {
 					// --- ON-TIME COMPLETION ---
+					updatedTask.streak = (updatedTask.streak || 0) + 1;
 					updatedTask.streakPoints = calculateStreakPoints(currentSP, daysInCycle);
 					updatedTask.tier = determineNextTier(currentTier, updatedTask.streakPoints);
 				}
 
 				// --- LEVEL UP LOGIC ---
-				// If the tier changed during this completion, we refill shields!
 				if (updatedTask.tier !== currentTier) {
 					updatedTask.shields = calculateShieldCapacity(updatedTask.tier, daysInCycle);
 					triggerToast(`Level Up! ${updatedTask.name} is now ${updatedTask.tier!.toUpperCase()}! Shields refilled.`, 'complete', id);
@@ -107,18 +106,6 @@ export function useQuestActions(
 				updatedTask.lastDepositMs = 0;
 			}
 
-			const audio = new Audio(successSound);
-			const volumeMap = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
-			audio.volume = volumeMap[volumeLevel];
-			if (volumeLevel > 0) audio.play().catch(error => console.log("Audio blocked by browser:", error));
-
-			confetti({
-				particleCount: 150,
-				spread: 80,
-				origin: { y: 0.6 },
-				colors: ['#f97316', '#fbbf24', '#34d399', '#3b82f6']
-			});
-
 			await saveTaskToDB(updatedTask);
 			forceRefresh();
 			if (!isUndoFromToast) triggerToast(`Completed: ${updatedTask.name}`, 'complete', id);
@@ -136,14 +123,14 @@ export function useQuestActions(
 
 				const currentSP = updatedTask.streakPoints || 0;
 
-				// Rollback SP Math
 				if (currentSP > 1) {
 					updatedTask.streakPoints = Math.max(0, currentSP - daysInCycle);
 				} else {
 					updatedTask.streakPoints = 0;
 				}
 
-				// Recalculate Tier and Shields based on raw SP to ensure clean downgrade
+				updatedTask.streak = Math.max(0, (updatedTask.streak || 0) - 1); // 🌟 RESTORED
+
 				updatedTask.tier = getQualifiedTier(updatedTask.streakPoints);
 				const newMaxCapacity = calculateShieldCapacity(updatedTask.tier, daysInCycle);
 
@@ -243,6 +230,6 @@ export function useQuestActions(
 		handleUndoBreak,
 		handleDelete,
 		handleRestore,
-		handleHardDelete
+		handleHardDelete,
 	};
 }

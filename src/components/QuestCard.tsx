@@ -1,9 +1,12 @@
 // src/components/QuestCard.tsx
 import { useState, useEffect } from 'react';
 import type { Quest } from '../types/quest';
+import confetti from 'canvas-confetti';
+import successSound from '../assets/success.mp3';
 
 interface QuestCardProps {
   quest: Quest;
+  volumeLevel: number;
   onToggleComplete: (id: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
@@ -37,7 +40,7 @@ const formatDescriptionWithLinks = (text: string) => {
   });
 };
 
-export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete, onTakeBreak, onOpenTierModal }: QuestCardProps) {
+export function QuestCard({ quest, volumeLevel, onToggleComplete, onEdit, onDelete, onRestore, onHardDelete, onTakeBreak, onOpenTierModal }: QuestCardProps) {
   const [now, setNow] = useState(Date.now());
 
   const activeDeadline = quest.isOneTime
@@ -58,6 +61,28 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
     const intervalId = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(intervalId);
   }, [isDynamic]);
+
+  // 🌟 Cleaned Up Handler: Instant Action + Synced Media
+  const handleCompleteClick = () => {
+    if (isPending || !quest.id) return;
+    
+    // 1. Fire Confetti
+    confetti({
+      particleCount: 150,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ['#f97316', '#fbbf24', '#34d399', '#3b82f6']
+    });
+
+    // 2. Play Sound (Mapped from 0-5 state to 0.0-1.0 volume)
+    const audio = new Audio(successSound);
+    const volumeMap = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+    audio.volume = volumeMap[volumeLevel];
+    audio.play().catch(error => console.log("Audio blocked by browser:", error));
+    
+    // 3. Complete the task instantly (No delay)
+    onToggleComplete(quest.id!);
+  };
 
   let percent = 100;
   if (quest.isBreak) {
@@ -95,7 +120,6 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
       barBorder = 'border-cyan-400/50 bg-gradient-to-b from-cyan-400/40 to-white/70';
       break;
   }
-  // --- END TIER CALCULATIONS ---
 
   let barColor;
   if (quest.completed || isPending) barColor = 'bg-gray-300';
@@ -177,7 +201,11 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
                 {quest.energyPercent! >= 100 ? '☕ Take Break' : '⏳ Cooling Down'}
               </button>
             ) : (
-              <button onClick={() => !isPending && quest.id && onToggleComplete(quest.id)} disabled={isPending} className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${btnClass} ${tierColors} hover:scale-103 active:scale-95`}>
+              <button 
+                onClick={quest.completed ? () => quest.id && onToggleComplete(quest.id) : handleCompleteClick} 
+                disabled={isPending} 
+                className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${btnClass} ${tierColors} hover:scale-103 active:scale-95`}
+              >
                 {btnText}
               </button>
             )}
