@@ -173,18 +173,18 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
         ) : (
           <>
             {quest.isBreak ? (
-              <button onClick={() => quest.id && onTakeBreak?.(quest.id)} disabled={quest.energyPercent! < 100} className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${quest.energyPercent! >= 100 ? 'bg-orange-100 text-orange-600 hover:bg-orange-500 hover:text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'} ${barBorder}`}>
+              <button onClick={() => quest.id && onTakeBreak?.(quest.id)} disabled={quest.energyPercent! < 100} className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${quest.energyPercent! >= 100 ? 'bg-orange-100 text-orange-600 hover:text-yellow-500' : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'} ${barBorder} ${tierColors} hover:scale-103 active:scale-95`}>
                 {quest.energyPercent! >= 100 ? '☕ Take Break' : '⏳ Cooling Down'}
               </button>
             ) : (
-              <button onClick={() => !isPending && quest.id && onToggleComplete(quest.id)} disabled={isPending} className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${btnClass} ${tierColors} hover:scale-102 active:scale-95`}>
+              <button onClick={() => !isPending && quest.id && onToggleComplete(quest.id)} disabled={isPending} className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${btnClass} ${tierColors} hover:scale-103 active:scale-95`}>
                 {btnText}
               </button>
             )}
 
             <div className="flex gap-1 shrink-0 ml-2">
-              <button onClick={() => quest.id && onEdit(quest.id)} className={`p-3 rounded-xl bg-gray-50 text-muted hover:text-orange-500 hover:bg-orange-50 transition-all hover:scale-105 active:scale-95 ${tierColors}`}>✏️</button>
-              <button onClick={() => quest.id && onDelete(quest.id)} className={`p-3 rounded-xl bg-gray-50 text-muted hover:text-red-500 hover:bg-red-50 transition-all hover:scale-105 active:scale-95 ${tierColors}`}>🗑️</button>
+              <button onClick={() => quest.id && onEdit(quest.id)} className={`p-3 rounded-xl bg-gray-50 text-muted transition-all hover:scale-105 active:scale-95 ${tierColors}`}>✏️</button>
+              <button onClick={() => quest.id && onDelete(quest.id)} className={`p-3 rounded-xl bg-gray-50 text-muted transition-all hover:scale-105 active:scale-95 ${tierColors}`}>🗑️</button>
             </div>
           </>
         )}
