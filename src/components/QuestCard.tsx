@@ -75,7 +75,7 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
   // --- TIER CALCULATIONS ---
   const isRecurring = !quest.isOneTime && !quest.isBreak;
 
-  let tierColors = 'ring-1 ring-gray-300';
+  let tierColors = 'ring-1 ring-gray-300 bg-gradient-to-br from-white/80 to-gray-200/60';
   let barBorder = 'border-gray-200 bg-linear-to-b from-gray-200 to-white';
   switch (quest.tier) {
     case 'bronze':
