@@ -111,12 +111,12 @@ export function QuestCard({ quest, onToggleComplete, onEdit, onDelete, onRestore
     const dateStr = startD.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     const timeStr = startD.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
-    btnClass = 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200';
+    btnClass = 'text-gray-400 cursor-not-allowed border border-gray-200';
     btnText = `⏳ Starts ${dateStr}, ${timeStr}`;
   } else {
     btnClass = quest.completed
-      ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600'
-      : 'bg-gray-100 text-dark hover:bg-orange-50 hover:text-orange-600';
+      ? 'text-green-700 hover:bg-red-100 hover:text-red-600'
+      : 'text-dark hover:bg-orange-50 hover:text-orange-600';
     btnText = quest.completed ? '✓ Done (Undo)' : 'Complete';
   }
 
