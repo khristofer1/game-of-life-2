@@ -131,8 +131,6 @@ export function useQuestActions(
 			updatedTask.isArchived = false;
 
 			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
-				updatedTask.streak += 1;
-				
 				const activeDurationMs = updatedTask.activeDeadlineMs || 86400000;
 				const daysInCycle = Math.max(1, Math.round(activeDurationMs / 86400000));
 
