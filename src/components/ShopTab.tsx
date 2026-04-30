@@ -21,10 +21,10 @@ export function ShopTab({ medals, onDraw, openingTier, recentResults, onCloseRes
   return (
     <div className="space-y-6 pb-12 animate-fade-in relative">
       
-      {/* Key Inventory Header */}
+      {/* Medal Inventory Header */}
       <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex justify-around items-center">
         <div className="text-center"><div className="text-2xl">{medals.bronze}</div><div className="text-xs font-bold text-orange-700 uppercase">Bronze</div></div>
-        <div className="text-center border-l border-r border-gray-100 px-8"><div className="text-2xl">{medals.silver}</div><div className="text-xs font-bold text-gray-500 uppercase">Silver</div></div>
+        <div className="text-center px-8"><div className="text-2xl">{medals.silver}</div><div className="text-xs font-bold text-gray-500 uppercase">Silver</div></div>
         <div className="text-center"><div className="text-2xl">{medals.gold}</div><div className="text-xs font-bold text-yellow-600 uppercase">Gold</div></div>
       </div>
 
