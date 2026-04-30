@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { logoutFromGoogle } from '../../services/firebase';
 import { setMeta } from '../../services/db';
 import successSound from '../../assets/success.mp3';
-import logo from '../../assets/logo.svg';
+import logo from '../../assets/logo.png';
 
 interface HeaderProps {
 	gems: number;
@@ -43,9 +43,9 @@ export function Header({
 					className="flex items-center gap-2 sm:gap-3 focus:outline-none group transition-transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
 					title="View Daily Summary"
 				>
-					<img src={logo} alt="Game of Life Logo" className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500 group-hover:drop-shadow-md transition-all" />
+					<img src={logo} alt="StackQuest Logo" className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500 group-hover:drop-shadow-md transition-all" />
 					<h1 className="text-xl sm:text-2xl font-bold tracking-tight text-dark hidden lg:block group-hover:text-orange-600 transition-colors">
-						Game of Life
+						StackQuest
 					</h1>
 				</button>
 
