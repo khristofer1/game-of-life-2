@@ -19,7 +19,7 @@ export const GAME_CONFIG = {
 
   // Dynamic creation costs for new cards
   cardCosts: {
-    onetime: 5,
+    onetime: 10,
     recurring: 10,
     break: 5
   },
