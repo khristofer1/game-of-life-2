@@ -3,11 +3,11 @@ import { saveTaskToDB, deleteTaskFromDB, setMeta } from '../services/db';
 import type { Quest } from '../types/quest';
 import type { ToastAction } from './useToast';
 import { GAME_CONFIG } from '../config/gameRules';
-import { 
-    calculateStreakPoints, 
-    determineNextTier, 
-    getQualifiedTier, 
-    calculateShieldCapacity 
+import {
+	calculateStreakPoints,
+	determineNextTier,
+	getQualifiedTier,
+	calculateShieldCapacity
 } from '../utils/questCalculations';
 
 export function useQuestActions(
@@ -38,69 +38,75 @@ export function useQuestActions(
 			const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
 			updatedTask.completionDates = updatedTask.completionDates.filter(date => date >= sevenDaysAgo);
 
-            // 🌟 THE UNIFIED PROGRESSION ENGINE 🌟
+			// 🌟 THE UNIFIED PROGRESSION ENGINE 🌟
 			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
-				const durationMs = updatedTask.activeDeadlineMs || 86400000;
-				const activeDeadline = (updatedTask.cycleStart || 0) + durationMs;
-				const daysInCycle = Math.max(1, Math.round(durationMs / 86400000));
-                
-                const currentSP = updatedTask.streakPoints || 0;
-                const currentTier = updatedTask.tier || 'standard';
+				// 1. Differentiate Frequency (Cycle) from Strictness (Active Window)
+				const cycleDurationMs = updatedTask.durationMs || 86400000; // e.g., 7 days for Weekly
+				const activeWindowMs = updatedTask.activeDeadlineMs || cycleDurationMs; // e.g., 15 hours
+
+				const activeDeadline = (updatedTask.cycleStart || 0) + activeWindowMs;
+
+				// 🌟 SP Weight is now purely based on the Frequency Cycle!
+				const frequencyDays = Math.max(1, Math.round(cycleDurationMs / 86400000));
+
+				const currentSP = updatedTask.streakPoints || 0;
+				const currentTier = updatedTask.tier || 'standard';
 
 				if (now >= activeDeadline) {
 					// --- LATE COMPLETION: SHIELD CHECK ---
+					// Shields evaluate how many full cycles you missed
 					const msPastDeadline = now - activeDeadline;
-					const cyclesMissed = Math.ceil(msPastDeadline / durationMs);
+					const cyclesMissed = Math.ceil(msPastDeadline / cycleDurationMs);
 					const currentShields = updatedTask.shields || 0;
 
 					if (currentShields >= cyclesMissed) {
 						// 🛡️ SHIELD SAVES THE STREAK!
 						updatedTask.shields = currentShields - cyclesMissed;
-						
-                        // 1. Single Increment
-                        updatedTask.streak = (updatedTask.streak || 0) + 1; 
-                        
-                        // 2. Calculate New SP & Tier
-						updatedTask.streakPoints = calculateStreakPoints(currentSP, daysInCycle);
+
+						// 1. Single Increment for raw streak
+						updatedTask.streak = (updatedTask.streak || 0) + 1;
+
+						// 2. Calculate New SP & Tier using frequencyDays
+						updatedTask.streakPoints = calculateStreakPoints(currentSP, frequencyDays);
 						updatedTask.tier = determineNextTier(currentTier, updatedTask.streakPoints);
 
 						triggerToast(`Shield activated! Saved your streak (-${cyclesMissed} 🛡️)`);
 					} else {
 						// 💔 STREAK BROKEN
-						updatedTask.streak = 1;         // Start fresh
-						updatedTask.streakPoints = 1;   // Start fresh
-						updatedTask.tier = 'standard';  // Drop back to baseline
-						updatedTask.shields = 0;        // Shatter any remaining shields
+						updatedTask.streak = 1;
+						updatedTask.streakPoints = 1;
+						updatedTask.tier = 'standard';
+						updatedTask.shields = 0;
 
 						triggerToast("Streak broken! Not enough shields to protect it.");
 					}
 				} else {
 					// --- ON-TIME COMPLETION ---
-                    // 1. Single Increment
-					updatedTask.streak = (updatedTask.streak || 0) + 1; 
-                    
-                    // 2. Calculate New SP & Tier
-					updatedTask.streakPoints = calculateStreakPoints(currentSP, daysInCycle);
+					// 1. Single Increment for raw streak
+					updatedTask.streak = (updatedTask.streak || 0) + 1;
+
+					// 2. Calculate New SP & Tier using frequencyDays
+					updatedTask.streakPoints = calculateStreakPoints(currentSP, frequencyDays);
 					updatedTask.tier = determineNextTier(currentTier, updatedTask.streakPoints);
 				}
 
-                // --- LEVEL UP LOGIC ---
-                // We check if the tier changed by comparing it to what it was at the start of the function
-                if (updatedTask.tier !== currentTier) {
-                    updatedTask.shields = calculateShieldCapacity(updatedTask.tier, daysInCycle);
-                    triggerToast(`Level Up! ${updatedTask.name} is now ${updatedTask.tier!.toUpperCase()}! Shields refilled.`, 'complete', id);
-                }
+				// --- LEVEL UP LOGIC ---
+				if (updatedTask.tier !== currentTier) {
+					updatedTask.shields = calculateShieldCapacity(updatedTask.tier, frequencyDays);
+					triggerToast(`Level Up! ${updatedTask.name} is now ${updatedTask.tier!.toUpperCase()}! Shields refilled.`, 'complete', id);
+				}
 			}
 
-            // --- VISUAL PROGRESS & ECONOMY ---
+			// --- VISUAL PROGRESS & ECONOMY ---
+			// Energy and Medals still use the strict Active Window to reward promptness
 			let activeDuration = updatedTask.isOneTime ? updatedTask.durationMs : (updatedTask.activeDeadlineMs || 1);
 			let activeDeadline = updatedTask.isOneTime ? (updatedTask.deadline || 0) : ((updatedTask.cycleStart || 0) + (updatedTask.activeDeadlineMs || 0));
 			let timeLeft = activeDeadline - now;
 
 			if (timeLeft > 0) {
 				updatedTask.energyPercent = Math.max(0, Math.min(100, Math.round((timeLeft / activeDuration) * 100)));
-				
-                if (updatedTask.energyPercent >= GAME_CONFIG.energy.greenThreshold) {
+
+				if (updatedTask.energyPercent >= GAME_CONFIG.energy.greenThreshold) {
 					updatedTask.pendingMedal = 'gold';
 				} else if (updatedTask.energyPercent >= GAME_CONFIG.energy.yellowThreshold) {
 					updatedTask.pendingMedal = 'silver';
@@ -108,21 +114,19 @@ export function useQuestActions(
 					updatedTask.pendingMedal = 'bronze';
 				}
 
-				const hoursSaved = timeLeft / (1000 * 60 * 60); 
-				const earnedTP = Math.floor(hoursSaved);        
+				const hoursSaved = timeLeft / (1000 * 60 * 60);
+				const earnedTP = Math.floor(hoursSaved);
 				updatedTask.lastDepositMs = Math.min(earnedTP, 10);
 			} else {
 				updatedTask.energyPercent = 0;
 				updatedTask.lastDepositMs = 0;
 			}
 
-            // (Confetti and Audio have been moved to the UI component!)
-
 			await saveTaskToDB(updatedTask);
 			forceRefresh();
 			if (!isUndoFromToast) triggerToast(`Completed: ${updatedTask.name}`, 'complete', id);
 
-		// --- UNDOING A COMPLETION ---
+			// --- UNDOING A COMPLETION ---
 		} else {
 			updatedTask.completed = false;
 			updatedTask.completedAt = null;
@@ -130,26 +134,27 @@ export function useQuestActions(
 			updatedTask.isArchived = false;
 
 			if (!updatedTask.isOneTime && !updatedTask.isBreak) {
-				const activeDurationMs = updatedTask.activeDeadlineMs || 86400000;
-				const daysInCycle = Math.max(1, Math.round(activeDurationMs / 86400000));
+				// Use cycle duration for rollback!
+				const cycleDurationMs = updatedTask.durationMs || 86400000;
+				const frequencyDays = Math.max(1, Math.round(cycleDurationMs / 86400000));
 
-                const currentSP = updatedTask.streakPoints || 0;
-                
-                // 1. Roll back SP
-                if (currentSP > 1) {
-                    updatedTask.streakPoints = Math.max(0, currentSP - daysInCycle);
-                } else {
-                    updatedTask.streakPoints = 0;
-                }
+				const currentSP = updatedTask.streakPoints || 0;
 
-                // 2. Roll back Streak (Only once!)
+				// 1. Roll back SP by the frequency weight
+				if (currentSP > frequencyDays) {
+					updatedTask.streakPoints = Math.max(0, currentSP - frequencyDays);
+				} else {
+					updatedTask.streakPoints = 0;
+				}
+
+				// 2. Roll back Streak
 				updatedTask.streak = Math.max(0, (updatedTask.streak || 0) - 1);
 
-                // 3. Roll back Tier based strictly on raw SP
-                updatedTask.tier = getQualifiedTier(updatedTask.streakPoints);
-				const newMaxCapacity = calculateShieldCapacity(updatedTask.tier, daysInCycle);
+				// 3. Roll back Tier based strictly on raw SP
+				updatedTask.tier = getQualifiedTier(updatedTask.streakPoints);
+				const newMaxCapacity = calculateShieldCapacity(updatedTask.tier, frequencyDays);
 
-                // 4. Adjust shields if necessary
+				// 4. Adjust shields if necessary
 				if ((updatedTask.shields || 0) > newMaxCapacity) {
 					updatedTask.shields = newMaxCapacity;
 				}

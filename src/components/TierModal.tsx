@@ -35,11 +35,12 @@ export function TierModal({ isOpen, onClose, quest, onBuyShield }: TierModalProp
 
   // --- SHIELD & COMPLETION LOGIC ---
   const isRecurring = !quest.isOneTime && !quest.isBreak;
-  const daysInCycle = Math.max(1, Math.round((quest.activeDeadlineMs || 86400000) / 86400000));
+  const daysInCycle = Math.max(1, Math.round(quest.durationMs / 86400000));
   const isDaily = daysInCycle === 1;
   
   // Calculate how many more completions are needed based on the quest's frequency
-  const completionsLeft = sp < next ? Math.ceil((next - sp) / daysInCycle) : 0;
+  // (daysInCycle - 1) is to account the one SP for the first completion
+  const completionsLeft = sp < next ? Math.ceil((next + daysInCycle - 1 - sp) / daysInCycle) : 0;
 
   const maxShields = calculateShieldCapacity(quest.tier, daysInCycle);
   const currentShields = quest.shields || 0;
