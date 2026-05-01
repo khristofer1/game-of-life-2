@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import type { Quest } from '../types/quest';
 import confetti from 'canvas-confetti';
 import successSound from '../assets/success.mp3';
+import { GAME_CONFIG } from '../config/gameRules';
 
 interface QuestCardProps {
   quest: Quest;
@@ -123,8 +124,8 @@ export function QuestCard({ quest, volumeLevel, onToggleComplete, onEdit, onDele
 
   let barColor;
   if (quest.completed || isPending) barColor = 'bg-gray-300';
-  else if (percent > 50) barColor = 'bg-linear-to-b from-green-400 to-green-500';
-  else if (percent > 25) barColor = 'bg-linear-to-b from-yellow-400 to-yellow-500';
+  else if (percent > GAME_CONFIG.energy.greenThreshold) barColor = 'bg-linear-to-b from-green-400 to-green-500';
+  else if (percent > GAME_CONFIG.energy.yellowThreshold) barColor = 'bg-linear-to-b from-yellow-400 to-yellow-500';
   else barColor = 'bg-linear-to-b from-red-400 to-red-500';
 
   let btnClass = '';
