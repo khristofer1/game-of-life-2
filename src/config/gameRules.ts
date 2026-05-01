@@ -14,6 +14,7 @@ export const GAME_CONFIG = {
     shatterGemYieldTP: 9,    
     maxTPRewardPerTask: 10, 
     shieldBaseCost: 5,
+    takeBreakCost: 5,
   },
 
   // Dynamic creation costs for new cards

@@ -176,8 +176,7 @@ export function useQuestActions(
 		const task = breakTasks.find(t => t.id === id);
 		if (!task) return;
 
-		const cooldownHours = (task.cooldownMs || 0) / (1000 * 60 * 60);
-		const tpCost = Math.min(10, Math.ceil(cooldownHours));
+		const tpCost = GAME_CONFIG.economy.takeBreakCost;
 
 		if (timePoints < tpCost) {
 			triggerToast(`Not enough TPs! You need ${tpCost} TP to take this break.`);
@@ -201,8 +200,7 @@ export function useQuestActions(
 		const taskToUpdate = allTasks.find(t => t.id === id);
 		if (!taskToUpdate) return;
 
-		const cooldownHours = (taskToUpdate.cooldownMs || 0) / (1000 * 60 * 60);
-		const tpRefund = Math.min(10, Math.ceil(cooldownHours));
+		const tpRefund = GAME_CONFIG.economy.takeBreakCost;
 
 		await setMeta("timePoints", timePoints + tpRefund);
 
