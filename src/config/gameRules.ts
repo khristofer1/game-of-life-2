@@ -28,6 +28,6 @@ export const GAME_CONFIG = {
   // CD2: Development & Accomplishment (Energy & Medals)
   energy: {
     greenThreshold: 50,    
-    yellowThreshold: 25,  
+    yellowThreshold: 20,  
   }
 };
