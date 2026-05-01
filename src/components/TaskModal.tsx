@@ -7,6 +7,7 @@ import { useTaskFormState } from '../hooks/useTaskFormState';
 import { BreakSettings } from './forms/BreakSettings';
 import { OneTimeSettings } from './forms/OneTimeSettings';
 import { RecurringSettings } from './forms/RecurringSettings';
+import { GAME_CONFIG } from '../config/gameRules'; // 1. Import the config
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -165,20 +166,26 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
           <button onClick={handleClose} className="flex-1 px-6 py-3 rounded-2xl font-semibold text-muted hover:bg-gray-200 transition-colors">Cancel</button>
           
           {(() => {
+            // 2. Calculate dynamic cost
             const isNewCard = !initialData;
-            const needsTp = isNewCard && totalTasks > 0;
-            const canAfford = !needsTp || timePoints >= 10;
+            const cardCost = GAME_CONFIG.cardCosts[state.questType];
+            
+            // Only require payment if it's a new card, NOT the first card, and the cost is actually > 0
+            const requiresPayment = isNewCard && totalTasks > 0 && cardCost > 0;
+            const canAfford = !requiresPayment || timePoints >= cardCost;
 
             return (
               <button 
                 onClick={handleSave} 
                 disabled={!canAfford}
-                className={`flex-1 px-6 py-3 rounded-2xl font-semibold transition-colors shadow-lg flex justify-center items-center gap-2 ${canAfford ? 'bg-dark text-white hover:bg-blue-500' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+                className={
+                  `flex-1 px-6 py-3 rounded-2xl font-semibold transition-colors shadow-lg flex justify-center items-center gap-2 ${canAfford ? 'bg-dark text-white hover:bg-blue-500' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`
+                }
               >
                 <span>Save Card</span>
-                {needsTp && (
+                {requiresPayment && (
                   <span className={`px-2 py-0.5 rounded-lg text-xs ${canAfford ? 'bg-white/20 text-white' : 'bg-gray-300 text-gray-500'}`}>
-                    ⏳ 10
+                    ⏳ {cardCost}
                   </span>
                 )}
               </button>

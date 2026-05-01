@@ -16,6 +16,13 @@ export const GAME_CONFIG = {
     shieldBaseCost: 5,
   },
 
+  // Dynamic creation costs for new cards
+  cardCosts: {
+    onetime: 5,
+    recurring: 10,
+    break: 5
+  },
+
   // CD2 / Progression - Tier Thresholds (in SP)
   tiers: {
     standard: 0,
