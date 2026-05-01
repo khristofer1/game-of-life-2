@@ -121,9 +121,11 @@ export function DailySummaryModal({
                       {/* Display both the TP and the Gem */}
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-sm font-bold text-green-600">+1 💎</span>
-                        <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-md">
-                          +{quest.lastDepositMs} ⏳
-                        </span>
+                        {quest.lastDepositMs !== undefined && (
+                          <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-md">
+                            +{quest.lastDepositMs} ⏳
+                          </span>
+                        )}
                       </div>
 
                     </div>
