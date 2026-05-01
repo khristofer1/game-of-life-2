@@ -24,14 +24,15 @@ export function TaskModal({ isOpen, onClose, initialData, onSave, defaultIsBreak
   // 1. Pull all state and logic from our custom hook
   const state = useTaskFormState(initialData, isOpen, defaultIsBreak);
 
-  // 2. Focus input on open
+  // 2. Focus input on open (ONLY for new cards)
   useEffect(() => {
-    if (isOpen) {
+    // We only want to auto-focus if the modal is open AND it's a creation flow (no initialData)
+    if (isOpen && !initialData) {
       setTimeout(() => {
         if (nameInputRef.current) nameInputRef.current.focus();
       }, 100);
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
 
   const handleClose = () => {
     const hasUnsavedChanges = initialData 
