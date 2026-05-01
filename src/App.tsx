@@ -31,12 +31,24 @@ export default function App() {
 	// --- AUTHENTICATION STATE ---
 	const [user, setUser] = useState<User | null>(null);
 	const [isAuthLoading, setIsAuthLoading] = useState(true);
-		
-	// Pull everything we need from our custom background engine!
+
+	// --- TOAST NOTIFICATION SYSTEM ---
+	const { toast, triggerToast, closeToast } = useToast();
+
+	// --- ECONOMY ENGINE (Initialize First) ---
+	// We pass an empty array for tasks initially, and a dummy forceRefresh.
+	// We'll update this below if needed, but the main goal is to get refreshEconomy.
+	const {
+		gems, timePoints, medals, pendingRewards, refreshEconomy,
+		handleBuyShield, handleBuyGemWithTime, handleBuyTimeWithGem, handleClaimRewards
+	} = useGameEconomy([], () => {}, triggerToast);
+
+	// --- TASK ENGINE ---
+	// Now we can pass refreshEconomy to useTasks
 	const {
 		allTasks, activeTasks, comingTasks, completedTasks, deletedTasks, breakTasks,
-		archivedTasks, gems, timePoints, medals, pendingRewards, forceRefresh
-	} = useTasks(user);
+		archivedTasks, forceRefresh
+	} = useTasks(user, refreshEconomy);
 
 	// --- UI & SETTINGS STATE ---
 	const [volumeLevel, setVolumeLevel] = useState(3);
@@ -58,18 +70,15 @@ export default function App() {
 	
 	// Load saved volume on mount
 	useEffect(() => {
-		// Only fetch the volume AFTER Firebase confirms who is logged in!
 		if (user) {
 			getMeta("volumeLevel", 3).then((savedVolume) => {
-				// Wrap it in Number() to protect against strict-equality bugs 
-				// just in case the database saved it as a string (e.g., "2" instead of 2)
 				setVolumeLevel(Number(savedVolume));
 			});
+            refreshEconomy();
 		}
-	}, [user]);
+	}, [user, refreshEconomy]);
 
 	useEffect(() => {
-		// listens for login/logout events automatically
 		const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
 			setUser(currentUser);
 			setIsAuthLoading(false);
@@ -87,24 +96,10 @@ export default function App() {
 		allTasks, activeTasks, comingTasks, deletedTasks, timePoints, forceRefresh, setSummaryData
 	);
 
-	// For debugging: shows all the cards object
-	// useEffect(() => {
-	// 	// We use (window as any) to stop TypeScript from complaining
-	// 	(window as any).debugTasks = allTasks;
-	// }, [allTasks]);
-
-	// --- TOAST NOTIFICATION SYSTEM ---
-	const { toast, triggerToast, closeToast } = useToast();
-	
 	// --- GACHA ENGINE ---
 	const { onDraw, openingTier, recentResults, setRecentResults } = usePrizeDraw(
 		medals, gems, timePoints, volumeLevel, forceRefresh, triggerToast
 	);
-
-	// --- ECONOMY ENGINE ---
-	const {
-		handleBuyShield, handleBuyGemWithTime, handleBuyTimeWithGem, handleClaimRewards
-	} = useGameEconomy(allTasks, forceRefresh, triggerToast);
 
 	// --- QUEST ACTIONS ENGINE ---
 	const { 
@@ -130,8 +125,6 @@ export default function App() {
 		return <Login />;
 	}
 
-	// --- Render Logic ---
-	// Determine which array to loop through based on the clicked tab
 	let displayedTasks = activeTasks;
 	if (activeTab === 'coming') displayedTasks = comingTasks;
 	if (activeTab === 'completed') displayedTasks = completedTasks;
