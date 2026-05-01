@@ -199,7 +199,14 @@ export function QuestCard({ quest, volumeLevel, onToggleComplete, onEdit, onDele
           <>
             {quest.isBreak ? (
               <button onClick={() => quest.id && onTakeBreak?.(quest.id)} disabled={quest.energyPercent! < 100} className={`grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${quest.energyPercent! >= 100 ? 'bg-orange-100 text-orange-600 hover:text-yellow-500' : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'} ${barBorder} ${tierColors} hover:scale-103 active:scale-95`}>
-                {quest.energyPercent! >= 100 ? `☕ Take Break ${GAME_CONFIG.economy.takeBreakCost}` : '⏳ Cooling Down'}
+                {quest.energyPercent! >= 100 ? (
+                  <>
+                    <span>☕ Take Break</span>
+                    <span className='px-2 py-0.5 rounded-lg text-xs bg-orange-600/20'>
+                      ⏳ {GAME_CONFIG.economy.takeBreakCost}
+                    </span>
+                  </>
+                ) : '⏳ Cooling Down'}
               </button>
             ) : (
               <button 
