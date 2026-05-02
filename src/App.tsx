@@ -93,7 +93,7 @@ export default function App() {
 
 	// --- QUEST MANAGER ENGINE ---
 	const { handleSaveQuest, handleReviveCard } = useQuestManager(
-		allTasks, activeTasks, comingTasks, deletedTasks, timePoints, forceRefresh, setSummaryData
+		allTasks, activeTasks, comingTasks, deletedTasks, timePoints, forceRefresh, setSummaryData, refreshEconomy
 	);
 
 	// --- GACHA ENGINE ---
@@ -118,7 +118,7 @@ export default function App() {
 	};
 
 	if (isAuthLoading) {
-		return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-muted animate-pulse">Loading Game of Life...</div>;
+		return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-muted animate-pulse">Loading StackQuest...</div>;
 	}
 
 	if (!user) {
@@ -137,7 +137,7 @@ export default function App() {
 			<Header 
 				gems={gems}
 				timePoints={timePoints} 
-				medals={medals} // <-- PASS THIS PROP
+				medals={medals}
 				volumeLevel={volumeLevel} 
 				setVolumeLevel={setVolumeLevel}
 				onOpenSummary={() => setShowSummaryModal(true)}

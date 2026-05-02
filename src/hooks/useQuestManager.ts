@@ -1,6 +1,7 @@
 // src/hooks/useQuestManager.ts
 import { saveTaskToDB, setMeta } from '../services/db';
 import type { Quest } from '../types/quest';
+import { GAME_CONFIG } from '../config/gameRules'; // Import dynamic costs
 
 export function useQuestManager(
 	allTasks: Quest[],
@@ -9,7 +10,8 @@ export function useQuestManager(
 	deletedTasks: Quest[],
 	timePoints: number,
 	forceRefresh: () => void,
-	setSummaryData: React.Dispatch<React.SetStateAction<any>>
+	setSummaryData: React.Dispatch<React.SetStateAction<any>>,
+	refreshEconomy: () => void 
 ) {
 	
 	const handleSaveQuest = async (newQuestData: Partial<Quest>, editingQuest: Quest | null, onSuccess: () => void) => {
@@ -38,13 +40,25 @@ export function useQuestManager(
 				}
 			}
 		} else {
-			// BRAND NEW QUEST - Deduct 10 TP unless it's their very first card
-			if (allTasks.length > 0 && timePoints < 10) {
-				alert("Not enough Time Points to create a new card!");
-				return;
-			}
-			if (allTasks.length > 0) {
-				await setMeta("timePoints", timePoints - 10);
+			// BRAND NEW QUEST 
+			const isNewCard = allTasks.length > 0;
+			
+			// 1. Derive the quest type from the boolean flags that Partial<Quest> knows about
+			let derivedType: 'onetime' | 'recurring' | 'break' = 'recurring';
+			if (newQuestData.isBreak) derivedType = 'break';
+			else if (newQuestData.isOneTime) derivedType = 'onetime';
+
+			// 2. Look up the cost using the CORRECT property name from GAME_CONFIG
+			const cost = GAME_CONFIG.cardCosts[derivedType];
+
+			// Deduct TP dynamically based on quest type
+			if (isNewCard && cost > 0) {
+				if (timePoints < cost) {
+					alert(`Not enough Time Points! You need ${cost} TP to create a ${derivedType} card.`);
+					return;
+				}
+				await setMeta("timePoints", timePoints - cost);
+				refreshEconomy(); // SYNC THE ECONOMY UI INSTANTLY
 			}
 
 			finalQuest = {
@@ -67,7 +81,8 @@ export function useQuestManager(
 	};
 
 	const handleReviveCard = async (taskId: number) => {
-		if (timePoints < 10) return alert("Not enough Time Points to revive this card!");
+		const reviveCost = 10; // Keeping revive cost hardcoded to 10 for now
+		if (timePoints < reviveCost) return alert("Not enough Time Points to revive this card!");
 
 		const taskToRevive = [...activeTasks, ...comingTasks, ...deletedTasks].find(t => t.id === taskId);
 		if (!taskToRevive) return;
@@ -75,9 +90,10 @@ export function useQuestManager(
 		// Removes it from the "Trash" state
 		delete taskToRevive.deletedAt;
 
-		// Deduct 10 TP
-		const newTp = timePoints - 10;
+		// Deduct TP and Sync
+		const newTp = timePoints - reviveCost;
 		await setMeta("timePoints", newTp);
+		refreshEconomy(); // SYNC THE ECONOMY UI INSTANTLY
 
 		// Reset the card times to NOW, keeping the original duration
 		const now = Date.now();
