@@ -11,6 +11,7 @@ interface DailySummaryModalProps {
   expiredQuests: Quest[];
   gems: number;
   gemsGained: number;
+  tpGained: number;
   timePoints: number;
   onRevive: (taskId: number) => void;
   rewards: PendingRewards;
@@ -19,7 +20,7 @@ interface DailySummaryModalProps {
 
 export function DailySummaryModal({
   isOpen, onClose, completedYesterday, expiredQuests,
-  gems, gemsGained, timePoints, onRevive, rewards, onClaim
+  gems, gemsGained, timePoints, onRevive, rewards, onClaim, tpGained
 }: DailySummaryModalProps) {
 
   // State for animations
@@ -170,7 +171,8 @@ export function DailySummaryModal({
 
           {/* FOOTER */}
           <div className="bg-gray-50 px-8 py-4 shrink-0 border-t border-gray-100">
-            {(gemsGained > 0 || displayRewards.tp > 0 || hasClaimableRewards) && (
+            {/* 1. Update the condition to include tpGained */}
+            {(gemsGained > 0 || tpGained > 0 || hasClaimableRewards) && (
               <div className="flex flex-col gap-3 mb-4">
                 <div>
                   <h3 className="text-orange-700 font-bold text-sm tracking-wider text-center">Rewards earned from yesterday's efforts:</h3>
@@ -178,7 +180,9 @@ export function DailySummaryModal({
                 
                 <div className="flex flex-wrap justify-center gap-3 bg-white px-4 py-3 rounded-lg shadow-sm border border-orange-100">
                   {gemsGained > 0 && <span className="font-black text-orange-500">💎 +{gemsGained}</span>}
-                  {displayRewards.tp > 0 && <span className="font-black text-blue-600">⏳ +{displayRewards.tp}</span>}
+                  
+                  {/* 2. USE tpGained instead of displayRewards.tp */}
+                  {tpGained > 0 && <span className="font-black text-blue-600">⏳ +{tpGained}</span>}
                   
                   {/* MEDAL BREAKDOWN */}
                   {displayRewards.medals?.bronze > 0 && <span className="font-black text-amber-700">🥉 +{displayRewards.medals.bronze}</span>}

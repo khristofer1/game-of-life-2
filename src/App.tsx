@@ -223,6 +223,7 @@ export default function App() {
 				completedYesterday={summaryData.completed}
 				expiredQuests={summaryData.expired}
 				gems={gems} gemsGained={summaryData.gemsGained}
+				tpGained={summaryData.tpGained}
 				timePoints={timePoints} onRevive={handleReviveCard}
 				rewards={pendingRewards}
 				onClaim={() => handleClaimRewards(

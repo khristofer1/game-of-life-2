@@ -6,7 +6,12 @@ import type { Quest } from '../types/quest';
 // 1. Add pendingRewards as the second argument
 export const useDailySummary = (allTasks: Quest[], pendingRewards: { gems: number, tp: number }) => {
 	const [showSummaryModal, setShowSummaryModal] = useState(false);
-	const [summaryData, setSummaryData] = useState({ completed: [] as Quest[], expired: [] as Quest[], gemsGained: 0 });
+	const [summaryData, setSummaryData] = useState({
+		completed: [] as Quest[],
+		expired: [] as Quest[],
+		gemsGained: 0,
+		tpGained: 0
+	});
 	const hasCheckedSummary = useRef(false);
 
 	useEffect(() => {
@@ -32,11 +37,13 @@ export const useDailySummary = (allTasks: Quest[], pendingRewards: { gems: numbe
 			);
 
 			const totalGemsGained = completedYesterday.length + breaksYesterday.length;
+			const totalTpGained = completedYesterday.reduce((acc, curr) => acc + (curr.lastDepositMs || 0), 0);
 
 			setSummaryData({
 				completed: [...completedYesterday, ...breaksYesterday],
 				expired: expiredOneTime,
-				gemsGained: totalGemsGained
+				gemsGained: totalGemsGained,
+				tpGained: totalTpGained
 			});
 
 			// --- NEW GATEKEEPER CHECK ---
