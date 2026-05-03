@@ -98,7 +98,7 @@ export default function App() {
 
 	// --- GACHA ENGINE ---
 	const { onDraw, openingTier, recentResults, setRecentResults } = usePrizeDraw(
-		medals, gems, timePoints, volumeLevel, forceRefresh, triggerToast
+		medals, gems, timePoints, volumeLevel, forceRefresh, triggerToast, refreshEconomy
 	);
 
 	// --- QUEST ACTIONS ENGINE ---

@@ -21,7 +21,8 @@ export function usePrizeDraw(
   timePoints: number,
   volumeLevel: number,
   forceRefresh: () => void,
-  triggerToast: (msg: string) => void
+  triggerToast: (msg: string) => void,
+  refreshEconomy: () => void
 ) {
   const [openingTier, setOpeningTier] = useState<PrizeTier | null>(null);
   const [recentResults, setRecentResults] = useState<GachaResult[] | null>(null);
@@ -81,9 +82,12 @@ export function usePrizeDraw(
     }
 
     // Deduct medals and Add Rewards
-    await setMeta("medals", { ...medals, [tier]: medals[tier] - amount });
-    await setMeta("gems", gems + totalGems);
-    await setMeta("timePoints", timePoints + totalTP);
+    // We use Promise.all to ensure the DB is fully updated before we signal a refresh
+    await Promise.all([
+      setMeta("medals", { ...medals, [tier]: medals[tier] - amount }),
+      setMeta("gems", gems + totalGems),
+      setMeta("timePoints", timePoints + totalTP)
+    ]);
 
     // --- STEP 2: THE SUSPENSE REVEAL (1.2s LATER) ---
     setTimeout(() => {
@@ -111,7 +115,8 @@ export function usePrizeDraw(
       }
       
       setRecentResults(results);
-      setOpeningTier(null); // Stop shaking
+      setOpeningTier(null);
+      refreshEconomy();
       forceRefresh();
     }, 1200); 
   };
